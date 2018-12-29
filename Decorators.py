@@ -106,3 +106,43 @@ def family_promo(prices):
     return sum(prices)
 
 print(christmas_promotions)
+
+
+"""
+And you can obviously create an object using a decorator, whose name will allow you to register more things!
+(This is the basic design behind @functools.singledispatch)
+"""
+
+def multi_dispatch(default_impl):
+    class MultiDispatcher:
+        def __init__(self):
+            self.options = {}
+            self.default_impl = default_impl
+
+        def register(self, *argument_types):
+            def decorator(f):
+                self.options[argument_types] = f
+                return f
+            return decorator
+
+        def __call__(self, *args):
+            arg_types = tuple(type(a) for a in args)
+            f = self.options.get(arg_types, self.default_impl)
+            return f(*args)
+    return MultiDispatcher()
+
+@multi_dispatch
+def collide(a, b):
+    print("Boom!", a, "and", b)
+
+@collide.register(int, int)
+def _(a, b):
+    print("Collision:", a + b)
+
+@collide.register(int, str)
+def _(a, b):
+    print("Collision:", a * b)
+
+collide(1, 2)
+collide(5, "b")
+collide("a", "b")
