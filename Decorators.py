@@ -36,7 +36,7 @@ def traced(f):
         result = f(*args, **kwargs)
         arg_to_str = (repr(a) for a in args)
         karg_to_str = (str(k) + "=" + repr(v) for k, v in kwargs.items())
-        print(f.__name__ + "(" + ",".join(itertools.chain(arg_to_str, karg_to_str)) + ") =>", result)
+        print("[TRACE]", f.__name__ + "(" + ",".join(itertools.chain(arg_to_str, karg_to_str)) + ") =>", result)
         return result
     return traced_f
 
@@ -76,3 +76,33 @@ def fib(n):
     return fib(n-1) + fib(n-2)
 
 print(fib(100))
+
+
+"""
+Registering into an object (not a singleton... just a global variable)
+"""
+
+class PromoRegistry:
+    def __init__(self):
+        self.promotions = []
+
+    def register(self, f):
+        self.promotions.append(f)
+        return f
+
+    def __len__(self):
+        return self.promotions
+
+    def __getitem__(self, item):
+        return self.promotions[item]
+
+    def __str__(self):
+        return str(self.promotions)
+
+christmas_promotions = PromoRegistry()
+
+@christmas_promotions.register
+def family_promo(prices):
+    return sum(prices)
+
+print(christmas_promotions)
