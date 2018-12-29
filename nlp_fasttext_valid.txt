@@ -1,0 +1,4 @@
+__label__positive I love cats
+__label__negative I hate cats
+__label__positive I enjoyed my meal
+__label__negative I was not quite satisfied with my meal

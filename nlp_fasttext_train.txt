@@ -1,0 +1,5 @@
+__label__positive I love dogs
+__label__negative I hate dogs
+__label__positive I enjoy breakfast
+__label__positive I like to run
+__label__negative I was not quite satisfied with my breakfast
