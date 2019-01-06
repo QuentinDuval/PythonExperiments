@@ -2,11 +2,12 @@ import collections
 import functools
 import itertools
 import numpy as np
+import pandas as pd
 import simpy
 
 
 TaxiSimulationOutcome = collections.namedtuple(
-    "TaxiSimulationOutcome", ["serviced_passengers", "traveling_passengers", "remaining_passengers"]
+    "TaxiSimulationOutcome", ["serviced", "traveling", "remaining"]
 )
 
 
@@ -31,9 +32,9 @@ class TaxiSimulation:
             env.process(self.taxi_cab_routine(env, resources))
         env.timeout(self.end_shift)
         env.run(until=self.end_shift)
-        return TaxiSimulationOutcome(serviced_passengers=resources.serviced_passengers,
-                                     traveling_passengers=resources.traveling_passengers,
-                                     remaining_passengers=resources.waiting_passengers.level)
+        return TaxiSimulationOutcome(serviced=resources.serviced_passengers,
+                                     traveling=resources.traveling_passengers,
+                                     remaining=resources.waiting_passengers.level)
 
     def passenger_arrival(self, env, resources):
         for i in itertools.count():
@@ -59,10 +60,15 @@ class TaxiSimulation:
 def taxi_test():
     simulation = TaxiSimulation(end_shift=10*60, taxi_count=6, passenger_inter_arrival=5, trip_duration=30)
     results = [simulation.run() for _ in range(100)]
-    # TODO - use data frames of pandas
-    print("Average people served:", np.mean([result.serviced_passengers for result in results]))
-    print("Average people in flight:", np.mean([result.traveling_passengers for result in results]))
-    print("Average people not served:", np.mean([result.remaining_passengers for result in results]))
+
+    # Using numpy
+    print("Average people served:", np.mean([result.serviced for result in results]))
+    print("Average people in flight (taxi overtime):", np.mean([result.traveling for result in results]))
+    print("Average people not served:", np.mean([result.remaining for result in results]))
+
+    # Using pandas
+    data_frame = pd.DataFrame(results)
+    print(data_frame.describe())
 
 
 taxi_test()
