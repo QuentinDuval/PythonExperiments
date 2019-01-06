@@ -64,7 +64,7 @@ class Simulation:
 def test(taxi_count):
     simulation = Simulation(trip_duration=0.5, client_wait=0.25,
                             taxis=[TaxiCab(taxi_id=i+1) for i in range(taxi_count)])
-    for e in simulation.run(start_time=0, end_time=10): # TODO - different waiting times for different events
+    for e in simulation.run(start_time=0, end_time=10):
         print(e)
 
 
