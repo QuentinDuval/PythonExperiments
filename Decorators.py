@@ -32,6 +32,7 @@ Printing argument and return of a function (good for debugging)
 """
 
 def traced(f):
+    # TODO - add the running time
     def traced_f(*args, **kwargs):
         result = f(*args, **kwargs)
         arg_to_str = (repr(a) for a in args)
