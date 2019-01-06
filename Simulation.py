@@ -22,9 +22,9 @@ class TaxiCab:
         yield TaxiEvent(time=time, taxi_id=self.id, description='end of working day')
 
 
-def simulate(taxis, expected_duration_of_trip):
+def simulate(taxis, start_time, end_time, trip_duration):
     pending_events = []
-    simulations = {taxi.id: taxi.new_simulation(0, 10) for taxi in taxis}
+    simulations = {taxi.id: taxi.new_simulation(start_time, end_time) for taxi in taxis}
     for simulation in simulations.values():
         heapq.heappush(pending_events, next(simulation))
 
@@ -33,20 +33,20 @@ def simulate(taxis, expected_duration_of_trip):
         yield event
         try:
             simulation = simulations[event.taxi_id]
-            duration = np.random.exponential(scale=expected_duration_of_trip)
+            duration = np.random.exponential(scale=trip_duration)
             event = simulation.send(event.time + duration)
             heapq.heappush(pending_events, event)
         except StopIteration:
-            pass
+            del simulations[event.taxi_id]
 
 
-def test():
-    taxis = [TaxiCab(taxi_id=1), TaxiCab(taxi_id=2), TaxiCab(taxi_id=3)]
-    for e in simulate(taxis, expected_duration_of_trip=1): # TODO - different waiting times for different events
+def test(taxi_count):
+    taxis = [TaxiCab(taxi_id=i+1) for i in range(taxi_count)]
+    for e in simulate(taxis, start_time=0, end_time=10, trip_duration=0.5): # TODO - different waiting times for different events
         print(e)
 
 
 # TODO - take into account money
 # TODO - count how late taxi end up their day
-test()
+test(taxi_count=10)
 
