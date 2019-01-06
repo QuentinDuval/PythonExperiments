@@ -20,57 +20,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="NLP.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/NLP.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-94">
-              <caret line="156" column="0" selection-start-line="156" selection-start-column="0" selection-end-line="156" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="CoolTricks.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/CoolTricks.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="93">
-              <caret line="26" column="0" selection-start-line="26" selection-start-column="0" selection-end-line="27" selection-end-column="25" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="NLPFastText.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/NLPFastText.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="388">
-              <caret line="29" column="46" selection-start-line="29" selection-start-column="46" selection-end-line="29" selection-end-column="46" />
-              <folding>
-                <element signature="e#0#38#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Decorators.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Decorators.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="714">
-              <caret line="42" column="0" selection-start-line="42" selection-start-column="0" selection-end-line="42" selection-end-column="0" />
-              <folding>
-                <element signature="e#0#35#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Simulation.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="Simulation.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Simulation.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1122">
-              <caret line="66" column="55" selection-start-line="66" selection-start-column="55" selection-end-line="66" selection-end-column="55" />
+            <state relative-caret-position="331">
+              <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="52" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -78,21 +32,33 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="nlp_fasttext_train.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nlp_fasttext_train.txt">
+      <file leaf-file-name="Simulation2.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Simulation2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="68">
-              <caret line="4" column="34" selection-start-line="4" selection-start-column="34" selection-end-line="4" selection-end-column="34" />
+            <state relative-caret-position="340">
+              <caret line="41" column="50" selection-start-line="41" selection-start-column="50" selection-end-line="41" selection-end-column="50" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="itertools.py" pinned="false" current-in-tab="false">
+        <entry file="file://$USER_HOME$/Library/Caches/PyCharm2016.2/python_stubs/1437855905/itertools.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="144">
+              <caret line="257" column="8" selection-start-line="257" selection-start-column="8" selection-end-line="257" selection-end-column="8" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="nlp_fasttext_valid.txt" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/nlp_fasttext_valid.txt">
+      <file leaf-file-name="store.py" pinned="false" current-in-tab="false">
+        <entry file="file:///usr/local/lib/python3.7/site-packages/simpy/resources/store.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="51">
-              <caret line="3" column="0" selection-start-line="3" selection-start-column="0" selection-end-line="3" selection-end-column="0" />
+            <state relative-caret-position="144">
+              <caret line="61" column="8" selection-start-line="61" selection-start-column="8" selection-end-line="61" selection-end-column="8" />
               <folding />
             </state>
           </provider>
@@ -122,6 +88,7 @@
         <option value="$PROJECT_DIR$/NLPFastText.py" />
         <option value="$PROJECT_DIR$/Decorators.py" />
         <option value="$PROJECT_DIR$/Simulation.py" />
+        <option value="$PROJECT_DIR$/Simulation2.py" />
       </list>
     </option>
   </component>
@@ -197,24 +164,7 @@
       <recent name="$PROJECT_DIR$" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.Simulation">
-    <configuration default="false" name="CoolTricks" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="/usr/local/bin/python3" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="false" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <module name="Experiments" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/CoolTricks.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <method />
-    </configuration>
+  <component name="RunManager" selected="Python.Simulation2">
     <configuration default="false" name="NLP" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -279,6 +229,23 @@
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <module name="Experiments" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Simulation.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <method />
+    </configuration>
+    <configuration default="false" name="Simulation2" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="Experiments" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Simulation2.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <method />
@@ -418,19 +385,19 @@
       <method />
     </configuration>
     <list size="5">
-      <item index="0" class="java.lang.String" itemvalue="Python.CoolTricks" />
-      <item index="1" class="java.lang.String" itemvalue="Python.NLP" />
-      <item index="2" class="java.lang.String" itemvalue="Python.Decorators" />
-      <item index="3" class="java.lang.String" itemvalue="Python.NLPFastText" />
-      <item index="4" class="java.lang.String" itemvalue="Python.Simulation" />
+      <item index="0" class="java.lang.String" itemvalue="Python.NLP" />
+      <item index="1" class="java.lang.String" itemvalue="Python.Decorators" />
+      <item index="2" class="java.lang.String" itemvalue="Python.NLPFastText" />
+      <item index="3" class="java.lang.String" itemvalue="Python.Simulation" />
+      <item index="4" class="java.lang.String" itemvalue="Python.Simulation2" />
     </list>
     <recent_temporary>
       <list size="5">
-        <item index="0" class="java.lang.String" itemvalue="Python.Simulation" />
-        <item index="1" class="java.lang.String" itemvalue="Python.NLPFastText" />
-        <item index="2" class="java.lang.String" itemvalue="Python.Decorators" />
-        <item index="3" class="java.lang.String" itemvalue="Python.NLP" />
-        <item index="4" class="java.lang.String" itemvalue="Python.CoolTricks" />
+        <item index="0" class="java.lang.String" itemvalue="Python.Simulation2" />
+        <item index="1" class="java.lang.String" itemvalue="Python.Simulation" />
+        <item index="2" class="java.lang.String" itemvalue="Python.NLPFastText" />
+        <item index="3" class="java.lang.String" itemvalue="Python.Decorators" />
+        <item index="4" class="java.lang.String" itemvalue="Python.NLP" />
       </list>
     </recent_temporary>
   </component>
@@ -457,7 +424,7 @@
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32994187" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32994187" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32994187" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -652,8 +619,34 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Simulation.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1122">
-          <caret line="66" column="55" selection-start-line="66" selection-start-column="55" selection-end-line="66" selection-end-column="55" />
+        <state relative-caret-position="331">
+          <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="52" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python3.7/site-packages/simpy/resources/store.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="61" column="8" selection-start-line="61" selection-start-column="8" selection-end-line="61" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Library/Caches/PyCharm2016.2/python_stubs/1437855905/itertools.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="144">
+          <caret line="257" column="8" selection-start-line="257" selection-start-column="8" selection-end-line="257" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Simulation2.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="340">
+          <caret line="41" column="50" selection-start-line="41" selection-start-column="50" selection-end-line="41" selection-end-column="50" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
