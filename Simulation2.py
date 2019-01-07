@@ -1,4 +1,5 @@
 import collections
+import dataclasses
 import functools
 import itertools
 import numpy as np
@@ -6,9 +7,28 @@ import pandas as pd
 import simpy
 
 
-TaxiSimulationOutcome = collections.namedtuple(
-    "TaxiSimulationOutcome", ["serviced", "traveling", "remaining"]
-)
+@dataclasses.dataclass
+class TaxiSimulationOutcome:
+    arrived: int = 0
+    traveling: int = 0
+    serviced: int = 0
+
+    @property
+    def remaining(self):
+        return self.arrived - self.traveling - self.serviced
+
+    def on_passenger_arrival(self):
+        self.arrived += 1
+
+    def on_passenger_taken(self):
+        self.traveling += 1
+
+    def on_passenger_dropped(self):
+        self.traveling -= 1
+        self.serviced += 1
+
+    def to_dict(self):
+        return dict(dataclasses.asdict(self), remaining=self.remaining)
 
 
 class TaxiSimulation:
@@ -18,56 +38,49 @@ class TaxiSimulation:
         self.passenger_inter_arrival = passenger_inter_arrival
         self.trip_duration = trip_duration
 
-    class Resources:
-        def __init__(self, env):
-            self.waiting_passengers = simpy.Container(env, init=0)
-            self.traveling_passengers = 0
-            self.serviced_passengers = 0
-
     def run(self):
         env = simpy.Environment()
-        resources = self.Resources(env)
-        env.process(self.passenger_arrival(env, resources))
+        waiting_passengers = simpy.Container(env, init=0)
+        outcome = TaxiSimulationOutcome()
+
+        def passenger_arrival():
+            for _ in itertools.count():
+                delay = np.random.exponential(scale=self.passenger_inter_arrival)
+                yield env.timeout(delay)
+                waiting_passengers.put(1)
+                outcome.on_passenger_arrival()
+
+        def taxi_cab_routine():
+            while True:
+                yield waiting_passengers.get(1)
+                if env.now >= self.end_shift:
+                    waiting_passengers.put(1)
+                    break
+                outcome.on_passenger_taken()
+                yield env.timeout(np.random.exponential(scale=self.trip_duration))
+                outcome.on_passenger_dropped()
+
+        env.process(passenger_arrival())
         for _ in range(self.taxi_count):
-            env.process(self.taxi_cab_routine(env, resources))
+            env.process(taxi_cab_routine())
         env.timeout(self.end_shift)
         env.run(until=self.end_shift)
-        return TaxiSimulationOutcome(serviced=resources.serviced_passengers,
-                                     traveling=resources.traveling_passengers,
-                                     remaining=resources.waiting_passengers.level)
+        return outcome
 
-    def passenger_arrival(self, env, resources):
-        for i in itertools.count():
-            delay = np.random.exponential(scale=self.passenger_inter_arrival)
-            yield env.timeout(delay)
-            # print("Passenger", i, "at", env.now, "after delay", delay)
-            resources.waiting_passengers.put(1)
-
-    def taxi_cab_routine(self, env, resources):
-        while True:
-            yield resources.waiting_passengers.get(1)
-            if env.now >= self.end_shift:
-                resources.waiting_passengers.put(1)
-                break
-            # print("Taking passenger at", env.now)
-            resources.traveling_passengers += 1
-            yield env.timeout(np.random.exponential(scale=self.trip_duration))
-            resources.traveling_passengers -= 1
-            resources.serviced_passengers += 1
-            # print("Dropping passenger at", env.now)
-        # print("> Taxi going back home at", last_trip_end)
 
 def taxi_test():
     simulation = TaxiSimulation(end_shift=10*60, taxi_count=6, passenger_inter_arrival=5, trip_duration=30)
     results = [simulation.run() for _ in range(100)]
 
     # Using numpy
+    print("Average people arrived:", np.mean([result.arrived for result in results]))
     print("Average people served:", np.mean([result.serviced for result in results]))
     print("Average people in flight (taxi overtime):", np.mean([result.traveling for result in results]))
     print("Average people not served:", np.mean([result.remaining for result in results]))
 
     # Using pandas
-    data_frame = pd.DataFrame(results)
+    data_frame = pd.DataFrame(result.to_dict() for result in results)
+    # data_frame['remaining'] = data_frame['arrived'] - data_frame['serviced'] - data_frame['traveling']
     print(data_frame.describe())
 
 
