@@ -5,6 +5,9 @@ import numpy as np
 import timeit
 
 
+# TODO - compare with https://aras-p.info/blog/2018/12/28/Modern-C-Lamentations/
+
+
 Timed = namedtuple('Timed', ['result', 'elapsed'])
 
 
@@ -27,7 +30,7 @@ def gcd(a, b):
 
 
 def pythagorean_triples():
-    for z in itertools.count(start=0, step=1):
+    for z in itertools.count():
         for x in range(1, z+1):
             for y in range(x, z+1):
                 if x * x + y * y == z * z and reduce(gcd, (x, y, z)) == 1:
@@ -35,6 +38,9 @@ def pythagorean_triples():
 
 
 def pythagorean_triples_linalg(max_z):
+
+    # TODO - transform this to use YIELD (co-routine which accepts values as well)
+
     triples = [np.array([3, 4, 5])]
     lo = 0
     hi = 1
@@ -63,6 +69,9 @@ def pythagorean_triples_linalg(max_z):
 
 
 def pythagorean_triples_linalg_2(max_z):
+    
+    # TODO - transform this to use YIELD (co-routine which accepts values as well)
+
     triples = [np.array([3, 4, 5])]
     lo = 0
     hi = 1
