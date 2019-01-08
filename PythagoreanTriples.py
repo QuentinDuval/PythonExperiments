@@ -62,6 +62,37 @@ def pythagorean_triples_linalg(max_z):
     return triples
 
 
+def pythagorean_triples_linalg_2(max_z):
+    triples = [np.array([3, 4, 5])]
+    lo = 0
+    hi = 1
+
+    A = np.array([[-1, 2, 2],
+                  [-2, 1, 2],
+                  [-2, 2, 3]])
+
+    B = np.array([[1, 2, 2],
+                  [2, 1, 2],
+                  [2, 2, 3]])
+
+    C = np.array([[1, -2, 2],
+                  [2, -1, 2],
+                  [2, -2, 3]])
+
+    matrices = np.concatenate((A, B, C), axis=0)
+
+    while hi - lo > 0:
+        for triple in triples[lo:hi]:
+            new_triples = matrices @ triple
+            new_triples = np.reshape(new_triples, (3,3))
+            for new_triple in new_triples:
+                if new_triple[2] < max_z:
+                    triples.append(new_triple)
+        lo, hi = hi, len(triples)
+
+    return triples
+
+
 @timed
 def test_pythagorean_triples():
     res = []
@@ -77,12 +108,18 @@ def test_pythagorean_triples_linalg():
     return pythagorean_triples_linalg(max_z=200)
 
 
+@timed
+def test_pythagorean_triples_linalg_2():
+    return pythagorean_triples_linalg_2(max_z=200)
+
+
 def run_bench(benches, trial_count):
     for bench in benches:
         elapsed = [bench().elapsed for _ in range(trial_count)]
         print(bench.__name__)
+        print(" * res: ", len(bench().result))
         print(" * mean:", np.mean(elapsed))
         print(" * std: ", np.std(elapsed))
 
 
-run_bench([test_pythagorean_triples, test_pythagorean_triples_linalg], trial_count=10)
+run_bench([test_pythagorean_triples, test_pythagorean_triples_linalg, test_pythagorean_triples_linalg_2], trial_count=10)
