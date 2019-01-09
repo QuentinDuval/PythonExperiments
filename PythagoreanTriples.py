@@ -69,30 +69,29 @@ def pythagorean_triples_linalg(max_z):
 
 
 def pythagorean_triples_linalg_2(max_z):
-    
+
     # TODO - transform this to use YIELD (co-routine which accepts values as well)
 
+    matrices = np.array(
+        [[-1, 2, 2],
+         [-2, 1, 2],
+         [-2, 2, 3],
+         [1, 2, 2],
+         [2, 1, 2],
+         [2, 2, 3],
+         [1, -2, 2],
+         [2, -1, 2],
+         [2, -2, 3]
+    ])
+
+    # Or you could use:
+    # matrices = np.concatenate((A, B, C), axis=0)
+
     triples = [np.array([3, 4, 5])]
-    lo = 0
-    hi = 1
-
-    A = np.array([[-1, 2, 2],
-                  [-2, 1, 2],
-                  [-2, 2, 3]])
-
-    B = np.array([[1, 2, 2],
-                  [2, 1, 2],
-                  [2, 2, 3]])
-
-    C = np.array([[1, -2, 2],
-                  [2, -1, 2],
-                  [2, -2, 3]])
-
-    matrices = np.concatenate((A, B, C), axis=0)
-
+    lo, hi = 0, 1
     while hi - lo > 0:
         for triple in triples[lo:hi]:
-            new_triples = matrices @ triple
+            new_triples = matrices @ triple # TODO - zarb... il faudrait transposer normalement
             new_triples = np.reshape(new_triples, (3,3))
             for new_triple in new_triples:
                 if new_triple[2] < max_z:
@@ -122,6 +121,40 @@ def test_pythagorean_triples_linalg_2():
     return pythagorean_triples_linalg_2(max_z=200)
 
 
+def next_pythagorean_triples(previous):
+    matrices = np.array(
+        [[-1, 2, 2],
+         [-2, 1, 2],
+         [-2, 2, 3],
+         [1, 2, 2],
+         [2, 1, 2],
+         [2, 2, 3],
+         [1, -2, 2],
+         [2, -1, 2],
+         [2, -2, 3]])
+
+    next_triples = np.transpose(matrices @ np.transpose(previous))
+    next_triples = next_triples.reshape((3 * previous.shape[0], previous.shape[1]))
+    return next_triples
+
+
+def pythagorean_triples_by_stage():
+    # TODO - filtering based on max_z?
+    current = np.array([[3, 4, 5]])
+    yield current
+    while True:
+        current = next_pythagorean_triples(current)
+        yield current
+
+
+@timed
+def test_pythagorean_triples_linalg_3():
+    for depth, triples in enumerate(pythagorean_triples_by_stage()):
+        if depth >= 5:
+            break
+        print(triples)
+
+
 def run_bench(benches, trial_count):
     for bench in benches:
         elapsed = [bench().elapsed for _ in range(trial_count)]
@@ -131,4 +164,11 @@ def run_bench(benches, trial_count):
         print(" * std: ", np.std(elapsed))
 
 
-run_bench([test_pythagorean_triples, test_pythagorean_triples_linalg, test_pythagorean_triples_linalg_2], trial_count=10)
+# run_bench([test_pythagorean_triples, test_pythagorean_triples_linalg, test_pythagorean_triples_linalg_2], trial_count=10)
+
+"""
+for triangle in test_pythagorean_triples_linalg_2().result:
+    print(triangle)
+"""
+
+test_pythagorean_triples_linalg_3()
