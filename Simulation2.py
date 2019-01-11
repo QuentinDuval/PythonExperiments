@@ -80,7 +80,7 @@ class TaxiSimulation:
                 outcome.on_passenger_taken(env.now)
                 yield env.timeout(np.random.exponential(scale=self.trip_duration))
                 outcome.on_passenger_dropped(env.now)
-                end_of_day = max(env.now, self.taxi_end_shift)
+                end_of_day = env.now
             outcome.on_taxi_end(end_of_day)
 
         env.process(passenger_arrival())
