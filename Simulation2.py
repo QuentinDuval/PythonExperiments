@@ -118,12 +118,67 @@ def taxi_test():
 """
 
 
+class BusSimulationOutcome:
+    def __init__(self):
+        self.arrived: int = 0
+        self.serviced: int = 0
+
+    def on_passenger_arrival(self, time):
+        self.arrived += 1
+
+    def on_passenger_taken(self, time, passenger_count):
+        self.serviced += passenger_count
+
+    # TODO - number of people by bus passage
+    # TODO - waiting time of passengers (number of bus to wait for?)
+    # TODO - number of people that go away (there is such a thing...)
+
+    def to_dict(self):
+        return {
+            'arrived': self.arrived,
+            'serviced': self.serviced
+        }
+
+
 class BusSimulation:
-    pass
+    def __init__(self, bus_capacity, bus_end_shift, bus_inter_arrival, passenger_inter_arrival, end_passenger_arrival):
+        self.bus_capacity = bus_capacity
+        self.bus_end_shift = bus_end_shift
+        self.bus_inter_arrival = bus_inter_arrival
+        self.end_passenger_arrival = end_passenger_arrival
+        self.passenger_inter_arrival = passenger_inter_arrival
+
+    def run(self, until=None):
+        env = simpy.Environment()
+        waiting_passengers = simpy.Container(env, init=0)
+        outcome = BusSimulationOutcome()
+
+        def passenger_arrival():
+            while env.now < self.end_passenger_arrival:
+                yield env.timeout(np.random.exponential(scale=self.passenger_inter_arrival))
+                outcome.on_passenger_arrival(env.now)
+                waiting_passengers.put(1)
+
+        def bus_routine():
+            while env.now < self.bus_end_shift:
+                passenger_count = min(waiting_passengers.level, self.bus_capacity)
+                if passenger_count > 0:
+                    waiting_passengers.get(passenger_count)
+                outcome.on_passenger_taken(env.now, passenger_count)
+                yield env.timeout(np.random.exponential(scale=self.bus_inter_arrival))
+
+        env.process(passenger_arrival())
+        env.process(bus_routine())
+        env.run(until=until)
+        return outcome
 
 
 def bus_test():
-    pass
+    simulation = BusSimulation(bus_capacity=40, bus_inter_arrival=30, bus_end_shift=10*60,
+                               passenger_inter_arrival=5, end_passenger_arrival=10*60)
+    results = [simulation.run(until=None) for _ in range(100)]
+    data_frame = pd.DataFrame(result.to_dict() for result in results)
+    print(data_frame.describe())
 
 
 """
