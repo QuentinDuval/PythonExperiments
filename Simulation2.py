@@ -1,13 +1,16 @@
-import dataclasses
-import itertools
+from typing import List
 
 import numpy as np
 import pandas as pd
 import simpy
-from typing import List
 
 
-# TODO - bus simulation
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+- TAXI SIMULATION: similar to workers taking work from a work-stealing queue
+------------------------------------------------------------------------------------------------------------------------
+"""
 
 
 class TaxiSimulationOutcome:
@@ -100,7 +103,6 @@ def taxi_test():
     # Using numpy
     print("Average people arrived:", np.mean([result.arrived for result in results]))
     print("Average people served:", np.mean([result.serviced for result in results]))
-    print("Average people in flight (taxi overtime):", np.mean([result.traveling for result in results]))
     print("Average people not served:", np.mean([result.remaining for result in results]))
 
     # Using pandas
@@ -109,4 +111,27 @@ def taxi_test():
     print(data_frame.describe())
 
 
+"""
+------------------------------------------------------------------------------------------------------------------------
+- BUS SIMULATION: similar to workers taking work from a work-stealing queue
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+class BusSimulation:
+    pass
+
+
+def bus_test():
+    pass
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+Running the tests 
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
 taxi_test()
+bus_test()
