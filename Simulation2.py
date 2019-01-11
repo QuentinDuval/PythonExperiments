@@ -113,7 +113,7 @@ def taxi_test():
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-- BUS SIMULATION: similar to workers taking work from a work-stealing queue
+- BUS SIMULATION: similar to a fixed schedule worker taking everything at once from a fixed size buffer
 ------------------------------------------------------------------------------------------------------------------------
 """
 
