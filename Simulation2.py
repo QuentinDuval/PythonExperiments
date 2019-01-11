@@ -1,76 +1,101 @@
-import collections
 import dataclasses
-import functools
 import itertools
+
 import numpy as np
 import pandas as pd
 import simpy
+from typing import List
 
 
-@dataclasses.dataclass
+# TODO - bus simulation
+
+
 class TaxiSimulationOutcome:
-    arrived: int = 0
-    traveling: int = 0
-    serviced: int = 0
+    def __init__(self):
+        self.arrived: int = 0
+        self.traveling: int = 0
+        self.serviced: int = 0
+        self.end_of_simulation: int = 0
+        self.end_taxi: List[int] = []
 
     @property
     def remaining(self):
         return self.arrived - self.traveling - self.serviced
 
-    def on_passenger_arrival(self):
+    def on_passenger_arrival(self, time):
         self.arrived += 1
 
-    def on_passenger_taken(self):
+    def on_passenger_taken(self, time):
         self.traveling += 1
 
-    def on_passenger_dropped(self):
+    def on_passenger_dropped(self, time):
         self.traveling -= 1
         self.serviced += 1
 
+    def on_taxi_end(self, time):
+        self.end_taxi.append(time)
+
+    def on_simulation_end(self, time):
+        self.end_of_simulation = time
+
     def to_dict(self):
-        return dict(dataclasses.asdict(self), remaining=self.remaining)
+        return {
+            'arrived': self.arrived,
+            'traveling': self.traveling,
+            'serviced': self.serviced,
+            'remaining': self.remaining,
+            'taxi_end': np.mean(self.end_taxi),
+            'simulation_end': self.on_simulation_end
+        }
 
 
 class TaxiSimulation:
-    def __init__(self, end_shift, taxi_count, passenger_inter_arrival, trip_duration):
-        self.end_shift = end_shift
+    def __init__(self, taxi_count, taxi_end_shift, end_passenger_arrival, passenger_inter_arrival, trip_duration):
+        self.taxi_end_shift = taxi_end_shift
+        self.end_passenger_arrival = end_passenger_arrival
         self.taxi_count = taxi_count
         self.passenger_inter_arrival = passenger_inter_arrival
         self.trip_duration = trip_duration
 
-    def run(self):
+    def run(self, until=None):
+        # TODO - add a SimulationState class ?
         env = simpy.Environment()
         waiting_passengers = simpy.Container(env, init=0)
         outcome = TaxiSimulationOutcome()
 
         def passenger_arrival():
-            for _ in itertools.count():
+            while env.now < self.end_passenger_arrival:
                 delay = np.random.exponential(scale=self.passenger_inter_arrival)
                 yield env.timeout(delay)
                 waiting_passengers.put(1)
-                outcome.on_passenger_arrival()
+                outcome.on_passenger_arrival(env.now)
 
         def taxi_cab_routine():
-            while True:
+            end_of_day = 0
+            while env.now < self.taxi_end_shift:
                 yield waiting_passengers.get(1)
-                if env.now >= self.end_shift:
+                if env.now >= self.taxi_end_shift:      # TODO - use a timeout + disjunction of event to do this...
                     waiting_passengers.put(1)
                     break
-                outcome.on_passenger_taken()
+                outcome.on_passenger_taken(env.now)
                 yield env.timeout(np.random.exponential(scale=self.trip_duration))
-                outcome.on_passenger_dropped()
+                outcome.on_passenger_dropped(env.now)
+                end_of_day = max(env.now, self.taxi_end_shift)
+            outcome.on_taxi_end(end_of_day)
 
         env.process(passenger_arrival())
         for _ in range(self.taxi_count):
             env.process(taxi_cab_routine())
-        env.timeout(self.end_shift)
-        env.run(until=self.end_shift)
+        env.run(until=until)
+        outcome.on_simulation_end(env.now)
         return outcome
 
 
 def taxi_test():
-    simulation = TaxiSimulation(end_shift=10*60, taxi_count=6, passenger_inter_arrival=5, trip_duration=30)
-    results = [simulation.run() for _ in range(100)]
+    simulation = TaxiSimulation(taxi_end_shift=10*60, taxi_count=6,
+                                end_passenger_arrival=10*60, passenger_inter_arrival=5,
+                                trip_duration=30)
+    results = [simulation.run(until=None) for _ in range(100)]
 
     # Using numpy
     print("Average people arrived:", np.mean([result.arrived for result in results]))
