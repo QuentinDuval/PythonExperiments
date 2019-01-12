@@ -1,9 +1,6 @@
-from typing import List
-
 import numpy as np
 import pandas as pd
 import simpy
-
 
 
 """
@@ -15,11 +12,11 @@ import simpy
 
 class TaxiSimulationOutcome:
     def __init__(self):
-        self.arrived: int = 0
-        self.traveling: int = 0
-        self.serviced: int = 0
-        self.end_of_simulation: int = 0
-        self.end_taxi: List[int] = []
+        self.arrived = 0
+        self.traveling = 0
+        self.serviced = 0
+        self.end_of_simulation = 0
+        self.end_taxi = []
 
     @property
     def remaining(self):
@@ -119,8 +116,8 @@ def taxi_test():
 
 class BusSimulationOutcome:
     def __init__(self):
-        self.arrived: int = 0
-        self.serviced: int = 0
+        self.arrived = 0
+        self.serviced = 0
 
     def on_passenger_arrival(self, time):
         self.arrived += 1
