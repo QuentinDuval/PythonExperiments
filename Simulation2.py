@@ -185,4 +185,5 @@ Running the tests
 
 
 taxi_test()
+print()
 bus_test()
