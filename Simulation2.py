@@ -68,8 +68,7 @@ class TaxiSimulation:
 
         def passenger_arrival():
             while env.now < self.end_passenger_arrival:
-                delay = np.random.exponential(scale=self.passenger_inter_arrival)
-                yield env.timeout(delay)
+                yield env.timeout(np.random.exponential(scale=self.passenger_inter_arrival))
                 waiting_passengers.put(1)
                 outcome.on_passenger_arrival(env.now)
 
