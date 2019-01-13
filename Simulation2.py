@@ -191,13 +191,15 @@ class PerformanceLog:
         self.time = []
         self.timing = []
         self.item_count = []
-        self.latency = []
+        self.mean_latency = []
+        self.max_latency = []
 
     def to_dict(self):
         return {
             'time': self.time,
             'timing': self.timing,
-            'latency': self.latency,
+            'mean_latency': self.mean_latency,
+            'max_latency': self.max_latency,
             'item_count': self.item_count
         }
 
@@ -235,10 +237,14 @@ class PerformanceTest:
                         items.append(item)
                     for _ in range(item_count):
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
-                    log.latency.append(np.mean([env.now - item for item in items]))
+
+                    latencies = [env.now - item for item in items]
+                    log.mean_latency.append(np.mean(latencies))
+                    log.max_latency.append(np.max(latencies))
                     yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
                 else:
-                    log.latency.append(np.nan)
+                    log.mean_latency.append(0)
+                    log.max_latency.append(0)
 
                 log.time.append(env.now)
                 log.item_count.append(item_count)
@@ -269,7 +275,8 @@ def performance_test():
     pyplot.ylabel('Timing')
 
     pyplot.subplot(3, 1, 3)
-    pyplot.plot(data_frame['time'], data_frame['latency'])
+    pyplot.plot(data_frame['time'], data_frame['mean_latency'])
+    pyplot.plot(data_frame['time'], data_frame['max_latency'])
     pyplot.ylabel('Latency')
 
     pyplot.show()
