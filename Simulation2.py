@@ -233,9 +233,13 @@ class PerformanceTest:
                 if item_count:
                     latencies = []
                     items = [item_queue.popleft() for _ in range(item_count)]
+
+                    # TODO - To parallelize, use AllOf? (https://simpy.readthedocs.io/en/latest/topical_guides/events.html)
+                    # TODO - Or use another process (thread pool) consuming the messages?
                     for item in items:
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
                         latencies.append(env.now - item)
+
                     yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
 
                     log.mean_latency.append(np.mean(latencies))
