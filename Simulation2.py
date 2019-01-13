@@ -254,7 +254,7 @@ class PerformanceTest:
 
 def performance_test():
     simulation = PerformanceTest()
-    result = simulation.run(until=10 * 60 * 1000)
+    result = simulation.run(until=2 * 60 * 1000)
     data_frame = pd.DataFrame(result.to_dict())
     print(data_frame.describe())
 
@@ -271,7 +271,7 @@ def performance_test():
     pyplot.subplot(3, 1, 3)
     pyplot.plot(data_frame['time'], data_frame['latency'])
     pyplot.ylabel('Latency')
-    
+
     pyplot.show()
 
 
