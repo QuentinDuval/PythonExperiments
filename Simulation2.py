@@ -209,8 +209,8 @@ class PerformanceTest:
     def __init__(self, input_inter_arrival):
         self.input_inter_arrival = input_inter_arrival
         self.round_trip_duration = 1
-        self.poll_request_duration = 5
-        self.make_handled_duration = 10
+        self.poll_request_duration = 5      # TODO - make it dependent on number of total entries (not taken!)
+        self.make_handled_duration = 10     # TODO - make it dependent on number of entries handled
         self.polling_delay = 100
         self.max_chunk = 1000
 
@@ -224,33 +224,37 @@ class PerformanceTest:
                 yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
                 item_queue.append(env.now)
 
+        def read_db():
+            yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
+            item_count = min(len(item_queue), self.max_chunk)
+            return [item_queue.popleft() for _ in range(item_count)]
+
+        def send_update():
+            yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+
+        def update_entries():
+            yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
+
         def consumer():
             while True:
                 start = env.now
 
-                yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
-                item_count = min(len(item_queue), self.max_chunk)
-                if item_count:
-                    latencies = []
-                    items = [item_queue.popleft() for _ in range(item_count)]
+                # TODO - To parallelize, use AllOf? (https://simpy.readthedocs.io/en/latest/topical_guides/events.html)
+                # TODO - Or use another process (thread pool) consuming the messages?
 
-                    # TODO - To parallelize, use AllOf? (https://simpy.readthedocs.io/en/latest/topical_guides/events.html)
-                    # TODO - Or use another process (thread pool) consuming the messages?
+                latencies = []
+                items = yield from read_db()
+                if items:
                     for item in items:
-                        yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                        yield from send_update()
                         latencies.append(env.now - item)
-
-                    yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
-
-                    log.mean_latency.append(np.mean(latencies))
-                    log.max_latency.append(np.max(latencies))
-                else:
-                    log.mean_latency.append(0)
-                    log.max_latency.append(0)
+                    yield from update_entries()
 
                 log.time.append(env.now)
-                log.item_count.append(item_count)
+                log.item_count.append(len(items))
                 log.timing.append(env.now - start)
+                log.mean_latency.append(np.mean(latencies) if latencies else 0)
+                log.max_latency.append(np.max(latencies) if latencies else 0)
 
                 """
                 if env.now - start < self.polling_delay:
