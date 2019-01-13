@@ -206,8 +206,8 @@ class PerformanceLog:
 
 
 class PerformanceTest:
-    def __init__(self):
-        self.input_inter_arrival = 10
+    def __init__(self, input_inter_arrival):
+        self.input_inter_arrival = input_inter_arrival
         self.round_trip_duration = 1
         self.poll_request_duration = 5
         self.make_handled_duration = 10
@@ -260,25 +260,35 @@ class PerformanceTest:
 
 
 def performance_test():
-    simulation = PerformanceTest()
-    result = simulation.run(until=2 * 60 * 1000)
-    data_frame = pd.DataFrame(result.to_dict())
-    print(data_frame.describe())
+    input_inter_arrivals = [20, 10, 5, 2, 1.5, 1.25]
 
-    # TODO - study time series (and print it)
-    # TODO - use moving average ?
-    pyplot.subplot(3, 1, 1)
-    pyplot.plot(data_frame['time'], data_frame['item_count'])
+    results = []
+    for input_inter_arrival in input_inter_arrivals:
+        simulation = PerformanceTest(input_inter_arrival=input_inter_arrival)
+        result = simulation.run(until=2 * 60 * 1000)
+        data_frame = pd.DataFrame(result.to_dict())
+        # print(data_frame.describe())
+        results.append(data_frame)
+
+    pyplot.subplot(4, 1, 1)
+    for result in results:
+        pyplot.plot(result['time'], result['item_count'])
     pyplot.ylabel('Item count')
 
-    pyplot.subplot(3, 1, 2)
-    pyplot.plot(data_frame['time'], data_frame['timing'])
+    pyplot.subplot(4, 1, 2)
+    for result in results:
+        pyplot.plot(result['time'], result['timing'])
     pyplot.ylabel('Timing')
 
-    pyplot.subplot(3, 1, 3)
-    pyplot.plot(data_frame['time'], data_frame['mean_latency'])
-    pyplot.plot(data_frame['time'], data_frame['max_latency'])
+    pyplot.subplot(4, 1, 3)
+    for result in results:
+        pyplot.plot(result['time'], result['mean_latency'])
+        # pyplot.plot(data_frame['time'], data_frame['max_latency'])
     pyplot.ylabel('Latency')
+
+    pyplot.subplot(4, 1, 4)
+    pyplot.plot(input_inter_arrivals, [result['mean_latency'].mean() for result in results])
+    pyplot.plot(input_inter_arrivals, [result['mean_latency'].max() for result in results])
 
     pyplot.show()
 
