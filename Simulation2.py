@@ -1,3 +1,4 @@
+from collections import *
 import matplotlib.pyplot as pyplot
 import numpy as np
 import pandas as pd
@@ -206,7 +207,7 @@ class PerformanceLog:
 
 class PerformanceTest:
     def __init__(self):
-        self.input_inter_arrival = 1.15
+        self.input_inter_arrival = 10
         self.round_trip_duration = 1
         self.poll_request_duration = 5
         self.make_handled_duration = 10
@@ -215,33 +216,29 @@ class PerformanceTest:
 
     def run(self, until=None):
         env = simpy.Environment()
-        # item_queue = simpy.Container(env, init=0)     # TODO - put down real item (and measure delay)
-        item_queue = simpy.Store(env)                   # TODO - a simple deque would suffice ?
+        item_queue = deque()
         log = PerformanceLog()
 
         def item_arrival():
             while True:
                 yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
-                item_queue.put(env.now)
+                item_queue.append(env.now)
 
         def consumer():
             while True:
                 start = env.now
 
                 yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
-                item_count = min(len(item_queue.items), self.max_chunk)
+                item_count = min(len(item_queue), self.max_chunk)
                 if item_count:
-                    items = []
-                    for _ in range(item_count):
-                        item = yield item_queue.get()
-                        items.append(item)
+                    items = [item_queue.popleft() for _ in range(item_count)]
                     for _ in range(item_count):
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                    yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
 
                     latencies = [env.now - item for item in items]
                     log.mean_latency.append(np.mean(latencies))
                     log.max_latency.append(np.max(latencies))
-                    yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
                 else:
                     log.mean_latency.append(0)
                     log.max_latency.append(0)
@@ -250,6 +247,10 @@ class PerformanceTest:
                 log.item_count.append(item_count)
                 log.timing.append(env.now - start)
 
+                """
+                if env.now - start < self.polling_delay:
+                    yield env.timeout(self.polling_delay - env.now + start)
+                """
                 yield env.timeout(self.polling_delay)
 
         env.process(item_arrival())
