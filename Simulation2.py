@@ -269,7 +269,7 @@ class PerformanceTest:
 
 
 def performance_test():
-    input_inter_arrivals = [20, 10, 5, 2, 1.5, 1.25]
+    input_inter_arrivals = np.array([20, 10, 5, 2, 1.5, 1.25, 1.15])
 
     results = []
     for input_inter_arrival in input_inter_arrivals:
@@ -292,12 +292,12 @@ def performance_test():
     pyplot.subplot(4, 1, 3)
     for result in results:
         pyplot.plot(result['time'], result['mean_latency'])
-        # pyplot.plot(data_frame['time'], data_frame['max_latency'])
     pyplot.ylabel('Latency')
 
     pyplot.subplot(4, 1, 4)
-    pyplot.plot(input_inter_arrivals, [result['mean_latency'].mean() for result in results])
-    pyplot.plot(input_inter_arrivals, [result['mean_latency'].max() for result in results])
+    pyplot.plot(1000 / input_inter_arrivals, [result['mean_latency'].mean() for result in results])
+    pyplot.plot(1000 / input_inter_arrivals, [result['max_latency'].max() for result in results])
+    pyplot.xlabel('Latency / Arrival rate')
 
     pyplot.show()
 
