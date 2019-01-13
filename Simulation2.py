@@ -143,7 +143,7 @@ class BusSimulation:
 
     def run(self, until=None):
         env = simpy.Environment()
-        waiting_passengers = simpy.Container(env, init=0)
+        waiting_passengers = simpy.Container(env, init=0) # TODO use simpy.Store to store latency
         outcome = BusSimulationOutcome()
 
         def passenger_arrival():
