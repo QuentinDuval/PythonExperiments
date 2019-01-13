@@ -188,20 +188,24 @@ See the impact of multi-threading of save / notification
 
 class PerformanceLog:
     def __init__(self):
+        self.time = []
         self.timing = []
         self.item_count = []
+        self.latency = []
 
     def to_dict(self):
         return {
+            'time': self.time,
             'timing': self.timing,
+            'latency': self.latency,
             'item_count': self.item_count
         }
 
 
 class PerformanceTest:
     def __init__(self):
-        self.input_inter_arrival = 1000 / 600
-        self.round_trip_duration = 2
+        self.input_inter_arrival = 3
+        self.round_trip_duration = 1
         self.poll_request_duration = 5
         self.make_handled_duration = 10
         self.polling_delay = 100
@@ -209,26 +213,37 @@ class PerformanceTest:
 
     def run(self, until=None):
         env = simpy.Environment()
-        item_queue = simpy.Container(env, init=0)   # TODO - put down real item (and measure delay)
+        # item_queue = simpy.Container(env, init=0)     # TODO - put down real item (and measure delay)
+        item_queue = simpy.Store(env)                   # TODO - a simple deque would suffice ?
         log = PerformanceLog()
 
         def item_arrival():
             while True:
                 yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
-                item_queue.put(1)
+                item_queue.put(env.now)
 
         def consumer():
             while True:
-                item_count = min(item_queue.level, self.max_chunk)
                 start = env.now
+
                 yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
+                item_count = min(len(item_queue.items), self.max_chunk)
                 if item_count:
-                    item_queue.get(item_count)
+                    items = []
+                    for _ in range(item_count):
+                        item = yield item_queue.get()
+                        items.append(item)
                     for _ in range(item_count):
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                    log.latency.append(np.mean([env.now - item for item in items]))
                     yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
+                else:
+                    log.latency.append(np.nan)
+
+                log.time.append(env.now)
                 log.item_count.append(item_count)
                 log.timing.append(env.now - start)
+
                 yield env.timeout(self.polling_delay)
 
         env.process(item_arrival())
@@ -245,7 +260,18 @@ def performance_test():
 
     # TODO - study time series (and print it)
     # TODO - use moving average ?
-    pyplot.plot(data_frame['timing'])
+    pyplot.subplot(3, 1, 1)
+    pyplot.plot(data_frame['time'], data_frame['item_count'])
+    pyplot.ylabel('Item count')
+
+    pyplot.subplot(3, 1, 2)
+    pyplot.plot(data_frame['time'], data_frame['timing'])
+    pyplot.ylabel('Timing')
+
+    pyplot.subplot(3, 1, 3)
+    pyplot.plot(data_frame['time'], data_frame['latency'])
+    pyplot.ylabel('Latency')
+    
     pyplot.show()
 
 
