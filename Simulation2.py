@@ -231,12 +231,13 @@ class PerformanceTest:
                 yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
                 item_count = min(len(item_queue), self.max_chunk)
                 if item_count:
+                    latencies = []
                     items = [item_queue.popleft() for _ in range(item_count)]
-                    for _ in range(item_count):
+                    for item in items:
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                        latencies.append(env.now - item)
                     yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
 
-                    latencies = [env.now - item for item in items]
                     log.mean_latency.append(np.mean(latencies))
                     log.max_latency.append(np.max(latencies))
                 else:
