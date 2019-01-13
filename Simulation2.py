@@ -1,4 +1,5 @@
 from collections import *
+import math
 import matplotlib.pyplot as pyplot
 import numpy as np
 import pandas as pd
@@ -209,15 +210,15 @@ class PerformanceTest:
     def __init__(self, input_inter_arrival):
         self.input_inter_arrival = input_inter_arrival
         self.round_trip_duration = 1
-        self.poll_request_duration = 5      # TODO - make it dependent on number of total entries (not taken!)
-        self.make_handled_duration = 10     # TODO - make it dependent on number of entries handled
+        self.poll_request_duration = 5
+        self.make_handled_duration = 5
         self.polling_delay = 100
         self.max_chunk = 1000
 
     def run(self, until=None):
         env = simpy.Environment()
         item_queue = deque()
-        log = PerformanceLog()
+        simulation_log = PerformanceLog()
 
         def item_arrival():
             while True:
@@ -225,15 +226,17 @@ class PerformanceTest:
                 item_queue.append(env.now)
 
         def read_db():
-            yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
+            delay = self.poll_request_duration * (1 + math.log(1 + len(item_queue)) / 10)
+            yield env.timeout(np.random.exponential(scale=delay))
             item_count = min(len(item_queue), self.max_chunk)
             return [item_queue.popleft() for _ in range(item_count)]
 
         def send_update():
             yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
 
-        def update_entries():
-            yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
+        def update_entries(items):
+            delay = self.make_handled_duration * (1 + math.log(1 + len(items)) / 10)
+            yield env.timeout(np.random.exponential(scale=delay))
 
         def consumer():
             while True:
@@ -241,6 +244,7 @@ class PerformanceTest:
 
                 # TODO - To parallelize, use AllOf? (https://simpy.readthedocs.io/en/latest/topical_guides/events.html)
                 # TODO - Or use another process (thread pool) consuming the messages?
+                # TODO - Simulate the overload of the destination server
 
                 latencies = []
                 items = yield from read_db()
@@ -248,13 +252,13 @@ class PerformanceTest:
                     for item in items:
                         yield from send_update()
                         latencies.append(env.now - item)
-                    yield from update_entries()
+                    yield from update_entries(items)
 
-                log.time.append(env.now)
-                log.item_count.append(len(items))
-                log.timing.append(env.now - start)
-                log.mean_latency.append(np.mean(latencies) if latencies else 0)
-                log.max_latency.append(np.max(latencies) if latencies else 0)
+                simulation_log.time.append(env.now)
+                simulation_log.item_count.append(len(items))
+                simulation_log.timing.append(env.now - start)
+                simulation_log.mean_latency.append(np.mean(latencies) if latencies else 0)
+                simulation_log.max_latency.append(np.max(latencies) if latencies else 0)
 
                 """
                 if env.now - start < self.polling_delay:
@@ -265,7 +269,7 @@ class PerformanceTest:
         env.process(item_arrival())
         env.process(consumer())
         env.run(until=until)
-        return log
+        return simulation_log
 
 
 def performance_test():
