@@ -96,11 +96,6 @@ def taxi_test():
                                 trip_duration=30)
     results = [simulation.run(until=None) for _ in range(100)]
 
-    # Using numpy
-    print("Average people arrived:", np.mean([result.arrived for result in results]))
-    print("Average people served:", np.mean([result.serviced for result in results]))
-    print("Average people not served:", np.mean([result.remaining for result in results]))
-
     # Using pandas
     data_frame = pd.DataFrame(result.to_dict() for result in results)
     # data_frame['remaining'] = data_frame['arrived'] - data_frame['serviced'] - data_frame['traveling']
@@ -179,6 +174,74 @@ def bus_test():
 
 """
 ------------------------------------------------------------------------------------------------------------------------
+- PERFORMANCE SIMULATION:
+  * New items to handle come at a given rate
+  * Treat all items (up to 1000 to limit memory) at once
+  * Send one notification / save DB for each item handled (simulate round trip!)
+
+See the impact of batching of save / notification
+See the impact of multi-threading of save / notification
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+class PerformanceLog:
+    def __init__(self):
+        self.timing = []
+        self.item_count = []
+
+    def to_dict(self):
+        return {
+            'timing': self.timing,
+            'item_count': self.item_count
+        }
+
+
+class PerformanceTest:
+    def __init__(self):
+        self.input_inter_arrival = 5
+        self.round_trip_duration = 2
+        self.polling_delay = 100
+        self.max_chunk = 1000
+
+    def run(self, until=None):
+        env = simpy.Environment()
+        item_queue = simpy.Container(env, init=0)   # TODO - put down real item (and measure delay)
+        log = PerformanceLog()
+
+        def item_arrival():
+            while True:
+                yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
+                item_queue.put(1)
+
+        def consumer():
+            while True:
+                item_count = min(item_queue.level, self.max_chunk)
+                start = env.now
+                if item_count:
+                    item_queue.get(item_count)
+                    for _ in range(item_count):
+                        yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                log.item_count.append(item_count)
+                log.timing.append(env.now - start)
+                yield env.timeout(self.polling_delay)
+
+        env.process(item_arrival())
+        env.process(consumer())
+        env.run(until=until)
+        return log
+
+
+def performance_test():
+    simulation = PerformanceTest()
+    result = simulation.run(until=10 * 60 * 1000)
+    data_frame = pd.DataFrame(result.to_dict())
+    print(data_frame.describe())
+    # TODO - study time series (and print it)
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
 Running the tests 
 ------------------------------------------------------------------------------------------------------------------------
 """
@@ -187,3 +250,5 @@ Running the tests
 taxi_test()
 print()
 bus_test()
+print()
+performance_test()
