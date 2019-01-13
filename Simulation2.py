@@ -206,7 +206,7 @@ class PerformanceLog:
 
 class PerformanceTest:
     def __init__(self):
-        self.input_inter_arrival = 3
+        self.input_inter_arrival = 1.15
         self.round_trip_duration = 1
         self.poll_request_duration = 5
         self.make_handled_duration = 10
