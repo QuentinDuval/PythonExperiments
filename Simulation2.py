@@ -1,3 +1,4 @@
+import matplotlib.pyplot as pyplot
 import numpy as np
 import pandas as pd
 import simpy
@@ -199,8 +200,10 @@ class PerformanceLog:
 
 class PerformanceTest:
     def __init__(self):
-        self.input_inter_arrival = 5
+        self.input_inter_arrival = 1000 / 600
         self.round_trip_duration = 2
+        self.poll_request_duration = 5
+        self.make_handled_duration = 10
         self.polling_delay = 100
         self.max_chunk = 1000
 
@@ -218,10 +221,12 @@ class PerformanceTest:
             while True:
                 item_count = min(item_queue.level, self.max_chunk)
                 start = env.now
+                yield env.timeout(np.random.exponential(scale=self.poll_request_duration))
                 if item_count:
                     item_queue.get(item_count)
                     for _ in range(item_count):
                         yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+                    yield env.timeout(np.random.exponential(scale=self.make_handled_duration))
                 log.item_count.append(item_count)
                 log.timing.append(env.now - start)
                 yield env.timeout(self.polling_delay)
@@ -237,7 +242,11 @@ def performance_test():
     result = simulation.run(until=10 * 60 * 1000)
     data_frame = pd.DataFrame(result.to_dict())
     print(data_frame.describe())
+
     # TODO - study time series (and print it)
+    # TODO - use moving average ?
+    pyplot.plot(data_frame['timing'])
+    pyplot.show()
 
 
 """
@@ -247,8 +256,8 @@ Running the tests
 """
 
 
-taxi_test()
+# taxi_test()
 print()
-bus_test()
+# bus_test()
 print()
 performance_test()
