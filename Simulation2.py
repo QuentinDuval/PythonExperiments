@@ -196,20 +196,29 @@ class PerformanceLog:
         self.mean_latency = []
         self.max_latency = []
 
-    def to_dict(self):
-        return {
+        self.message_timings = []
+        self.message_latencies = []
+
+    def to_chunk_report(self):
+        return pd.DataFrame({
             'time': self.time,
             'timing': self.timing,
             'mean_latency': self.mean_latency,
             'max_latency': self.max_latency,
             'item_count': self.item_count
-        }
+        })
+
+    def to_message_report(self):
+        return pd.DataFrame({
+            'time': self.message_timings,
+            'latency': self.message_latencies,
+        })
 
 
 class PerformanceTest:
     def __init__(self, input_inter_arrival):
         self.input_inter_arrival = input_inter_arrival
-        self.round_trip_duration = 1
+        self.round_trip_duration = 2
         self.poll_request_duration = 5
         self.make_handled_duration = 5
         self.polling_delay = 100
@@ -218,6 +227,7 @@ class PerformanceTest:
     def run(self, until=None):
         env = simpy.Environment()
         item_queue = deque()
+        # TODO - a resource as output (if the JMS queue overloads)
         simulation_log = PerformanceLog()
 
         def item_arrival():
@@ -246,11 +256,13 @@ class PerformanceTest:
                 # TODO - Or use another process (thread pool) consuming the messages?
                 # TODO - Simulate the overload of the destination server
 
+                emissions = []
                 latencies = []
                 items = yield from read_db()
                 if items:
                     for item in items:
                         yield from send_update()
+                        emissions.append(item)
                         latencies.append(env.now - item)
                     yield from update_entries(items)
 
@@ -259,6 +271,9 @@ class PerformanceTest:
                 simulation_log.timing.append(env.now - start)
                 simulation_log.mean_latency.append(np.mean(latencies) if latencies else 0)
                 simulation_log.max_latency.append(np.max(latencies) if latencies else 0)
+
+                simulation_log.message_timings.extend(emissions)
+                simulation_log.message_latencies.extend(latencies)
 
                 """
                 if env.now - start < self.polling_delay:
@@ -273,34 +288,43 @@ class PerformanceTest:
 
 
 def performance_test():
-    input_inter_arrivals = np.array([20, 10, 5, 2, 1.5, 1.25, 1.15])
+    # input_inter_arrivals = np.array([5, 2, 1.5, 1.25, 1.15])
+    # input_inter_arrivals = np.array([100])  # 10 messages per second
+    # input_inter_arrivals = np.array([10])  # 100 messages per second
+    input_inter_arrivals = np.array([5])  # 200 messages per second
+    # input_inter_arrivals = np.array([1.7])  # 600 messages per second
 
-    results = []
+    chunk_reports = []
+    message_reports = []
     for input_inter_arrival in input_inter_arrivals:
         simulation = PerformanceTest(input_inter_arrival=input_inter_arrival)
-        result = simulation.run(until=2 * 60 * 1000)
-        data_frame = pd.DataFrame(result.to_dict())
-        # print(data_frame.describe())
-        results.append(data_frame)
+        result = simulation.run(until=0.5 * 60 * 1000) # Simulate for 30 minutes
+        chunk_reports.append(result.to_chunk_report())      # TODO - derive chunk report from message report?
+        message_reports.append(result.to_message_report())
 
-    pyplot.subplot(4, 1, 1)
-    for result in results:
+    pyplot.subplot(5, 1, 1)
+    for result in chunk_reports:
         pyplot.plot(result['time'], result['item_count'])
     pyplot.ylabel('Item count')
 
-    pyplot.subplot(4, 1, 2)
-    for result in results:
+    pyplot.subplot(5, 1, 2)
+    for result in chunk_reports:
         pyplot.plot(result['time'], result['timing'])
     pyplot.ylabel('Timing')
 
-    pyplot.subplot(4, 1, 3)
-    for result in results:
+    pyplot.subplot(5, 1, 3)
+    for result in chunk_reports:
         pyplot.plot(result['time'], result['mean_latency'])
     pyplot.ylabel('Latency')
 
-    pyplot.subplot(4, 1, 4)
-    pyplot.plot(1000 / input_inter_arrivals, [result['mean_latency'].mean() for result in results])
-    pyplot.plot(1000 / input_inter_arrivals, [result['max_latency'].max() for result in results])
+    pyplot.subplot(5, 1, 4)
+    for result in message_reports:
+        pyplot.scatter(result['time'], result['latency'], alpha=0.5, s=1)
+    pyplot.ylabel('Latency')
+
+    pyplot.subplot(5, 1, 5)
+    pyplot.plot(1000 / input_inter_arrivals, [result['mean_latency'].mean() for result in chunk_reports])
+    pyplot.plot(1000 / input_inter_arrivals, [result['max_latency'].max() for result in chunk_reports])
     pyplot.xlabel('Latency / Arrival rate')
 
     pyplot.show()
