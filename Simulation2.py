@@ -261,15 +261,11 @@ class RealItemArrival:
         print(self.total_duration)
 
     def __call__(self, env, db_lock, item_queue):
-        pending = []
         for diff in self.inter_arrivals:
             millis = diff / np.timedelta64(1, 'ms')
             if millis > 0:
                 yield env.timeout(millis)
-            pending.append(env.now)
-            if db_lock.count == 0:
-                item_queue.extend(pending)
-                pending.clear()
+            item_queue.append(env.now)
 
 
 class PerformanceTest:
@@ -277,6 +273,7 @@ class PerformanceTest:
         self.arrival_strategy = arrival_strategy
         self.ack_round_trip_duration = 2
         self.ack_window_size = 1
+        self.parallelization = 1
         self.select_request_duration = 5    # TODO - measure by doing request on DB
         self.update_request_duration = 10   # TODO - measure by doing request on DB
         self.polling_delay = 100
@@ -295,12 +292,21 @@ class PerformanceTest:
             return [item_queue.popleft() for _ in range(item_count)]
 
         def send_update():
-            yield env.timeout(np.random.exponential(scale=self.ack_round_trip_duration))
+            round_trips = [np.random.exponential(scale=self.ack_round_trip_duration)
+                           for _ in range(self.parallelization)]
+            yield env.timeout(np.max(round_trips))
 
         def update_entries(items):
             with db_lock.request():
                 delay = self.update_request_duration * (1 + math.log(1 + len(items)) / 10)
                 yield env.timeout(np.random.exponential(scale=delay))
+
+        def wait_for_polling(start_time):
+            # """
+            if env.now - start_time < self.polling_delay:
+                yield env.timeout(self.polling_delay - (env.now - start_time))
+            # """
+            # yield env.timeout(self.polling_delay)
 
         def consumer():
             while True:
@@ -315,9 +321,10 @@ class PerformanceTest:
                 receptions = []
                 items = yield from read_db()
                 if items:
-                    for start in range(0, len(items), self.ack_window_size):
+                    group_size = self.ack_window_size * self.parallelization
+                    for start in range(0, len(items), group_size):
                         yield from send_update()
-                        end = min(len(items), start+self.ack_window_size)
+                        end = min(len(items), start+group_size)
                         for item in items[start:end]:
                             emissions.append(item)
                             receptions.append(env.now)
@@ -329,16 +336,11 @@ class PerformanceTest:
                 simulation_log.timing.append(env.now - start_time)
                 simulation_log.mean_latency.append(np.mean(latencies) if latencies else 0)
                 simulation_log.max_latency.append(np.max(latencies) if latencies else 0)
-
                 simulation_log.message_emissions.extend(emissions)
                 simulation_log.message_receptions.extend(receptions)
                 simulation_log.message_latencies.extend(latencies)
 
-                """
-                if env.now - start < self.polling_delay:
-                    yield env.timeout(self.polling_delay - env.now + start)
-                """
-                yield env.timeout(self.polling_delay)
+                yield from wait_for_polling(start_time)
 
         env.process(self.arrival_strategy(env, db_lock, item_queue))
         env.process(consumer())
