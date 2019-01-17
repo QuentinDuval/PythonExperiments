@@ -302,11 +302,11 @@ class PerformanceTest:
                 yield env.timeout(np.random.exponential(scale=delay))
 
         def wait_for_polling(start_time):
-            # """
+            """
             if env.now - start_time < self.polling_delay:
                 yield env.timeout(self.polling_delay - (env.now - start_time))
-            # """
-            # yield env.timeout(self.polling_delay)
+            """
+            yield env.timeout(self.polling_delay)
 
         def consumer():
             while True:
