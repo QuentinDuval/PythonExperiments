@@ -1,4 +1,5 @@
 from collections import *
+import datetime
 import math
 import matplotlib.pyplot as pyplot
 import numpy as np
@@ -196,112 +197,213 @@ class PerformanceLog:
         self.mean_latency = []
         self.max_latency = []
 
-    def to_dict(self):
-        return {
+        self.message_emissions = []
+        self.message_receptions = []
+        self.message_latencies = []
+
+    def to_chunk_report(self):
+        df = pd.DataFrame({
             'time': self.time,
             'timing': self.timing,
             'mean_latency': self.mean_latency,
             'max_latency': self.max_latency,
             'item_count': self.item_count
-        }
+        })
+        df['time'] = pd.to_datetime(df['time'], unit='ms')
+        return df
+
+    def to_message_report(self):
+        df = pd.DataFrame({
+            'emission': self.message_emissions,
+            'reception': self.message_receptions,
+            'latency': self.message_latencies
+        })
+        df['emission'] = pd.to_datetime(df['emission'], unit='ms')
+        df['reception'] = pd.to_datetime(df['reception'], unit='ms')
+        return df
+
+
+class UniformItemArrival:
+    def __init__(self, input_inter_arrival):
+        self.input_inter_arrival = input_inter_arrival
+        self.total_duration = 10 * 60 * 1000
+
+    def __call__(self, env, db_lock, item_queue):
+        pending = []
+        while True:
+            yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
+            pending.append(env.now)
+            if db_lock.count == 0:
+                item_queue.extend(pending)
+                pending.clear()
+
+
+class BurstyItemArrival:
+    def __init__(self, input_inter_arrival, burst):
+        self.input_inter_arrival = input_inter_arrival
+        self.burst = burst
+        self.total_duration = 10 * 60 * 1000
+
+    def __call__(self, env, db_lock, item_queue):
+        pending = []
+        while True:
+            yield env.timeout(np.random.exponential(scale=self.input_inter_arrival * self.burst))
+            pending.extend(env.now for _ in range(self.burst))
+            if db_lock.count == 0:
+                item_queue.extend(pending)
+                pending.clear()
+
+
+class RealItemArrival:
+    def __init__(self, real_values):
+        self.inter_arrivals = map(lambda x, y: y - x, real_values, real_values[1:])
+        self.total_duration = (real_values.iloc[-1] - real_values.iloc[0]) / np.timedelta64(1, 'ms')
+        print(self.total_duration)
+
+    def __call__(self, env, db_lock, item_queue):
+        for diff in self.inter_arrivals:
+            millis = diff / np.timedelta64(1, 'ms')
+            if millis > 0:
+                yield env.timeout(millis)
+            item_queue.append(env.now)
 
 
 class PerformanceTest:
-    def __init__(self, input_inter_arrival):
-        self.input_inter_arrival = input_inter_arrival
-        self.round_trip_duration = 1
-        self.poll_request_duration = 5
-        self.make_handled_duration = 5
+    def __init__(self, arrival_strategy):
+        self.arrival_strategy = arrival_strategy
+        self.ack_round_trip_duration = 2
+        self.ack_window_size = 1
+        self.parallelization = 1
+        self.select_request_duration = 5    # TODO - measure by doing request on DB
+        self.update_request_duration = 10   # TODO - measure by doing request on DB
         self.polling_delay = 100
-        self.max_chunk = 1000
+        self.max_chunk = 1000               # If you try 40, you will get interesting results
 
     def run(self, until=None):
         env = simpy.Environment()
+        db_lock = simpy.Resource(env, capacity=1)
         item_queue = deque()
         simulation_log = PerformanceLog()
 
-        def item_arrival():
-            while True:
-                yield env.timeout(np.random.exponential(scale=self.input_inter_arrival))
-                item_queue.append(env.now)
-
         def read_db():
-            delay = self.poll_request_duration * (1 + math.log(1 + len(item_queue)) / 10)
+            delay = self.select_request_duration * (1 + len(item_queue) / 100)
             yield env.timeout(np.random.exponential(scale=delay))
             item_count = min(len(item_queue), self.max_chunk)
             return [item_queue.popleft() for _ in range(item_count)]
 
         def send_update():
-            yield env.timeout(np.random.exponential(scale=self.round_trip_duration))
+            round_trips = [np.random.exponential(scale=self.ack_round_trip_duration)
+                           for _ in range(self.parallelization)]
+            yield env.timeout(np.max(round_trips))
 
         def update_entries(items):
-            delay = self.make_handled_duration * (1 + math.log(1 + len(items)) / 10)
-            yield env.timeout(np.random.exponential(scale=delay))
+            with db_lock.request():
+                delay = self.update_request_duration * (1 + math.log(1 + len(items)) / 10)
+                yield env.timeout(np.random.exponential(scale=delay))
+
+        def wait_for_polling(start_time):
+            """
+            if env.now - start_time < self.polling_delay:
+                yield env.timeout(self.polling_delay - (env.now - start_time))
+            """
+            yield env.timeout(self.polling_delay)
 
         def consumer():
             while True:
-                start = env.now
+                start_time = env.now
 
                 # TODO - To parallelize, use AllOf? (https://simpy.readthedocs.io/en/latest/topical_guides/events.html)
                 # TODO - Or use another process (thread pool) consuming the messages?
                 # TODO - Simulate the overload of the destination server
 
+                emissions = []
                 latencies = []
+                receptions = []
                 items = yield from read_db()
                 if items:
-                    for item in items:
+                    group_size = self.ack_window_size * self.parallelization
+                    for start in range(0, len(items), group_size):
                         yield from send_update()
-                        latencies.append(env.now - item)
+                        end = min(len(items), start+group_size)
+                        for item in items[start:end]:
+                            emissions.append(item)
+                            receptions.append(env.now)
+                            latencies.append(env.now - item)
                     yield from update_entries(items)
 
                 simulation_log.time.append(env.now)
                 simulation_log.item_count.append(len(items))
-                simulation_log.timing.append(env.now - start)
+                simulation_log.timing.append(env.now - start_time)
                 simulation_log.mean_latency.append(np.mean(latencies) if latencies else 0)
                 simulation_log.max_latency.append(np.max(latencies) if latencies else 0)
+                simulation_log.message_emissions.extend(emissions)
+                simulation_log.message_receptions.extend(receptions)
+                simulation_log.message_latencies.extend(latencies)
 
-                """
-                if env.now - start < self.polling_delay:
-                    yield env.timeout(self.polling_delay - env.now + start)
-                """
-                yield env.timeout(self.polling_delay)
+                yield from wait_for_polling(start_time)
 
-        env.process(item_arrival())
+        env.process(self.arrival_strategy(env, db_lock, item_queue))
         env.process(consumer())
         env.run(until=until)
         return simulation_log
 
 
 def performance_test():
-    input_inter_arrivals = np.array([20, 10, 5, 2, 1.5, 1.25, 1.15])
+    real_data = pd.read_csv('trades200.csv', sep=';', parse_dates=['time'],
+                            date_parser=lambda x: pd.datetime.strptime(x, '%H:%M:%S.%f'))
 
-    results = []
-    for input_inter_arrival in input_inter_arrivals:
-        simulation = PerformanceTest(input_inter_arrival=input_inter_arrival)
-        result = simulation.run(until=2 * 60 * 1000)
-        data_frame = pd.DataFrame(result.to_dict())
-        # print(data_frame.describe())
-        results.append(data_frame)
+    input_distributions = [
+        # UniformItemArrival(5),
+        # BurstyItemArrival(5, 10),
+        RealItemArrival(real_data['time'])
+    ]
 
-    pyplot.subplot(4, 1, 1)
-    for result in results:
-        pyplot.plot(result['time'], result['item_count'])
-    pyplot.ylabel('Item count')
+    chunk_reports = []
+    message_reports = []
+    for input_distribution in input_distributions:
+        simulation = PerformanceTest(arrival_strategy=input_distribution)
+        result = simulation.run(until=input_distribution.total_duration)
+        chunk_reports.append(result.to_chunk_report())
+        message_reports.append(result.to_message_report())
 
-    pyplot.subplot(4, 1, 2)
-    for result in results:
+    pyplot.subplot(5, 1, 1)
+    for result in chunk_reports:
         pyplot.plot(result['time'], result['timing'])
+        # pyplot.plot(result['time'], result['item_count'])
     pyplot.ylabel('Timing')
 
-    pyplot.subplot(4, 1, 3)
-    for result in results:
+    pyplot.subplot(5, 1, 2)
+    for result in chunk_reports:
         pyplot.plot(result['time'], result['mean_latency'])
+        pyplot.plot(result['time'], result['max_latency'])
     pyplot.ylabel('Latency')
 
-    pyplot.subplot(4, 1, 4)
-    pyplot.plot(1000 / input_inter_arrivals, [result['mean_latency'].mean() for result in results])
-    pyplot.plot(1000 / input_inter_arrivals, [result['max_latency'].max() for result in results])
+    pyplot.subplot(5, 1, 3)
+    for result in message_reports:
+        pyplot.plot_date(result['emission'], result['latency'], alpha=0.5, markersize=1)
+        # pyplot.plot_date(result['reception'], result['latency'], alpha=0.5, markersize=1)
+        # pyplot.scatter(result['reception'], result['latency'], alpha=0.5, s=1)
+    pyplot.ylabel('Message latency')
+
+    # '''
+    pyplot.subplot(5, 1, 4)
+    pyplot.plot_date(real_data['time'], real_data['latency'], alpha=0.5, markersize=1)
     pyplot.xlabel('Latency / Arrival rate')
+
+    # Display the density of X over time (show the clustering happening)
+    pyplot.subplot(5, 1, 5)
+    resampled_data = real_data.set_index('time').resample('50ms').count()
+    print(resampled_data)
+    pyplot.plot_date(resampled_data.index, resampled_data['latency'], alpha=0.5, markersize=1, linestyle='-')
+    pyplot.xlabel('Latency / Arrival rate')
+    # '''
+
+    '''
+    pyplot.subplot(5, 1, 5)
+    pyplot.plot(1000 / input_inter_arrivals, [result['mean_latency'].mean() for result in chunk_reports])
+    pyplot.plot(1000 / input_inter_arrivals, [result['max_latency'].max() for result in chunk_reports])
+    pyplot.xlabel('Latency / Arrival rate')
+    '''
 
     pyplot.show()
 
