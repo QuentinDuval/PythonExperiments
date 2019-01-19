@@ -197,6 +197,9 @@ class IndexHeap:
         self.index = {}
         self.values = [(None, -1 * float('inf'))]
 
+    def __len__(self):
+        return len(self.values) - 1
+
     def __repr__(self):
         return 'IndexHeap' + repr({
             'index': self.index,
@@ -208,8 +211,14 @@ class IndexHeap:
 
     def pop_min(self):
         min_key, min_prio = self.values[1]
-        self.values[1] = self.values.pop()
-        self._dive(1)
+        if len(self.values) > 2:
+            key, prio = self.values.pop()
+            self.values[1] = (key, prio)
+            self.index[key] = 1
+            self._dive(1)
+        else:
+            self.values.pop()
+        del self.index[min_key]
         return min_key, min_prio
 
     def add(self, key, priority):
@@ -229,6 +238,12 @@ class IndexHeap:
                 self._dive(idx)
             else:
                 self._swim(idx)
+
+    def __contains__(self, key):
+        return key in self.index
+
+    def get_priority(self, key):
+        return self.values[self.index[key]][1]
 
     def _swim(self, i):
         while self.values[i][1] < self.values[i//2][1]:
@@ -272,8 +287,61 @@ Prim's algorithm
 """
 
 
-def prims():
-    pass
+def prims(graph):
+    heap = IndexHeap()
+    vertices = list(graph.vertices())
+    heap.add(vertices[0], 0)
+    parents = {}
+    visited = set()
+
+    while len(heap) > 0:
+        u, _ = heap.pop_min()
+        visited.add(u)
+        for e in graph.edges_from(u):
+            if e.destination in visited:
+                continue
+            if e.destination in heap:
+                if heap.get_priority(e.destination) > e.weight:
+                    heap.update(e.destination, e.weight)
+                    parents[e.destination] = e
+            else:
+                heap.add(e.destination, e.weight)
+                parents[e.destination] = e
+
+    return parents.values()
+
+
+def test_prims():
+    # Example graph of https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+    vertices = list('abcdefg')
+    edges = [
+        WeightedEdge('a', 'b', 7),
+        WeightedEdge('a', 'd', 5),
+        WeightedEdge('b', 'c', 8),
+        WeightedEdge('b', 'd', 9),
+        WeightedEdge('b', 'e', 7),
+        WeightedEdge('c', 'e', 5),
+        WeightedEdge('d', 'e', 15),
+        WeightedEdge('d', 'f', 6),
+        WeightedEdge('e', 'f', 8),
+        WeightedEdge('e', 'g', 9),
+        WeightedEdge('f', 'g', 11)
+    ]
+    graph = AdjListGraph(vertices=vertices, edges=edges)
+    for e in prims(graph):
+        print(e)
+
+    # Showing the graph
+    graph = nx.Graph((e.source, e.destination) for e in edges)
+    for e in edges:
+        graph[e.source][e.destination]['weight'] = e.weight
+    g_layout = nx.spring_layout(graph)
+    nx.draw(graph, pos=g_layout, with_labels=True)
+    nx.draw_networkx_edge_labels(graph, pos=g_layout, labels=nx.get_edge_attributes(graph, 'weight'))
+    plot.show()
+
+
+# test_prims()
 
 
 def dijkstra():
