@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/Simulation2.py" beforeDir="false" afterPath="$PROJECT_DIR$/Simulation2.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/Graphs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -20,13 +21,25 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Simulation2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="246" column="72" selection-start-line="246" selection-start-column="72" selection-end-line="246" selection-end-column="72" />
+            <state relative-caret-position="576">
+              <caret line="279" column="77" lean-forward="true" selection-start-line="279" selection-start-column="77" selection-end-line="279" selection-end-column="77" />
               <folding>
                 <element signature="e#0#4#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/Graphs.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="294">
+              <caret line="76" column="23" selection-start-line="76" selection-start-column="23" selection-end-line="76" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#25#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -61,6 +74,7 @@
         <option value="$PROJECT_DIR$/Simulation.py" />
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/Simulation2.py" />
+        <option value="$PROJECT_DIR$/Graphs.py" />
       </list>
     </option>
   </component>
@@ -110,7 +124,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.Simulation2">
+  <component name="RunManager" selected="Python.Graphs">
     <configuration default="true" type="tests" factoryName="Attests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -151,19 +165,19 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="NLP" type="PythonConfigurationType" factoryName="Python" temporary="true">
+    <configuration name="Graphs" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Experiments" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="/usr/local/bin/python3" />
+      <option name="SDK_HOME" value="" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="false" />
+      <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/NLP.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Graphs.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -236,19 +250,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.NLP" />
       <item itemvalue="Python.Decorators" />
       <item itemvalue="Python.NLPFastText" />
       <item itemvalue="Python.Simulation" />
       <item itemvalue="Python.Simulation2" />
+      <item itemvalue="Python.Graphs" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.Graphs" />
         <item itemvalue="Python.Simulation2" />
         <item itemvalue="Python.Simulation" />
         <item itemvalue="Python.NLPFastText" />
         <item itemvalue="Python.Decorators" />
-        <item itemvalue="Python.NLP" />
       </list>
     </recent_temporary>
   </component>
@@ -437,10 +451,27 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Simulation2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="165">
-          <caret line="246" column="72" selection-start-line="246" selection-start-column="72" selection-end-line="246" selection-end-column="72" />
+        <state relative-caret-position="576">
+          <caret line="279" column="77" lean-forward="true" selection-start-line="279" selection-start-column="77" selection-end-line="279" selection-end-column="77" />
           <folding>
             <element signature="e#0#4#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/local/lib/python3.7/site-packages/numpy/random/__init__.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="101" column="7" selection-start-line="101" selection-start-column="7" selection-end-line="101" selection-end-column="7" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Graphs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="294">
+          <caret line="76" column="23" selection-start-line="76" selection-start-column="23" selection-end-line="76" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
