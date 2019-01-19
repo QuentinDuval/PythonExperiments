@@ -1,5 +1,7 @@
 from collections import *
 from dataclasses import *
+import matplotlib.pyplot as plot
+import networkx as nx
 import numpy as np
 
 
@@ -154,7 +156,6 @@ def kruskal(graph: AdjListGraph) -> 'list of WeightedEdge':
 
 def test_kruskal():
     # Example graph of https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-    # TODO - find a way to print the graph nicely
     vertices = list('abcdefg')
     edges = [
         WeightedEdge('a', 'b', 7),
@@ -172,6 +173,15 @@ def test_kruskal():
     graph = AdjListGraph(vertices=vertices, edges=edges)
     for e in kruskal(graph):
         print(e)
+
+    # Showing the graph
+    graph = nx.Graph((e.source, e.destination) for e in edges)
+    for e in edges:
+        graph[e.source][e.destination]['weight'] = e.weight
+    g_layout = nx.spring_layout(graph)
+    nx.draw(graph, pos=g_layout, with_labels=True)
+    nx.draw_networkx_edge_labels(graph, pos=g_layout, labels=nx.get_edge_attributes(graph, 'weight'))
+    plot.show()
 
 
 # test_kruskal()
