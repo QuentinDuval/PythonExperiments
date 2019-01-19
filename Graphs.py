@@ -3,6 +3,7 @@ from dataclasses import *
 import matplotlib.pyplot as plot
 import networkx as nx
 import numpy as np
+from typing import List
 
 
 @dataclass
@@ -137,7 +138,7 @@ def test_disjoint_set():
 # test_disjoint_set()
 
 
-def kruskal(graph: AdjListGraph) -> 'list of WeightedEdge':
+def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
     minimum_spanning_tree = []
 
     edges = list(graph.edges())
@@ -287,7 +288,7 @@ Prim's algorithm
 """
 
 
-def prims(graph):
+def prims(graph: AdjListGraph) -> List[WeightedEdge]:
     heap = IndexHeap()
     vertices = list(graph.vertices())
     heap.add(vertices[0], 0)
