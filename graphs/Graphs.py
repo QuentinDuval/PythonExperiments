@@ -4,6 +4,7 @@ import matplotlib.pyplot as plot
 import networkx as nx
 from typing import List
 from graphs.DisjointSets import *
+from graphs.IndexHeap import *
 
 
 @dataclass(repr=True, eq=True, order=True, unsafe_hash=True, frozen=True)
@@ -85,101 +86,6 @@ def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
                 break
 
     return minimum_spanning_tree
-
-
-"""
-Binary heap which supports a update-key
-"""
-
-
-class IndexHeap:
-    def __init__(self):
-        self.index = {}
-        self.values = [(None, -1 * float('inf'))]
-
-    def __len__(self):
-        return len(self.values) - 1
-
-    def __repr__(self):
-        return 'IndexHeap' + repr({
-            'index': self.index,
-            'values': self.values
-        })
-
-    def min(self):
-        return self.values[1][0]
-
-    def pop_min(self):
-        min_key, min_prio = self.values[1]
-        if len(self.values) > 2:
-            key, prio = self.values.pop()
-            self.values[1] = (key, prio)
-            self.index[key] = 1
-            self._dive(1)
-        else:
-            self.values.pop()
-        del self.index[min_key]
-        return min_key, min_prio
-
-    def add(self, key, priority):
-        self.values.append((key, priority))
-        last_index = len(self.values) - 1
-        self.index[key] = last_index
-        self._swim(last_index)
-
-    def update(self, key, priority):
-        if key not in self.index:
-            self.add(key, priority)
-        else:
-            idx = self.index[key]
-            _, previous_priority = self.values[idx]
-            self.values[idx] = key, priority
-            if priority > previous_priority:
-                self._dive(idx)
-            else:
-                self._swim(idx)
-
-    def __contains__(self, key):
-        return key in self.index
-
-    def get_priority(self, key):
-        return self.values[self.index[key]][1]
-
-    def _swim(self, i):
-        while self.values[i][1] < self.values[i//2][1]:
-            self._swap(i, i//2)
-            i = i // 2
-
-    def _dive(self, i):
-        while True:
-            prio = self.values[i][1]
-            l_prio = self.values[i*2][1] if i*2 < len(self.values) else float('inf')
-            r_prio = self.values[i*2+1][1] if i*2+1 < len(self.values) else float('inf')
-            if prio <= max(l_prio, r_prio):
-                break
-
-            child = i*2 if l_prio < r_prio else i*2+1
-            self._swap(i, child)
-
-    def _swap(self, i, j):
-        ki = self.values[i][0]
-        kj = self.values[j][0]
-        self.index[ki], self.index[kj] = self.index[kj], self.index[ki]
-        self.values[i], self.values[j] = self.values[j], self.values[i]
-
-
-def test_index_heap():
-    heap = IndexHeap()
-    for c in "ghaibcjdef":
-        heap.add(c, ord(c))
-    assert 'a' == heap.min()
-    heap.update('c', ord('a') - 1)
-    assert 'c' == heap.min()
-    heap.pop_min()
-    assert 'a' == heap.min()
-
-
-# test_index_heap()
 
 
 """

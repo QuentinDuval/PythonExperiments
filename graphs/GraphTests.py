@@ -78,3 +78,13 @@ class TestGraph(unittest.TestCase):
         }
         self.assertSetEqual(expected, result)
         # show_weighted_graph(graph)
+
+    def test_index_heap(self):
+        heap = IndexHeap()
+        for c in "ghaibcjdef":
+            heap.add(c, ord(c))
+        self.assertEqual('a', heap.min())
+        heap.update('c', ord('a') - 1)
+        self.assertEqual('c', heap.min())
+        heap.pop_min()
+        self.assertEqual('a', heap.min())
