@@ -47,11 +47,11 @@ class TestGraph(unittest.TestCase):
         for u, v in zip(values, values[1:]):
             self.assertTrue(disjoint_set.joined(u, v), repr(disjoint_set))
 
-    def test_kruskal(self):
+    def minimum_spanning_tree(self, algorithm):
         """
-        Example graph of
-        https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-        """
+                Example graph of
+                https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+                """
         vertices = list('abcdefg')
         edges = [
             WeightedEdge('a', 'b', 7),
@@ -67,8 +67,11 @@ class TestGraph(unittest.TestCase):
             WeightedEdge('f', 'g', 11)
         ]
         graph = AdjListGraph(vertices=vertices, edges=edges)
-        result = set(kruskal(graph))
-        expected = {
+
+        result = algorithm(graph)
+        weight = sum(e.weight for e in result)
+
+        example_expected = {
             WeightedEdge(source='a', destination='d', weight=5),
             WeightedEdge(source='c', destination='e', weight=5),
             WeightedEdge(source='d', destination='f', weight=6),
@@ -76,8 +79,16 @@ class TestGraph(unittest.TestCase):
             WeightedEdge(source='b', destination='e', weight=7),
             WeightedEdge(source='e', destination='g', weight=9)
         }
-        self.assertSetEqual(expected, result)
+        expected_weight = sum(e.weight for e in example_expected)
+
+        self.assertEqual(expected_weight, weight)
         # show_weighted_graph(graph)
+
+    def test_kruskal(self):
+        self.minimum_spanning_tree(kruskal)
+
+    def test_prims(self):
+        self.minimum_spanning_tree(prims)
 
     def test_index_heap(self):
         heap = IndexHeap()
