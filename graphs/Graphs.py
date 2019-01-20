@@ -70,28 +70,6 @@ class AdjListGraph:
             yield from self.edges_from(source)
 
 
-def test_graph():
-    vertices = [0, 1, 2, 3, 4, 5]
-    edges = list((u, v) for u in vertices for v in vertices)
-    weights = [np.random.normal(loc=5, scale=2) for _ in edges]
-    graph = AdjListGraph(vertices=vertices, edges=edges, weights=weights)
-
-    visited = set()
-    parents = {}
-    to_visit = [0]
-    while to_visit:
-        u = to_visit.pop()
-        visited.add(u)
-        for v in graph.adjacent_vertices(u):
-            if v not in visited:
-                parents[v] = u
-                to_visit.append(v)
-    print("DFS Tree:", parents)
-
-
-# test_graph()
-
-
 class DisjointSets:
     """
     Data structure to implement Union-Find
