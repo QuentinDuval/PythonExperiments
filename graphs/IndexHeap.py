@@ -39,13 +39,11 @@ class IndexHeap:
         self._swim(last_index)
 
     def update(self, key, priority):
-        if key not in self.index:
-            self.add(key, priority)
-        else:
-            idx = self.index[key]
-            _, previous_priority = self.values[idx]
-            self.values[idx] = key, priority
-            if priority > previous_priority:
+        idx = self.index[key]
+        _, prev_priority = self.values[idx]
+        if prev_priority != priority:
+            self.values[idx] = (key, priority)
+            if priority > prev_priority:
                 self._dive(idx)
             else:
                 self._swim(idx)
@@ -66,11 +64,13 @@ class IndexHeap:
             prio = self.values[i][1]
             l_prio = self.values[i*2][1] if i*2 < len(self.values) else float('inf')
             r_prio = self.values[i*2+1][1] if i*2+1 < len(self.values) else float('inf')
-            if prio <= max(l_prio, r_prio):
+            if prio <= min(l_prio, r_prio):
+                print(prio, l_prio, r_prio)
                 break
 
             child = i*2 if l_prio < r_prio else i*2+1
             self._swap(i, child)
+            i = child
 
     def _swap(self, i, j):
         ki = self.values[i][0]

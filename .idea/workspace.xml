@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graphs/GraphTests.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/GraphTests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graphs/Graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/Graphs.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graphs/IndexHeap.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/IndexHeap.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -37,8 +37,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="307">
-              <caret line="123" selection-start-line="123" selection-end-line="123" />
+            <state relative-caret-position="428">
+              <caret line="153" selection-start-line="153" selection-end-line="153" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -49,8 +49,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/graphs/IndexHeap.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-219">
-              <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
+            <state relative-caret-position="273">
+              <caret line="49" selection-start-line="49" selection-end-line="49" />
             </state>
           </provider>
         </entry>
@@ -58,8 +58,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="218">
-              <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
+            <state relative-caret-position="268">
+              <caret line="108" column="38" selection-start-line="108" selection-start-column="38" selection-end-line="108" selection-end-column="38" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -105,8 +105,8 @@
         <option value="$PROJECT_DIR$/.gitignore" />
         <option value="$PROJECT_DIR$/graphs/Debugging.py" />
         <option value="$PROJECT_DIR$/graphs/.hypothesis/IndexHeap.py" />
-        <option value="$PROJECT_DIR$/graphs/IndexHeap.py" />
         <option value="$PROJECT_DIR$/graphs/Graphs.py" />
+        <option value="$PROJECT_DIR$/graphs/IndexHeap.py" />
         <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
       </list>
     </option>
@@ -212,27 +212,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="NLPFastText" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="Experiments" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/NLPFastText.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="Simulation" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Experiments" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -275,6 +254,20 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="Experiments" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/graphs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;GraphTests.TestGraph.test_heap_always_returns_minimum&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="Unittests in GraphTests.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="Experiments" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -290,19 +283,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.NLPFastText" />
       <item itemvalue="Python.Simulation" />
       <item itemvalue="Python.Simulation2" />
       <item itemvalue="Python.Graphs" />
       <item itemvalue="Python tests.Unittests in GraphTests.py" />
+      <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python tests.Unittests in GraphTests.py" />
+        <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" />
         <item itemvalue="Python.Graphs" />
         <item itemvalue="Python.Simulation2" />
         <item itemvalue="Python.Simulation" />
-        <item itemvalue="Python.NLPFastText" />
       </list>
     </recent_temporary>
   </component>
@@ -320,34 +313,34 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 49m 10s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 43m 58s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 49m 58s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 44m 11s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 50m 30s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 44m 50s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 50m 56s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 46m 10s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 22s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 46m 41s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 40s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 48m 27s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 46s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 50m 02s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 52m 44s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 50m 13s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 52m 55s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 50m 26s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 54m 11s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 14h 50m 47s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
   </component>
@@ -550,13 +543,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file:///usr/local/lib/python3.7/site-packages/hypothesis/_strategies.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="212">
-          <caret line="670" column="4" selection-start-line="670" selection-start-column="4" selection-end-line="670" selection-end-column="4" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/.gitignore">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
@@ -574,17 +560,24 @@
         </state>
       </provider>
     </entry>
+    <entry file="file:///usr/local/lib/python3.7/site-packages/hypothesis/_strategies.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="140">
+          <caret line="670" column="4" selection-start-line="670" selection-start-column="4" selection-end-line="670" selection-end-column="4" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/graphs/IndexHeap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-219">
-          <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
+        <state relative-caret-position="273">
+          <caret line="49" selection-start-line="49" selection-end-line="49" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="307">
-          <caret line="123" selection-start-line="123" selection-end-line="123" />
+        <state relative-caret-position="428">
+          <caret line="153" selection-start-line="153" selection-end-line="153" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
@@ -593,8 +586,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
+        <state relative-caret-position="268">
+          <caret line="108" column="38" selection-start-line="108" selection-start-column="38" selection-end-line="108" selection-end-column="38" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>

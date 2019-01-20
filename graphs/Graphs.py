@@ -137,23 +137,19 @@ def prims(graph: AdjListGraph) -> List[WeightedEdge]:
 
     heap = IndexHeap()
     vertices = list(graph.vertices())
-    heap.add(vertices[0], 0)
-    parents = {}
-    visited = set()
 
+    heap.add(vertices[0], 0)
+    for v in vertices[1:]:
+        heap.add(v, float('inf'))
+
+    parents = {}
     while len(heap) > 0:
         u, _ = heap.pop_min()
-        visited.add(u)
         for e in graph.edges_from(u):
-            if e.destination not in visited:
-                if e.destination in heap:
-                    if heap.get_priority(e.destination) > e.weight:
-                        heap.update(e.destination, e.weight)
-                        parents[e.destination] = e
-                else:
-                    heap.add(e.destination, e.weight)
+            if e.destination in heap:
+                if heap.get_priority(e.destination) > e.weight:
+                    heap.update(e.destination, e.weight)
                     parents[e.destination] = e
-
     return parents.values()
 
 

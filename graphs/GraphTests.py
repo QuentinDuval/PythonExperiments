@@ -93,7 +93,6 @@ class TestGraph(unittest.TestCase):
         self.minimum_spanning_tree(prims)
 
     @given(sets(elements=integers()))
-    # @reproduce_failure('4.0.1', b'AXicDcOBDQAgCMCwoSgq///rmjSAgOHp9PJ2+fj6ufkFCgBN')
     def test_kruskal_versus_prims(self, nodes):
         nodes = list(nodes)
 
@@ -105,10 +104,10 @@ class TestGraph(unittest.TestCase):
                 graph.add(WeightedEdge(u, v, weight=np.random.randint(1, 10)))
 
         kruskal_result = sum(e.weight for e in kruskal(graph))
-        prims_result = sum(e.weight for e in prims_slow(graph))
-        if kruskal_result != prims_result:
-            show_weighted_graph(graph)
+        prims_result = sum(e.weight for e in prims(graph))
+        prims_slow_result = sum(e.weight for e in prims_slow(graph))
         self.assertEqual(kruskal_result, prims_result)
+        self.assertEqual(kruskal_result, prims_slow_result)
 
     def test_index_heap(self):
         heap = IndexHeap()
@@ -119,3 +118,15 @@ class TestGraph(unittest.TestCase):
         self.assertEqual('c', heap.min())
         heap.pop_min()
         self.assertEqual('a', heap.min())
+
+    @given(sets(elements=integers(), min_size=1))
+    def test_heap_always_returns_minimum(self, values):
+        heap = IndexHeap()
+
+        for val in values:
+            heap.add(key=val, priority=val*2)
+        self.assertEqual(min(values), heap.min(), str(values) + " " + str(heap))
+
+        for val in values:
+            heap.update(key=val, priority=-1*val)
+        self.assertEqual(max(values), heap.min(), str(values) + " " + str(heap))
