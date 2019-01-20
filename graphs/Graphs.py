@@ -40,10 +40,7 @@ class AdjListGraph:
             self.adj_list[v] = []
         for e in edges:
             if isinstance(e, WeightedEdge):
-                self.adj_list[e.source].append(e.destination)
-                self.adj_list[e.destination].append(e.source)
-                self.weights[(e.source, e.destination)] = e.weight
-                self.weights[(e.destination, e.source)] = e.weight
+                self.add(e)
             else:
                 u, v = e
                 self.adj_list[u].append(v)
@@ -76,6 +73,24 @@ class AdjListGraph:
     def edges(self):
         for source in self.vertices():
             yield from self.edges_from(source)
+
+
+"""
+Find the articulation points of a graph (Tarjan's algorithm)
+"""
+
+
+def articulation_points():
+    pass
+
+
+"""
+Topological sorting
+"""
+
+
+def topological_sort():
+    pass
 
 
 """
@@ -153,10 +168,11 @@ def prims(graph: AdjListGraph) -> List[WeightedEdge]:
     return parents.values()
 
 
+"""
+Dijkstra's algorithm: Shortest Path with positive weights
+"""
+
+
 def dijkstra():
-    pass
-
-
-def articulation_points():
     pass
 

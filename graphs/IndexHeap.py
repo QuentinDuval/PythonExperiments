@@ -65,7 +65,6 @@ class IndexHeap:
             l_prio = self.values[i*2][1] if i*2 < len(self.values) else float('inf')
             r_prio = self.values[i*2+1][1] if i*2+1 < len(self.values) else float('inf')
             if prio <= min(l_prio, r_prio):
-                print(prio, l_prio, r_prio)
                 break
 
             child = i*2 if l_prio < r_prio else i*2+1
