@@ -53,13 +53,15 @@ class AdjListGraph:
         return self.adj_list[vertex]
 
     def add(self, e: WeightedEdge):
+        self.add_directed(e)
+        self.add_directed(WeightedEdge(source=e.destination, destination=e.source, weight=e.weight))
+
+    def add_directed(self, e: WeightedEdge):
         self.adj_list[e.source].append(e.destination)
-        self.adj_list[e.destination].append(e.source)
         self.weights[(e.source, e.destination)] = e.weight
-        self.weights[(e.destination, e.source)] = e.weight
 
     def adjacent_vertices(self, source):
-        return self.adj_list[source]
+        return self.adj_list.get(source, [])
 
     def edges_from(self, source):
         for destination in self.adj_list[source]:
@@ -89,8 +91,34 @@ Topological sorting
 """
 
 
-def topological_sort():
-    pass
+class CycleDetected(Exception):
+    """ Raised when a graph is not a DAG as expected """
+    def __init__(self, graph, u, v):
+        self.graph = graph
+        self.source = u
+        self.destination = v
+
+
+def topological_sort(graph: AdjListGraph) -> List[any]:
+    result = []
+    visited = set()
+    current_path = set()
+
+    def visit(u):
+        current_path.add(u)
+        visited.add(u)
+        for v in graph.adjacent_vertices(u):
+            if v in current_path:
+                raise CycleDetected(graph, u, v)
+            if v not in visited:
+                visit(v)
+        result.append(u)
+        current_path.remove(u)
+
+    for v in graph.vertices():
+        if v not in visited:
+            visit(v)
+    return reversed(result)
 
 
 """

@@ -30,6 +30,16 @@ class TestGraph(unittest.TestCase):
         self.assertSetEqual(set(vertices), set(parents.keys()))
 
     @given(sets(elements=integers()))
+    def test_topological_sort(self, nodes):
+        nodes = list(nodes)
+        graph = AdjListGraph(vertices=nodes)
+        for i in range(1, 5):
+            for u, v in zip(nodes, nodes[i:]):
+                graph.add_directed(WeightedEdge(u, v))
+        ordering = topological_sort(graph)
+        self.assertListEqual(nodes, list(ordering))
+
+    @given(sets(elements=integers()))
     @example(values={1, 2})
     def test_disjoint_set_becomes_joined(self, values):
         values = list(values)
