@@ -1,7 +1,12 @@
+from graphs.DisjointSets import *
 from graphs.Graphs import *
 
 import numpy as np
 import unittest
+
+from hypothesis import given, example
+from hypothesis.strategies import text
+from hypothesis.strategies import lists, sets, integers
 
 
 class TestGraph(unittest.TestCase):
@@ -24,3 +29,19 @@ class TestGraph(unittest.TestCase):
                     to_visit.append(v)
         self.assertSetEqual(set(vertices), set(parents.keys()))
 
+    @given(sets(elements=integers()))
+    @example(values={1, 2})
+    def test_disjoint_set_becomes_joined(self, values):
+        values = list(values)
+        disjoint_set = DisjointSets(values)
+
+        np.random.shuffle(values)
+        for u, v in zip(values, values[1:]):
+            self.assertFalse(disjoint_set.joined(u, v))
+
+        for u, v in zip(values, values[1:]):
+            disjoint_set.union(u, v)
+
+        np.random.shuffle(values)
+        for u, v in zip(values, values[1:]):
+            self.assertTrue(disjoint_set.joined(u, v), repr(disjoint_set))

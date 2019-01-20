@@ -2,8 +2,8 @@ from collections import *
 from dataclasses import *
 import matplotlib.pyplot as plot
 import networkx as nx
-import numpy as np
 from typing import List
+from graphs.DisjointSets import *
 
 
 @dataclass
@@ -68,52 +68,6 @@ class AdjListGraph:
     def edges(self):
         for source in self.vertices():
             yield from self.edges_from(source)
-
-
-class DisjointSets:
-    """
-    Data structure to implement Union-Find
-    """
-
-    def __init__(self, values):
-        self.parents = list(range(len(values)))
-        self.value_to_set = {v: i for i, v in enumerate(values)}
-
-    def union(self, u, v):
-        su = self.find(u)
-        sv = self.find(v)
-        if su != sv:
-            self.parents[su] = sv   # TODO - Union by rank
-
-    def find(self, u):
-        s = self.value_to_set[u]
-        while self.parents[self.parents[s]] != self.parents[s]:
-            self.parents[s] = self.parents[self.parents[s]]
-        return self.parents[s]
-
-    def joined(self, u, v):
-        return self.find(u) == self.find(v)
-
-    def __repr__(self):
-        return 'DisjointSets' + repr({
-            'parents': self.parents,
-            'value_to_set': self.value_to_set
-        })
-
-
-def test_disjoint_set():
-    disjoint_set = DisjointSets(range(10))
-    assert not disjoint_set.joined(1, 2)
-    disjoint_set.union(1, 2)
-    assert disjoint_set.joined(1, 2)
-    for i in range(1, 10):
-        disjoint_set.union(i-1, i)
-    for i in range(1, 10):
-        assert disjoint_set.joined(i-1, i)
-    print(disjoint_set)
-
-
-# test_disjoint_set()
 
 
 def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
