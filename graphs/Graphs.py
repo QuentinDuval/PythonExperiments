@@ -88,8 +88,41 @@ Find the articulation points of a graph (Tarjan's algorithm)
 """
 
 
-def articulation_points():
-    pass
+def articulation_points(graph):
+    """
+    Do a DFS:
+    - Keep track of the lowest discovery time found in the child of each node
+    - If the lowest discovery time is after the time of the node => articulation point
+    """
+    time = 0
+    discovery = {}
+    child_lowest_discovery = {}
+    parent = {}
+    result = set()
+
+    def visit(u, source):
+        nonlocal time
+        time += 1
+        parent[u] = source
+        discovery[u] = time
+        child_lowest_discovery[u] = time
+
+        for v in graph.adjacent_vertices(u):
+            if v not in discovery:
+                visit(v, source=u)
+                child_lowest_discovery[u] = min(child_lowest_discovery[u], child_lowest_discovery[v])
+                if parent[u] and child_lowest_discovery[v] >= discovery[u]:
+                    result.add(u)
+
+            if v != parent[u]:
+                child_lowest_discovery[u] = min(child_lowest_discovery[u], discovery[v])
+
+    start_vertex = list(graph.vertices())[0]
+    visit(start_vertex, None)
+
+    if len([u for u, p in parent.items() if p == start_vertex]) > 1:
+        result.add(start_vertex)
+    return result
 
 
 """

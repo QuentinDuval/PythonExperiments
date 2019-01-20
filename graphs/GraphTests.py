@@ -59,6 +59,16 @@ class TestGraph(unittest.TestCase):
             except CycleDetected:
                 pass
 
+    def test_articulation_points(self):
+        nodes = [1, 2, 3, 4, 5, 6, 7]
+        graph = AdjListGraph(vertices=nodes,
+                             edges=[(1, 2), (2, 3), (1, 3),
+                                    (5, 6), (6, 7), (5, 7),
+                                    (3, 4), (4, 5)])
+        # show_weighted_graph(graph)
+        result = articulation_points(graph)
+        self.assertSetEqual({3, 4, 5}, result, result)
+
     @given(sets(elements=integers()))
     @example(values={1, 2})
     def test_disjoint_set_becomes_joined(self, values):

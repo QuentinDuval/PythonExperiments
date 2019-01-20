@@ -27,18 +27,6 @@
             <state relative-caret-position="1731">
               <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
               <folding>
-                <element signature="e#0#4#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="482">
-              <caret line="49" column="29" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
-              <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
             </state>
@@ -46,10 +34,22 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="176">
+              <caret line="123" column="31" selection-start-line="123" selection-start-column="31" selection-end-line="123" selection-end-column="31" />
+              <folding>
+                <element signature="e#0#25#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="283">
-              <caret line="57" column="51" selection-start-line="57" selection-start-column="51" selection-end-line="57" selection-end-column="51" />
+            <state relative-caret-position="223">
+              <caret line="69" column="54" selection-start-line="69" selection-start-column="54" selection-end-line="69" selection-end-column="54" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -97,8 +97,8 @@
         <option value="$PROJECT_DIR$/graphs/Debugging.py" />
         <option value="$PROJECT_DIR$/graphs/.hypothesis/IndexHeap.py" />
         <option value="$PROJECT_DIR$/graphs/IndexHeap.py" />
-        <option value="$PROJECT_DIR$/graphs/Graphs.py" />
         <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
+        <option value="$PROJECT_DIR$/graphs/Graphs.py" />
       </list>
     </option>
   </component>
@@ -203,27 +203,6 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="Simulation" type="PythonConfigurationType" factoryName="Python" temporary="true">
-      <module name="Experiments" />
-      <option name="INTERPRETER_OPTIONS" value="" />
-      <option name="PARENT_ENVS" value="true" />
-      <envs>
-        <env name="PYTHONUNBUFFERED" value="1" />
-      </envs>
-      <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
-      <option name="ADD_CONTENT_ROOTS" value="true" />
-      <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/Simulation.py" />
-      <option name="PARAMETERS" value="" />
-      <option name="SHOW_COMMAND_LINE" value="false" />
-      <option name="EMULATE_TERMINAL" value="false" />
-      <option name="MODULE_MODE" value="false" />
-      <option name="REDIRECT_INPUT" value="false" />
-      <option name="INPUT_FILE" value="" />
-      <method v="2" />
-    </configuration>
     <configuration name="Simulation2" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="Experiments" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -243,6 +222,20 @@
       <option name="MODULE_MODE" value="false" />
       <option name="REDIRECT_INPUT" value="false" />
       <option name="INPUT_FILE" value="" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+      <module name="Experiments" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/graphs" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;GraphTests.TestGraph.test_articulation_points&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
     <configuration name="Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
@@ -274,19 +267,19 @@
       <method v="2" />
     </configuration>
     <list>
-      <item itemvalue="Python.Simulation" />
       <item itemvalue="Python.Simulation2" />
       <item itemvalue="Python.Graphs" />
       <item itemvalue="Python tests.Unittests in GraphTests.py" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" />
+      <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_articulation_points" />
     </list>
     <recent_temporary>
       <list>
         <item itemvalue="Python tests.Unittests in GraphTests.py" />
+        <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_articulation_points" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_heap_always_returns_minimum" />
         <item itemvalue="Python.Graphs" />
         <item itemvalue="Python.Simulation2" />
-        <item itemvalue="Python.Simulation" />
       </list>
     </recent_temporary>
   </component>
@@ -304,35 +297,35 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 20m 44s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 06m 28s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 23m 33s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 06m 41s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 23m 55s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 22s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 30m 01s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 41s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 31m 05s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 52s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 31m 28s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 10m 28s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 32m 18s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 11m 31s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 32m 45s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 11m 52s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 33m 37s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 14m 24s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 15h 34m 56s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 14m 50s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
   </component>
   <component name="ToolWindowManager">
@@ -498,16 +491,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Simulation2.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1731">
-          <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
-          <folding>
-            <element signature="e#0#4#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python3.7/site-packages/numpy/random/__init__.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="140">
@@ -565,10 +548,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
+    <entry file="file://$PROJECT_DIR$/Simulation2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="482">
-          <caret line="49" column="29" selection-start-line="49" selection-start-column="29" selection-end-line="49" selection-end-column="29" />
+        <state relative-caret-position="1731">
+          <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
@@ -577,10 +560,20 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="283">
-          <caret line="57" column="51" selection-start-line="57" selection-start-column="51" selection-end-line="57" selection-end-column="51" />
+        <state relative-caret-position="223">
+          <caret line="69" column="54" selection-start-line="69" selection-start-column="54" selection-end-line="69" selection-end-column="54" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="176">
+          <caret line="123" column="31" selection-start-line="123" selection-start-column="31" selection-end-line="123" selection-end-column="31" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
           </folding>
         </state>
       </provider>
