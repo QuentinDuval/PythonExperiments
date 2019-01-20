@@ -5,9 +5,8 @@ from graphs.Debugging import *
 import numpy as np
 import unittest
 
-from hypothesis import given, example
-from hypothesis.strategies import text
-from hypothesis.strategies import lists, sets, integers
+from hypothesis import *
+from hypothesis.strategies import *
 
 
 class TestGraph(unittest.TestCase):
@@ -91,6 +90,7 @@ class TestGraph(unittest.TestCase):
         self.minimum_spanning_tree(prims)
 
     @given(sets(elements=integers()))
+    @reproduce_failure('4.0.1', b'AXicDcOBDQAgCMCwoSgq///rmjSAgOHp9PJ2+fj6ufkFCgBN')
     def test_kruskal_versus_prims(self, nodes):
         nodes = list(nodes)
 
@@ -103,6 +103,8 @@ class TestGraph(unittest.TestCase):
 
         kruskal_result = sum(e.weight for e in kruskal(graph))
         prims_result = sum(e.weight for e in prims(graph))
+        if kruskal_result != prims_result:
+            show_weighted_graph(graph)
         self.assertEqual(kruskal_result, prims_result)
 
     def test_index_heap(self):
