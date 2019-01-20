@@ -1,5 +1,6 @@
 from graphs.DisjointSets import *
 from graphs.Graphs import *
+from graphs.Debugging import *
 
 import numpy as np
 import unittest
@@ -45,3 +46,35 @@ class TestGraph(unittest.TestCase):
         np.random.shuffle(values)
         for u, v in zip(values, values[1:]):
             self.assertTrue(disjoint_set.joined(u, v), repr(disjoint_set))
+
+    def test_kruskal(self):
+        """
+        Example graph of
+        https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+        """
+        vertices = list('abcdefg')
+        edges = [
+            WeightedEdge('a', 'b', 7),
+            WeightedEdge('a', 'd', 5),
+            WeightedEdge('b', 'c', 8),
+            WeightedEdge('b', 'd', 9),
+            WeightedEdge('b', 'e', 7),
+            WeightedEdge('c', 'e', 5),
+            WeightedEdge('d', 'e', 15),
+            WeightedEdge('d', 'f', 6),
+            WeightedEdge('e', 'f', 8),
+            WeightedEdge('e', 'g', 9),
+            WeightedEdge('f', 'g', 11)
+        ]
+        graph = AdjListGraph(vertices=vertices, edges=edges)
+        result = set(kruskal(graph))
+        expected = {
+            WeightedEdge(source='a', destination='d', weight=5),
+            WeightedEdge(source='c', destination='e', weight=5),
+            WeightedEdge(source='d', destination='f', weight=6),
+            WeightedEdge(source='a', destination='b', weight=7),
+            WeightedEdge(source='b', destination='e', weight=7),
+            WeightedEdge(source='e', destination='g', weight=9)
+        }
+        self.assertSetEqual(expected, result)
+        # show_weighted_graph(graph)

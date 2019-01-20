@@ -6,7 +6,7 @@ from typing import List
 from graphs.DisjointSets import *
 
 
-@dataclass
+@dataclass(repr=True, eq=True, order=True, unsafe_hash=True, frozen=True)
 class WeightedEdge:
     source: any
     destination: any
@@ -85,39 +85,6 @@ def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
                 break
 
     return minimum_spanning_tree
-
-
-def test_kruskal():
-    # Example graph of https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-    vertices = list('abcdefg')
-    edges = [
-        WeightedEdge('a', 'b', 7),
-        WeightedEdge('a', 'd', 5),
-        WeightedEdge('b', 'c', 8),
-        WeightedEdge('b', 'd', 9),
-        WeightedEdge('b', 'e', 7),
-        WeightedEdge('c', 'e', 5),
-        WeightedEdge('d', 'e', 15),
-        WeightedEdge('d', 'f', 6),
-        WeightedEdge('e', 'f', 8),
-        WeightedEdge('e', 'g', 9),
-        WeightedEdge('f', 'g', 11)
-    ]
-    graph = AdjListGraph(vertices=vertices, edges=edges)
-    for e in kruskal(graph):
-        print(e)
-
-    # Showing the graph
-    graph = nx.Graph((e.source, e.destination) for e in edges)
-    for e in edges:
-        graph[e.source][e.destination]['weight'] = e.weight
-    g_layout = nx.spring_layout(graph)
-    nx.draw(graph, pos=g_layout, with_labels=True)
-    nx.draw_networkx_edge_labels(graph, pos=g_layout, labels=nx.get_edge_attributes(graph, 'weight'))
-    plot.show()
-
-
-# test_kruskal()
 
 
 """
