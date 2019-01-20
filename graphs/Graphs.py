@@ -46,6 +46,12 @@ class AdjListGraph:
                 self.adj_list[u].append(v)
                 self.adj_list[v].append(u)
 
+    def __repr__(self):
+        return 'AdjListGraph ' + repr({
+            'adj_list': self.adj_list,
+            'weights': self.weights
+        })
+
     def __len__(self):
         return len(self.adj_list)
 
@@ -119,6 +125,29 @@ def topological_sort(graph: AdjListGraph) -> List[any]:
         if v not in visited:
             visit(v)
     return reversed(result)
+
+
+def topological_sort_2(graph: AdjListGraph) -> List[any]:
+    time = 0
+    start_visit = {}
+    end_visit = {}
+
+    def visit(u):
+        nonlocal time
+        time += 1
+        start_visit[u] = time
+        for v in graph.adjacent_vertices(u):
+            if v not in start_visit:
+                visit(v)
+            elif v not in end_visit:
+                raise CycleDetected(graph, u, v)
+        time += 1
+        end_visit[u] = time
+
+    for v in graph.vertices():
+        if v not in start_visit:
+            visit(v)
+    return [node for node, time in sorted(end_visit.items(), key=lambda p: p[1], reverse=True)]
 
 
 """

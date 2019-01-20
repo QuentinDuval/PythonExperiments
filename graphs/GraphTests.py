@@ -36,8 +36,28 @@ class TestGraph(unittest.TestCase):
         for i in range(1, 5):
             for u, v in zip(nodes, nodes[i:]):
                 graph.add_directed(WeightedEdge(u, v))
-        ordering = topological_sort(graph)
-        self.assertListEqual(nodes, list(ordering))
+        self.assertListEqual(nodes, list(topological_sort(graph)))
+        self.assertListEqual(nodes, list(topological_sort_2(graph)))
+
+    @given(sets(elements=integers(), min_size=2))
+    def test_topological_sort_find_cycles(self, nodes):
+        nodes = list(nodes)
+        graph = AdjListGraph(vertices=nodes)
+        for i in range(1, 5):
+            for u, v in zip(nodes, nodes[i:]):
+                graph.add_directed(WeightedEdge(u, v))
+
+        indices = list(range(len(nodes)))
+        u = np.random.choice(indices)
+        v = np.random.choice(indices)
+        u, v = max(u, v), min(u, v)
+        graph.add_directed(WeightedEdge(nodes[u], nodes[v]))
+        for algo in [topological_sort, topological_sort_2]:
+            try:
+                algo(graph)
+                self.assertFalse("Excepted an cycle detected " + algo.__name__ + " " + str(graph))
+            except CycleDetected:
+                pass
 
     @given(sets(elements=integers()))
     @example(values={1, 2})
