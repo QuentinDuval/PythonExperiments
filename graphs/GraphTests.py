@@ -86,15 +86,18 @@ class TestGraph(unittest.TestCase):
     def test_kruskal(self):
         self.minimum_spanning_tree(kruskal)
 
+    def test_prims_slow(self):
+        self.minimum_spanning_tree(prims_slow)
+
     def test_prims(self):
         self.minimum_spanning_tree(prims)
 
     @given(sets(elements=integers()))
-    @reproduce_failure('4.0.1', b'AXicDcOBDQAgCMCwoSgq///rmjSAgOHp9PJ2+fj6ufkFCgBN')
+    # @reproduce_failure('4.0.1', b'AXicDcOBDQAgCMCwoSgq///rmjSAgOHp9PJ2+fj6ufkFCgBN')
     def test_kruskal_versus_prims(self, nodes):
         nodes = list(nodes)
 
-        # TODO - make a generator of graph instead
+        # TODO - make a generator of graph instead (cause it hinders reproducibility)
         graph = AdjListGraph()
         for i in range(5):
             np.random.shuffle(nodes)
@@ -102,7 +105,7 @@ class TestGraph(unittest.TestCase):
                 graph.add(WeightedEdge(u, v, weight=np.random.randint(1, 10)))
 
         kruskal_result = sum(e.weight for e in kruskal(graph))
-        prims_result = sum(e.weight for e in prims(graph))
+        prims_result = sum(e.weight for e in prims_slow(graph))
         if kruskal_result != prims_result:
             show_weighted_graph(graph)
         self.assertEqual(kruskal_result, prims_result)

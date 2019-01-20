@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graphs/GraphTests.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/GraphTests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graphs/Graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/Graphs.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -35,8 +37,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-492">
-              <caret line="86" column="17" selection-start-line="86" selection-start-column="17" selection-end-line="86" selection-end-column="17" />
+            <state relative-caret-position="307">
+              <caret line="123" selection-start-line="123" selection-end-line="123" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -44,11 +46,20 @@
           </provider>
         </entry>
       </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/graphs/IndexHeap.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-219">
+              <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="296">
-              <caret line="105" column="11" selection-start-line="105" selection-start-column="11" selection-end-line="105" selection-end-column="11" />
+            <state relative-caret-position="218">
+              <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -309,34 +320,34 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 21m 40s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 49m 10s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 22m 34s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 49m 58s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 27m 51s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 50m 30s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 28m 08s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 50m 56s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 29m 06s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 22s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 29m 34s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 40s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 30m 37s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 51m 46s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 32m 27s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 52m 44s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 32m 45s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 52m 55s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 33m 33s.xml">
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 54m 11s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
   </component>
@@ -565,15 +576,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/IndexHeap.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1185">
-          <caret line="79" lean-forward="true" selection-start-line="79" selection-end-line="79" />
+        <state relative-caret-position="-219">
+          <caret line="22" column="8" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-492">
-          <caret line="86" column="17" selection-start-line="86" selection-start-column="17" selection-end-line="86" selection-end-column="17" />
+        <state relative-caret-position="307">
+          <caret line="123" selection-start-line="123" selection-end-line="123" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
@@ -582,8 +593,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="296">
-          <caret line="105" column="11" selection-start-line="105" selection-start-column="11" selection-end-line="105" selection-end-column="11" />
+        <state relative-caret-position="218">
+          <caret line="105" lean-forward="true" selection-start-line="105" selection-end-line="105" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>

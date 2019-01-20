@@ -5,6 +5,7 @@ import networkx as nx
 from typing import List
 from graphs.DisjointSets import *
 from graphs.IndexHeap import *
+import heapq
 
 
 @dataclass(repr=True, eq=True, order=True, unsafe_hash=True, frozen=True)
@@ -86,25 +87,48 @@ def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
     if len(graph) == 0:
         return []
 
-    minimum_spanning_tree = []
-
     edges = list(graph.edges())
     edges.sort(key=lambda e: e.weight)
     disjoint_sets = DisjointSets(graph.vertices())
 
+    minimum_spanning_tree = []
     for edge in edges:
         if not disjoint_sets.joined(edge.source, edge.destination):
             disjoint_sets.union(edge.source, edge.destination)
             minimum_spanning_tree.append(edge)
             if len(minimum_spanning_tree) == len(graph) - 1:
                 break
-
     return minimum_spanning_tree
 
 
 """
 Prim's algorithm: Minimum Spanning Tree
 """
+
+
+def prims_slow(graph: AdjListGraph) -> List[WeightedEdge]:
+    if len(graph) == 0:
+        return []
+
+    minimum_spanning_tree = []
+    start_vertex = list(graph.vertices())[0]
+    visited = {start_vertex}
+
+    edge_heap = [(e.weight, e) for e in graph.edges_from(start_vertex)]
+    heapq.heapify(edge_heap)
+
+    while edge_heap:
+        _, e = heapq.heappop(edge_heap)
+        if e.destination in visited:
+            continue
+
+        visited.add(e.destination)
+        minimum_spanning_tree.append(e)
+        for e in graph.edges_from(e.destination):
+            if e.destination not in visited:
+                heapq.heappush(edge_heap, (e.weight, e))
+
+    return minimum_spanning_tree
 
 
 def prims(graph: AdjListGraph) -> List[WeightedEdge]:
@@ -121,15 +145,14 @@ def prims(graph: AdjListGraph) -> List[WeightedEdge]:
         u, _ = heap.pop_min()
         visited.add(u)
         for e in graph.edges_from(u):
-            if e.destination in visited:
-                continue
-            if e.destination in heap:
-                if heap.get_priority(e.destination) > e.weight:
-                    heap.update(e.destination, e.weight)
+            if e.destination not in visited:
+                if e.destination in heap:
+                    if heap.get_priority(e.destination) > e.weight:
+                        heap.update(e.destination, e.weight)
+                        parents[e.destination] = e
+                else:
+                    heap.add(e.destination, e.weight)
                     parents[e.destination] = e
-            else:
-                heap.add(e.destination, e.weight)
-                parents[e.destination] = e
 
     return parents.values()
 
