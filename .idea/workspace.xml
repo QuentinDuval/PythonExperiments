@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/graphs/GraphTests.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/GraphTests.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graphs/Graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/Graphs.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
@@ -36,8 +35,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="176">
-              <caret line="123" column="31" selection-start-line="123" selection-start-column="31" selection-end-line="123" selection-end-column="31" />
+            <state relative-caret-position="236">
+              <caret line="116" column="97" selection-start-line="116" selection-start-column="97" selection-end-line="116" selection-end-column="97" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -297,18 +296,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 06m 28s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 06m 41s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 22s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 41s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 09m 52s.xml">
       <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
     </history-entry>
@@ -326,6 +313,18 @@
     </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 14m 50s.xml">
       <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_GraphTests_TestGraph_test_articulation_points - 2019.01.20 at 23h 18m 37s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph.test_articulation_points" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 23h 19m 07s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 23h 20m 01s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 23h 20m 33s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
   </component>
   <component name="ToolWindowManager">
@@ -570,8 +569,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="176">
-          <caret line="123" column="31" selection-start-line="123" selection-start-column="31" selection-end-line="123" selection-end-column="31" />
+        <state relative-caret-position="236">
+          <caret line="116" column="97" selection-start-line="116" selection-start-column="97" selection-end-line="116" selection-end-column="97" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>

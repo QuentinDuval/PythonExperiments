@@ -93,6 +93,7 @@ def articulation_points(graph):
     Do a DFS:
     - Keep track of the lowest discovery time found in the child of each node
     - If the lowest discovery time is after the time of the node => articulation point
+    https://www.geeksforgeeks.org/articulation-points-or-cut-vertices-in-a-graph/
     """
     time = 0
     discovery = {}
@@ -110,12 +111,10 @@ def articulation_points(graph):
         for v in graph.adjacent_vertices(u):
             if v not in discovery:
                 visit(v, source=u)
-                child_lowest_discovery[u] = min(child_lowest_discovery[u], child_lowest_discovery[v])
                 if parent[u] and child_lowest_discovery[v] >= discovery[u]:
                     result.add(u)
-
             if v != parent[u]:
-                child_lowest_discovery[u] = min(child_lowest_discovery[u], discovery[v])
+                child_lowest_discovery[u] = min(child_lowest_discovery[u], child_lowest_discovery[v])
 
     start_vertex = list(graph.vertices())[0]
     visit(start_vertex, None)
