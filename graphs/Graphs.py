@@ -54,6 +54,12 @@ class AdjListGraph:
     def __getitem__(self, vertex):
         return self.adj_list[vertex]
 
+    def add(self, e: WeightedEdge):
+        self.adj_list[e.source].append(e.destination)
+        self.adj_list[e.destination].append(e.source)
+        self.weights[(e.source, e.destination)] = e.weight
+        self.weights[(e.destination, e.source)] = e.weight
+
     def adjacent_vertices(self, source):
         return self.adj_list[source]
 
@@ -77,6 +83,9 @@ Kruskal algorithm: Minimum Spanning Tree
 
 
 def kruskal(graph: AdjListGraph) -> List[WeightedEdge]:
+    if len(graph) == 0:
+        return []
+
     minimum_spanning_tree = []
 
     edges = list(graph.edges())
@@ -99,6 +108,9 @@ Prim's algorithm: Minimum Spanning Tree
 
 
 def prims(graph: AdjListGraph) -> List[WeightedEdge]:
+    if len(graph) == 0:
+        return []
+
     heap = IndexHeap()
     vertices = list(graph.vertices())
     heap.add(vertices[0], 0)

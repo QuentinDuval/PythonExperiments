@@ -49,9 +49,9 @@ class TestGraph(unittest.TestCase):
 
     def minimum_spanning_tree(self, algorithm):
         """
-                Example graph of
-                https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
-                """
+        Example graph of
+        https://en.wikipedia.org/wiki/Kruskal%27s_algorithm
+        """
         vertices = list('abcdefg')
         edges = [
             WeightedEdge('a', 'b', 7),
@@ -89,6 +89,21 @@ class TestGraph(unittest.TestCase):
 
     def test_prims(self):
         self.minimum_spanning_tree(prims)
+
+    @given(sets(elements=integers()))
+    def test_kruskal_versus_prims(self, nodes):
+        nodes = list(nodes)
+
+        # TODO - make a generator of graph instead
+        graph = AdjListGraph()
+        for i in range(5):
+            np.random.shuffle(nodes)
+            for u, v in zip(nodes, nodes[1:]):
+                graph.add(WeightedEdge(u, v, weight=np.random.randint(1, 10)))
+
+        kruskal_result = sum(e.weight for e in kruskal(graph))
+        prims_result = sum(e.weight for e in prims(graph))
+        self.assertEqual(kruskal_result, prims_result)
 
     def test_index_heap(self):
         heap = IndexHeap()

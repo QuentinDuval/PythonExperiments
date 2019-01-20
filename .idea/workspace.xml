@@ -36,8 +36,8 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="571">
-              <caret line="121" column="27" selection-start-line="121" selection-start-column="27" selection-end-line="121" selection-end-column="27" />
+            <state relative-caret-position="-492">
+              <caret line="86" column="17" selection-start-line="86" selection-start-column="17" selection-end-line="86" selection-end-column="17" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -48,8 +48,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="352">
-              <caret line="84" column="19" lean-forward="true" selection-start-line="84" selection-start-column="19" selection-end-line="84" selection-end-column="19" />
+            <state relative-caret-position="260">
+              <caret line="101" column="75" selection-start-line="101" selection-start-column="75" selection-end-line="101" selection-end-column="75" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -310,24 +310,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 03m 50s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 04m 30s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 04m 52s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 05m 20s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 07m 02s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 11m 37s.xml">
-      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 13m 46s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
@@ -338,6 +320,24 @@
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
     <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 19m 54s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 21m 40s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 22m 34s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 27m 51s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 28m 08s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 29m 06s.xml">
+      <configuration name="Unittests in GraphTests.py" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_GraphTests_py - 2019.01.20 at 11h 29m 34s.xml">
       <configuration name="Unittests in GraphTests.py" configurationId="tests" />
     </history-entry>
   </component>
@@ -573,8 +573,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="571">
-          <caret line="121" column="27" selection-start-line="121" selection-start-column="27" selection-end-line="121" selection-end-column="27" />
+        <state relative-caret-position="-492">
+          <caret line="86" column="17" selection-start-line="86" selection-start-column="17" selection-end-line="86" selection-end-column="17" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
@@ -583,8 +583,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="352">
-          <caret line="84" column="19" lean-forward="true" selection-start-line="84" selection-start-column="19" selection-end-line="84" selection-end-column="19" />
+        <state relative-caret-position="260">
+          <caret line="101" column="75" selection-start-line="101" selection-start-column="75" selection-end-line="101" selection-end-column="75" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>
