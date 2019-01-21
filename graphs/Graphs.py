@@ -111,7 +111,7 @@ def digraph_strongly_connected_components(graph):
             if v not in discovery:
                 visit(v)
                 lowest[u] = min(lowest[u], lowest[v])
-            if v in current_path:
+            elif v in current_path:
                 lowest[u] = min(lowest[u], discovery[v])
 
         current_path.remove(u)
