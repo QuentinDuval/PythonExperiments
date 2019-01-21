@@ -139,7 +139,7 @@ def articulation_points(graph):
     """
     time = 0
     discovery = {}
-    child_lowest_discovery = {}
+    lowest = {}
     parent = {}
     result = set()
 
@@ -148,15 +148,15 @@ def articulation_points(graph):
         time += 1
         parent[u] = source
         discovery[u] = time
-        child_lowest_discovery[u] = time
+        lowest[u] = time
 
         for v in graph.adjacent_vertices(u):
             if v not in discovery:
                 visit(v, source=u)
-                if parent[u] and child_lowest_discovery[v] >= discovery[u]:
+                if parent[u] and lowest[v] >= discovery[u]:
                     result.add(u)
             if v != parent[u]:
-                child_lowest_discovery[u] = min(child_lowest_discovery[u], discovery[v])
+                lowest[u] = min(lowest[u], discovery[v])
 
     start_vertex = list(graph.vertices())[0]
     visit(start_vertex, None)
