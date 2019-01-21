@@ -114,7 +114,7 @@ def articulation_points(graph):
                 if parent[u] and child_lowest_discovery[v] >= discovery[u]:
                     result.add(u)
             if v != parent[u]:
-                child_lowest_discovery[u] = min(child_lowest_discovery[u], child_lowest_discovery[v])
+                child_lowest_discovery[u] = min(child_lowest_discovery[u], discovery[v])
 
     start_vertex = list(graph.vertices())[0]
     visit(start_vertex, None)
