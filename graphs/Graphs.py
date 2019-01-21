@@ -94,6 +94,7 @@ def digraph_strongly_connected_components(graph):
     - Keep track of the lowest discovery time found in the child of each node
     - If the lowest discovery time is equal to the discovery time => root of a SCC
     - SCC will have the same lowest discovery time
+    https://www.geeksforgeeks.org/tarjan-algorithm-find-strongly-connected-components/
     """
     time = 0
     discovery = {}
