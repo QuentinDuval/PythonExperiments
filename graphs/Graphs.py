@@ -153,6 +153,7 @@ def articulation_points(graph):
         for v in graph.adjacent_vertices(u):
             if v not in discovery:
                 visit(v, source=u)
+                lowest[u] = min(lowest[u], lowest[v])
                 if parent[u] and lowest[v] >= discovery[u]:
                     result.add(u)
             if v != parent[u]:
