@@ -29,6 +29,35 @@ class TestGraph(unittest.TestCase):
                     to_visit.append(v)
         self.assertSetEqual(set(vertices), set(parents.keys()))
 
+    def test_digraph_strongly_connected_components(self):
+        nodes = list('abcdefghij')
+        graph = AdjListGraph(vertices=nodes)
+
+        # SCC 1
+        graph.add_directed(WeightedEdge("a", "c"))
+        graph.add_directed(WeightedEdge("c", "b"))
+        graph.add_directed(WeightedEdge("b", "a"))
+        graph.add_directed(WeightedEdge("b", "d"))
+
+        # SCC 2
+        graph.add_directed(WeightedEdge("f", "g"))
+        graph.add_directed(WeightedEdge("g", "h"))
+        graph.add_directed(WeightedEdge("h", "f"))
+
+        # SCC 3
+        graph.add_directed(WeightedEdge("i", "j"))
+        graph.add_directed(WeightedEdge("j", "i"))
+
+        # Connections from SCC 1 to SCC 2 and SCC 3
+        graph.add_directed(WeightedEdge("d", "f"))
+        graph.add_directed(WeightedEdge("d", "i"))
+
+        # Cross-edge between SCC 2 and SCC 3
+        graph.add_directed(WeightedEdge("i", "g"))
+
+        sccs = digraph_strongly_connected_components(graph)
+        self.assertListEqual([['a', 'c', 'b'], ['d'], ['f', 'g', 'h'], ['i', 'j']], sccs)
+
     @given(sets(elements=integers()))
     def test_topological_sort(self, nodes):
         nodes = list(nodes)

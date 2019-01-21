@@ -84,6 +84,47 @@ class AdjListGraph:
 
 
 """
+Find the strongly connected components of a DIRECTED graph (Tarjan's algorithm)
+"""
+
+
+def digraph_strongly_connected_components(graph):
+    """
+    Do a DFS:
+    - Keep track of the lowest discovery time found in the child of each node
+    - If the lowest discovery time is equal to the discovery time => root of a SCC
+    - SCC will have the same lowest discovery time
+    """
+    time = 0
+    discovery = {}
+    lowest = {}
+    current_path = set()
+
+    def visit(u):
+        nonlocal time
+        time += 1
+        discovery[u] = time
+        lowest[u] = time
+        current_path.add(u)
+
+        for v in graph.adjacent_vertices(u):
+            if v not in discovery:
+                visit(v)
+                lowest[u] = min(lowest[u], lowest[v])
+            if v in current_path:
+                lowest[u] = min(lowest[u], discovery[v])
+
+        current_path.remove(u)
+
+    visit(list(graph.vertices())[0])
+
+    scc = defaultdict(list)
+    for node, low in lowest.items():
+        scc[low].append(node)
+    return list(scc.values())
+
+
+"""
 Find the articulation points of a graph (Tarjan's algorithm)
 """
 
