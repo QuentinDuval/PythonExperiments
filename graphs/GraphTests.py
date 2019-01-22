@@ -115,6 +115,29 @@ class TestGraph(unittest.TestCase):
         for u, v in zip(values, values[1:]):
             self.assertTrue(disjoint_set.joined(u, v), repr(disjoint_set))
 
+    def test_index_heap(self):
+        heap = IndexHeap()
+        for c in "ghaibcjdef":
+            heap.add(c, ord(c))
+        self.assertEqual('a', heap.min())
+        heap.update('c', ord('a') - 1)
+        self.assertEqual('c', heap.min())
+        heap.pop_min()
+        self.assertEqual('a', heap.min())
+
+    @given(sets(elements=integers(), min_size=1))
+    def test_heap_always_returns_minimum(self, values):
+        heap = IndexHeap()
+
+        for val in values:
+            heap.add(key=val, priority=val*2)
+        self.assertEqual(min(values), heap.min(), str(values) + " " + str(heap))
+
+        for val in values:
+            heap.update(key=val, priority=-1*val)
+        self.assertEqual(max(values), heap.min(), str(values) + " " + str(heap))
+
+
     def minimum_spanning_tree(self, algorithm):
         """
         Example graph of
@@ -178,24 +201,19 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(kruskal_result, prims_result)
         self.assertEqual(kruskal_result, prims_slow_result)
 
-    def test_index_heap(self):
-        heap = IndexHeap()
-        for c in "ghaibcjdef":
-            heap.add(c, ord(c))
-        self.assertEqual('a', heap.min())
-        heap.update('c', ord('a') - 1)
-        self.assertEqual('c', heap.min())
-        heap.pop_min()
-        self.assertEqual('a', heap.min())
-
-    @given(sets(elements=integers(), min_size=1))
-    def test_heap_always_returns_minimum(self, values):
-        heap = IndexHeap()
-
-        for val in values:
-            heap.add(key=val, priority=val*2)
-        self.assertEqual(min(values), heap.min(), str(values) + " " + str(heap))
-
-        for val in values:
-            heap.update(key=val, priority=-1*val)
-        self.assertEqual(max(values), heap.min(), str(values) + " " + str(heap))
+    def test_dijkstra(self):
+        # Example graph: https://www.baeldung.com/java-dijkstra
+        vertices = list('abcdef')
+        edges = [
+            WeightedEdge('a', 'b', 10),
+            WeightedEdge('a', 'c', 15),
+            WeightedEdge('b', 'd', 12),
+            WeightedEdge('b', 'f', 15),
+            WeightedEdge('c', 'e', 10),
+            WeightedEdge('d', 'f', 1),
+            WeightedEdge('d', 'e', 2),
+            WeightedEdge('f', 'e', 5)
+        ]
+        graph = AdjListGraph(vertices=vertices, edges=edges)
+        distance = dijkstra(graph, 'a').shortest_distance_to('e')
+        self.assertEqual(24, distance)

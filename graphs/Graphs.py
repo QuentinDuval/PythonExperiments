@@ -2,7 +2,7 @@ from collections import *
 from dataclasses import *
 import matplotlib.pyplot as plot
 import networkx as nx
-from typing import List
+from typing import List, Mapping
 from graphs.DisjointSets import *
 from graphs.IndexHeap import *
 import heapq
@@ -294,6 +294,7 @@ def prims(graph: AdjListGraph) -> List[WeightedEdge]:
         u, _ = heap.pop_min()
         for e in graph.edges_from(u):
             if e.destination in heap:
+                # Relaxation of the distance
                 if heap.get_priority(e.destination) > e.weight:
                     heap.update(e.destination, e.weight)
                     parents[e.destination] = e
@@ -302,9 +303,46 @@ def prims(graph: AdjListGraph) -> List[WeightedEdge]:
 
 """
 Dijkstra's algorithm: Shortest Path with positive weights
+- Observe the similitude with Prim's algorithm (only the weighting policy changes)
 """
 
 
-def dijkstra():
-    pass
+class SingleSourceShortestPaths:
+    def __init__(self, source, parents):
+        self.source = source
+        self.parents = parents
 
+    def shortest_path_to(self, destination):
+        # Observe the generator's elegance: no need to duplicate code between shortest_path_to and shortest_distance_to
+        while destination != self.source:
+            e = self.parents.get(destination)
+            if e is None:
+                yield WeightedEdge(source=None, destination=None, weight=float('inf'))
+                return
+            else:
+                yield e
+                destination = e.source
+
+    def shortest_distance_to(self, destination):
+        return sum(e.weight for e in self.shortest_path_to(destination))
+
+
+def dijkstra(graph: AdjListGraph, start_vertex: any) -> SingleSourceShortestPaths:
+    if len(graph) == 0:
+        return []
+
+    heap = IndexHeap()
+    for v in graph.vertices():
+        heap.add(v, float('inf'))
+    heap.update(start_vertex, 0)
+
+    parents = {}
+    while len(heap) > 0:
+        u, distance_u = heap.pop_min()
+        for e in graph.edges_from(u):
+            if e.destination in heap:
+                # Relaxation of the distance
+                if heap.get_priority(e.destination) > e.weight + distance_u:
+                    heap.update(e.destination, e.weight + distance_u)
+                    parents[e.destination] = e
+    return SingleSourceShortestPaths(start_vertex, parents)
