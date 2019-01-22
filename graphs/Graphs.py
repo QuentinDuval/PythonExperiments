@@ -31,9 +31,11 @@ class AdjListGraph:
     Give weights and it becomes a weighted graph (weights are equal to 1 by default)
     """
 
-    def __init__(self, vertices=[], edges=[], weights={}):
+    # TODO - could use a representation of a dict of dict to weight
+
+    def __init__(self, vertices=[], edges=[], weights=None):
         self.adj_list = defaultdict(list)
-        self.weights = weights
+        self.weights = weights or {}
         for v in vertices:
             self.adj_list[v] = []
         for e in edges:
@@ -52,6 +54,9 @@ class AdjListGraph:
 
     def __len__(self):
         return len(self.adj_list)
+
+    def __bool__(self):
+        return len(self.adj_list) > 0
 
     def __getitem__(self, vertex):
         return self.adj_list[vertex]
@@ -325,14 +330,14 @@ class ShortestPathsFrom:
         return sum(e.weight for e in self.shortest_path_to(destination))
 
 
-def dijkstra(graph: AdjListGraph, start_vertex: any) -> ShortestPathsFrom:
-    if len(graph) == 0:
-        return []
+def dijkstra(graph: AdjListGraph, source: any) -> ShortestPathsFrom:
+    if not graph:
+        return None
 
     heap = IndexHeap()
     for v in graph.vertices():
         heap.add(v, float('inf'))
-    heap.update(start_vertex, 0)
+    heap.update(source, 0)
 
     parents = {}
     while len(heap) > 0:
@@ -343,4 +348,43 @@ def dijkstra(graph: AdjListGraph, start_vertex: any) -> ShortestPathsFrom:
                 if heap.get_priority(e.destination) > e.weight + distance_u:
                     heap.update(e.destination, e.weight + distance_u)
                     parents[e.destination] = e
-    return ShortestPathsFrom(start_vertex, parents)
+    return ShortestPathsFrom(source, parents)
+
+
+"""
+Bellman Ford's algorithm: Shortest Path with any weights
+- Consider path of increasing length
+- If a path is bigger than the number of vertices - 1, then there is a negative cycle
+"""
+
+
+class NegativeCycleDetected(Exception):
+    """ Raised when a negative cycle is detected (no shortest path possible) """
+
+
+def bellman_ford(graph: AdjListGraph, source: any) -> ShortestPathsFrom:
+    if not graph:
+        return None
+
+    distance = {v: float('inf') for v in graph.vertices()}
+    parents = {v: None for v in graph.vertices()}
+    distance[source] = 0
+
+    for _ in range(len(graph)):
+        at_least_one_update = False
+        for e in graph.edges():
+            # Relaxation of the distance
+            if distance[e.destination] > e.weight + distance[e.source]:
+                distance[e.destination] = e.weight + distance[e.source]
+                parents[e.destination] = e
+                at_least_one_update = True
+        if not at_least_one_update:
+            break
+    else:
+        # The else in Python is triggered if the loop is finished
+        for e in graph.edges():
+            if distance[e.destination] > e.weight + distance[e.source]:
+                raise NegativeCycleDetected()
+
+    return ShortestPathsFrom(source, parents)
+

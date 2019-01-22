@@ -201,7 +201,7 @@ class TestGraph(unittest.TestCase):
         self.assertEqual(kruskal_result, prims_result)
         self.assertEqual(kruskal_result, prims_slow_result)
 
-    def test_dijkstra(self):
+    def shortest_path_graph(self):
         # Example graph: https://www.baeldung.com/java-dijkstra
         vertices = list('abcdef')
         edges = [
@@ -214,6 +214,28 @@ class TestGraph(unittest.TestCase):
             WeightedEdge('d', 'e', 2),
             WeightedEdge('f', 'e', 5)
         ]
-        graph = AdjListGraph(vertices=vertices, edges=edges)
+        return AdjListGraph(vertices=vertices, edges=edges)
+
+    def test_dijkstra(self):
+        graph = self.shortest_path_graph()
         distance = dijkstra(graph, 'a').shortest_distance_to('e')
         self.assertEqual(24, distance)
+
+    def test_bellman_ford(self):
+        graph = self.shortest_path_graph()
+        distance = bellman_ford(graph, 'a').shortest_distance_to('e')
+        self.assertEqual(24, distance)
+
+    def test_bellman_ford_with_negative_weights(self):
+        graph = self.shortest_path_graph()
+        graph.weights[('d', 'e')] = -1
+        distance = bellman_ford(graph, 'a').shortest_distance_to('e')
+        self.assertEqual(21, distance)
+
+    def test_bellman_ford_with_cycle_detected(self):
+        graph = self.shortest_path_graph()
+        graph.weights[('d', 'f')] = -1
+        graph.weights[('f', 'd')] = -1
+        with self.assertRaises(NegativeCycleDetected) as context:
+            bellman_ford(graph, 'a').shortest_distance_to('e')
+        self.assertTrue(context.exception)
