@@ -1,8 +1,6 @@
 from collections import *
 from dataclasses import *
-import matplotlib.pyplot as plot
-import networkx as nx
-from typing import List, Mapping
+from typing import List
 from graphs.DisjointSets import *
 from graphs.IndexHeap import *
 import heapq
@@ -307,7 +305,7 @@ Dijkstra's algorithm: Shortest Path with positive weights
 """
 
 
-class SingleSourceShortestPaths:
+class ShortestPathsFrom:
     def __init__(self, source, parents):
         self.source = source
         self.parents = parents
@@ -327,7 +325,7 @@ class SingleSourceShortestPaths:
         return sum(e.weight for e in self.shortest_path_to(destination))
 
 
-def dijkstra(graph: AdjListGraph, start_vertex: any) -> SingleSourceShortestPaths:
+def dijkstra(graph: AdjListGraph, start_vertex: any) -> ShortestPathsFrom:
     if len(graph) == 0:
         return []
 
@@ -345,4 +343,4 @@ def dijkstra(graph: AdjListGraph, start_vertex: any) -> SingleSourceShortestPath
                 if heap.get_priority(e.destination) > e.weight + distance_u:
                     heap.update(e.destination, e.weight + distance_u)
                     parents[e.destination] = e
-    return SingleSourceShortestPaths(start_vertex, parents)
+    return ShortestPathsFrom(start_vertex, parents)
