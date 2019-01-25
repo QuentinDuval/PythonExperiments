@@ -26,20 +26,20 @@ class LRUCache:
 
     def __contains__(self, key):
         if key in self.dict:
-            self.dict.move_to_end(key, last=False)
+            self.dict.move_to_end(key, last=False)  # Move to beginning
             return True
         return False
 
     def __setitem__(self, key, value):
         self.dict[key] = value
-        self.dict.move_to_end(key, last=False)
+        self.dict.move_to_end(key, last=False)      # Move to beginning
         if len(self) > self.max_size:
-            self.dict.popitem(last=True)
+            self.dict.popitem(last=True)            # Pop the last key
 
     def __getitem__(self, key):
         val = self.dict.get(key)
         if val is not None:
-            self.dict.move_to_end(key, last=False)
+            self.dict.move_to_end(key, last=False)  # Move to beginning
         return val
 
 
