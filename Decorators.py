@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import itertools
+import time
 
 
 """
@@ -24,7 +25,7 @@ def lowest_price_refund(prices):
 def best_promo(prices):
     return min(promo(prices) for promo in promotions)
 
-print(best_promo([5.5, 7.5, 6]))
+# print(best_promo([5.5, 7.5, 6]))
 
 
 """
@@ -32,12 +33,14 @@ Printing argument and return of a function (good for debugging)
 """
 
 def traced(f):
-    # TODO - add the running time
     def traced_f(*args, **kwargs):
+        start_time = time.clock()
         result = f(*args, **kwargs)
+        end_time = time.clock()
+        running_time = (end_time - start_time) * 1000
         arg_to_str = (repr(a) for a in args)
         karg_to_str = (str(k) + "=" + repr(v) for k, v in kwargs.items())
-        print("[TRACE]", f.__name__ + "(" + ",".join(itertools.chain(arg_to_str, karg_to_str)) + ") =>", result)
+        print("[TRACE]", f.__name__ + "(" + ",".join(itertools.chain(arg_to_str, karg_to_str)) + ") =>", result, "in", running_time, "ms")
         return result
     return traced_f
 
@@ -45,7 +48,7 @@ def traced(f):
 def hello(name):
     return "Hello, " + name + "!"
 
-print(hello("my friend"))
+# print(hello("my friend"))
 
 
 """
@@ -76,7 +79,7 @@ def fib(n):
     if n <= 1: return 1
     return fib(n-1) + fib(n-2)
 
-print(fib(100))
+# print(fib(100))
 
 
 """
@@ -106,7 +109,7 @@ christmas_promotions = PromoRegistry()
 def family_promo(prices):
     return sum(prices)
 
-print(christmas_promotions)
+# print(christmas_promotions)
 
 
 """
@@ -144,6 +147,6 @@ def _(a, b):
 def _(a, b):
     print("Collision:", a * b)
 
-collide(1, 2)
-collide(5, "b")
-collide("a", "b")
+# collide(1, 2)
+# collide(5, "b")
+# collide("a", "b")
