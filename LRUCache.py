@@ -12,8 +12,9 @@ def read_resource(resource_name):
 
 
 @functools.lru_cache(maxsize=4)
-def read_resource_cached(resource_name):
-    return read_resource(resource_name)
+def long_computation(arg):
+    print("Long computation", arg)
+    return read_resource(arg)
 
 
 class LRUCache:
