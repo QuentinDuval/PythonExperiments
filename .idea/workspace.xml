@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="" />
+    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/stack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/stack/Exercises.py" afterDir="false" />
+    </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -18,11 +20,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1839">
-              <caret line="178" lean-forward="true" selection-start-line="178" selection-end-line="178" />
+            <state relative-caret-position="169">
+              <caret line="76" column="3" lean-forward="true" selection-start-line="76" selection-start-column="3" selection-end-line="76" selection-end-column="3" />
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
@@ -30,11 +32,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/divide/Exercises.py">
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/stack/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="495">
-              <caret line="33" lean-forward="true" selection-start-line="33" selection-end-line="33" />
+            <state relative-caret-position="120">
+              <caret line="8" column="6" selection-start-line="8" selection-start-column="6" selection-end-line="8" selection-end-column="6" />
             </state>
           </provider>
         </entry>
@@ -89,6 +91,7 @@
         <option value="$PROJECT_DIR$/divide/ExercisesTest.py" />
         <option value="$PROJECT_DIR$/divide/Exercises.py" />
         <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
+        <option value="$PROJECT_DIR$/stack/Exercises.py" />
       </list>
     </option>
   </component>
@@ -130,6 +133,11 @@
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="graphs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="stack" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -582,11 +590,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1839">
-          <caret line="178" lean-forward="true" selection-start-line="178" selection-end-line="178" />
+        <state relative-caret-position="169">
+          <caret line="76" column="3" lean-forward="true" selection-start-line="76" selection-start-column="3" selection-end-line="76" selection-end-column="3" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stack/Exercises.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="8" column="6" selection-start-line="8" selection-start-column="6" selection-end-line="8" selection-end-column="6" />
         </state>
       </provider>
     </entry>
