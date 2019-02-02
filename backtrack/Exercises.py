@@ -115,7 +115,7 @@ def keypad_words(digits, dictionary) -> List[str]:
 
 
 """
-Minimum coin change:
+Minimum coin change (an optimization problem):
 https://leetcode.com/problems/coin-change/
 The backtracking one beats the hell out of the memoization implementations
 """
@@ -173,7 +173,55 @@ def min_coin_change(coins, amount):
 
 
 """
-Combinations of coin changes:
+Combinations of coin changes (a pure combinatorial problem + memoization):
 https://leetcode.com/problems/coin-change-2/
 """
 
+
+def count_change(coins, amount):
+
+    """
+    # This does not work because we have many equivalent combinations
+    for remaining in range(1, amount+1):
+        count = 0
+        for coin in coins:
+            if coin <= remaining:
+                count += memo[remaining - coin]
+        memo[remaining] = count
+
+    return memo[-1]
+    """
+
+    """
+    # This correctly works:
+    # - we account for each coin just once
+    # - we try all count for that coin
+    # But it is slow and can be simplified
+    memo = [0] * (amount + 1)
+    memo[0] = 1
+
+    for coin in coins:
+        new_memo = [0] * (amount + 1)
+        new_memo[0] = 1
+
+        for remaining in range(1, amount+1):
+            count = 0
+            max_q = remaining // coin
+            for q in range(max_q+1):
+                count += memo[remaining-q*coin]
+            new_memo[remaining] = count
+        memo = new_memo
+
+    return memo[-1]
+    """
+
+    # This version is vastly simplified:
+    # By taking the remaining in the right order, we profit from memoization furthermore
+    # And we having having to consider every single quotient from 0 to remaining // coin
+
+    memo = [0] * (amount + 1)
+    memo[0] = 1
+    for coin in coins:
+        for remaining in range(coin, amount + 1):
+            memo[remaining] += memo[remaining - coin]
+    return memo[-1]
