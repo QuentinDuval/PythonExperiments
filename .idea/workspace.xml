@@ -2,11 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/dictionaries/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dictionaries/tries.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/divide/Exercises.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/divide/ExercisesTest.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/divide/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backtrack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/Exercises.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backtrack/ExercisesTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/ExercisesTest.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -24,70 +24,22 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/Simulation2.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1731">
-              <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
-              <folding>
-                <element signature="e#0#25#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="321">
-              <caret line="173" lean-forward="true" selection-start-line="173" selection-end-line="173" />
-              <folding>
-                <element signature="e#0#25#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
+        <entry file="file://$PROJECT_DIR$/divide/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="240">
-              <caret line="95" column="34" lean-forward="true" selection-start-line="95" selection-start-column="34" selection-end-line="95" selection-end-column="34" />
-              <folding>
-                <element signature="e#0#31#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="159">
+              <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/backtrack/ExercisesTest.py">
+        <entry file="file://$PROJECT_DIR$/divide/ExercisesTest.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="279">
-              <caret line="19" column="38" selection-start-line="19" selection-start-column="38" selection-end-line="19" selection-end-column="38" />
+            <state relative-caret-position="105">
+              <caret line="7" lean-forward="true" selection-start-line="7" selection-end-line="7" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dictionaries/tries.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="230">
-              <caret line="18" column="71" lean-forward="true" selection-start-line="18" selection-start-column="40" selection-end-line="18" selection-end-column="71" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="165">
-              <caret line="11" selection-start-line="11" selection-end-line="11" selection-end-column="35" />
-              <folding>
-                <element signature="e#0#33#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -141,6 +93,8 @@
         <option value="$PROJECT_DIR$/dictionaries/tries.py" />
         <option value="$PROJECT_DIR$/backtrack/ExercisesTest.py" />
         <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
+        <option value="$PROJECT_DIR$/divide/ExercisesTest.py" />
+        <option value="$PROJECT_DIR$/divide/Exercises.py" />
       </list>
     </option>
   </component>
@@ -172,6 +126,11 @@
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="dictionaries" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="divide" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
@@ -208,7 +167,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python tests.Unittests for ExercisesTest.TestBackTrack">
+  <component name="RunManager" selected="Python tests.Unittests in ExercisesTest.py">
     <configuration default="true" type="tests" factoryName="Attests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -298,34 +257,34 @@
       <option name="_new_targetType" value="&quot;PYTHON&quot;" />
       <method v="2" />
     </configuration>
-    <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_cycle_detected" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
+    <configuration name="Unittests in ExercisesTest.py" type="tests" factoryName="Unittests" temporary="true" nameIsGenerated="true">
       <module name="Experiments" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <option name="SDK_HOME" value="" />
-      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/graphs" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/divide" />
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
       <option name="_new_additionalArguments" value="&quot;&quot;" />
-      <option name="_new_target" value="&quot;GraphTests.TestGraph.test_bellman_ford_with_cycle_detected&quot;" />
-      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/divide/ExercisesTest.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
       <method v="2" />
     </configuration>
     <list>
       <item itemvalue="Python.LRUCache" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph" />
-      <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_cycle_detected" />
       <item itemvalue="Python.Exercises" />
       <item itemvalue="Python tests.Unittests for ExercisesTest.TestBackTrack" />
+      <item itemvalue="Python tests.Unittests in ExercisesTest.py" />
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python tests.Unittests in ExercisesTest.py" />
         <item itemvalue="Python tests.Unittests for ExercisesTest.TestBackTrack" />
         <item itemvalue="Python.Exercises" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph" />
         <item itemvalue="Python.LRUCache" />
-        <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_cycle_detected" />
       </list>
     </recent_temporary>
   </component>
@@ -343,12 +302,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 31m 02s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 37m 09s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 10h 59m 35s.xml">
       <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
     </history-entry>
@@ -372,6 +325,12 @@
     </history-entry>
     <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 17h 01m 35s.xml">
       <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 17h 02m 04s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_in_ExercisesTest_py - 2019.02.02 at 17h 09m 43s.xml">
+      <configuration name="Unittests in ExercisesTest.py" configurationId="tests" />
     </history-entry>
   </component>
   <component name="ToolWindowManager">
@@ -598,11 +557,28 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="240">
-          <caret line="95" column="34" lean-forward="true" selection-start-line="95" selection-start-column="34" selection-end-line="95" selection-end-column="34" />
+        <state relative-caret-position="254">
+          <caret line="72" column="6" selection-start-line="72" selection-start-column="6" selection-end-line="72" selection-end-column="6" />
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/divide/ExercisesTest.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="105">
+          <caret line="7" lean-forward="true" selection-start-line="7" selection-end-line="7" />
+          <folding>
+            <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/divide/Exercises.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="159">
+          <caret line="23" lean-forward="true" selection-start-line="23" selection-end-line="23" />
         </state>
       </provider>
     </entry>

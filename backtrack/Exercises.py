@@ -63,6 +63,17 @@ def multiset_permutations(multiset):
 
 
 """
+Exercise 7.10 of "The algorithm design manual"
+Solve the minimum vertex coloring problem:
+- Return the minimum number of colors needed to color each vertex
+- Such that no two adjacent vertices have the same color
+"""
+
+
+# TODO
+
+
+"""
 Exercise 7.17 of "The algorithm design manual"
 Generate all possible words from translating a given digit sequence of a telephone keypad
 """
