@@ -56,7 +56,7 @@ class TestGraph(unittest.TestCase):
         graph.add_directed(WeightedEdge("i", "g"))
 
         sccs = digraph_strongly_connected_components(graph)
-        self.assertListEqual([['a', 'c', 'b'], ['d'], ['f', 'g', 'h'], ['i', 'j']], sccs)
+        self.assertListEqual([['h', 'g', 'f'], ['j', 'i'], ['d'], ['b', 'c', 'a']], sccs)
 
     @given(sets(elements=integers()))
     def test_topological_sort(self, nodes):

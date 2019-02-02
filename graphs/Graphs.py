@@ -103,6 +103,8 @@ def digraph_strongly_connected_components(graph):
     discovery = {}
     lowest = {}
     current_path = set()
+    visited_stack = []
+    scc_list = []
 
     def visit(u):
         nonlocal time
@@ -110,6 +112,7 @@ def digraph_strongly_connected_components(graph):
         discovery[u] = time
         lowest[u] = time
         current_path.add(u)
+        visited_stack.append(u)
 
         for v in graph.adjacent_vertices(u):
             if v not in discovery:
@@ -120,12 +123,16 @@ def digraph_strongly_connected_components(graph):
 
         current_path.remove(u)
 
-    visit(list(graph.vertices())[0])
+        # This is the root of a strongly connected component
+        if lowest[u] == discovery[u]:
+            scc = []
+            while visited_stack and visited_stack[-1] != u:
+                scc.append(visited_stack.pop())
+            scc.append(visited_stack.pop())
+            scc_list.append(scc)
 
-    scc = defaultdict(list)
-    for node, low in lowest.items():
-        scc[low].append(node)
-    return list(scc.values())
+    visit(list(graph.vertices())[0])
+    return scc_list
 
 
 """

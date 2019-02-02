@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/LRUCache.py" beforeDir="false" afterPath="$PROJECT_DIR$/LRUCache.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/graphs/Graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/Graphs.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -16,38 +16,6 @@
   <component name="CreatePatchCommitExecutor">
     <option name="PATCH_PATH" value="" />
   </component>
-  <component name="FUSProjectUsageTrigger">
-    <session id="-839036985">
-      <usages-collector id="statistics.file.extensions.open">
-        <counts>
-          <entry key="py" value="9" />
-          <entry key="pyi" value="2" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.types.open">
-        <counts>
-          <entry key="Python" value="9" />
-          <entry key="PythonStub" value="2" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.extensions.edit">
-        <counts>
-          <entry key="py" value="2190" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.file.types.edit">
-        <counts>
-          <entry key="Python" value="2190" />
-        </counts>
-      </usages-collector>
-      <usages-collector id="statistics.lifecycle.project">
-        <counts>
-          <entry key="project.open.time.1" value="1" />
-          <entry key="project.opened" value="1" />
-        </counts>
-      </usages-collector>
-    </session>
-  </component>
   <component name="FavoritesManager">
     <favorites_list name="Experiments" />
   </component>
@@ -56,7 +24,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/Simulation2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="5950">
+            <state relative-caret-position="1731">
               <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
@@ -65,23 +33,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="6545">
-              <caret line="390" selection-start-line="390" selection-end-line="390" />
-              <folding>
-                <element signature="e#0#25#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/LRUCache.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="527">
-              <caret line="31" column="20" lean-forward="true" selection-start-line="31" selection-start-column="20" selection-end-line="31" selection-end-column="20" />
+            <state relative-caret-position="266">
+              <caret line="127" column="20" lean-forward="true" selection-start-line="127" selection-start-column="20" selection-end-line="127" selection-end-column="20" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -90,10 +46,13 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://C:/Python/Python37/Lib/collections/__init__.py">
+        <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1751">
-              <caret line="110" column="40" selection-start-line="110" selection-start-column="40" selection-end-line="110" selection-end-column="40" />
+            <state relative-caret-position="133">
+              <caret line="58" selection-start-line="58" selection-end-line="58" />
+              <folding>
+                <element signature="e#0#33#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -138,10 +97,10 @@
         <option value="$PROJECT_DIR$/graphs/Debugging.py" />
         <option value="$PROJECT_DIR$/graphs/.hypothesis/IndexHeap.py" />
         <option value="$PROJECT_DIR$/graphs/IndexHeap.py" />
-        <option value="$PROJECT_DIR$/graphs/Graphs.py" />
         <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
         <option value="$PROJECT_DIR$/Decorators.py" />
         <option value="$PROJECT_DIR$/LRUCache.py" />
+        <option value="$PROJECT_DIR$/graphs/Graphs.py" />
       </list>
     </option>
   </component>
@@ -161,13 +120,19 @@
         <subPane>
           <expand>
             <path>
-              <item name="PythonExperiments" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PythonExperiments" type="462c0819:PsiDirectoryNode" />
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
-              <item name="PythonExperiments" type="b2602c69:ProjectViewProjectNode" />
-              <item name="PythonExperiments" type="462c0819:PsiDirectoryNode" />
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="graphs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="graphs" type="462c0819:PsiDirectoryNode" />
+              <item name=".hypothesis" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
@@ -199,7 +164,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.LRUCache">
+  <component name="RunManager" selected="Python tests.Unittests for GraphTests.TestGraph">
     <configuration default="true" type="tests" factoryName="Attests">
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -297,16 +262,16 @@
       <method v="2" />
     </configuration>
     <list>
+      <item itemvalue="Python.LRUCache" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" />
       <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_cycle_detected" />
-      <item itemvalue="Python.LRUCache" />
     </list>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.LRUCache" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph" />
+        <item itemvalue="Python.LRUCache" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_cycle_detected" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" />
         <item itemvalue="Python tests.Unittests for GraphTests.TestGraph.test_bellman_ford" />
@@ -327,9 +292,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 26m 42s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 27m 20s.xml">
       <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
     </history-entry>
@@ -357,17 +319,20 @@
     <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.01.22 at 22h 34m 42s.xml">
       <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
     </history-entry>
+    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 25m 08s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
+    </history-entry>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-1928" y="-8" width="1936" height="1176" extended-state="6" />
+    <frame x="19" y="42" width="1400" height="757" extended-state="0" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.17860906" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.24945612" />
       <window_info id="Structure" order="1" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32932332" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49963742" visible="true" weight="0.32917467" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" sideWeight="0.49963742" visible="true" weight="0.32932332" />
       <window_info anchor="bottom" id="Debug" order="3" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
@@ -388,9 +353,6 @@
     <option name="RECENTLY_FILTERED_BRANCH_GROUPS">
       <collection />
     </option>
-  </component>
-  <component name="VcsContentAnnotationSettings">
-    <option name="myLimit" value="2678400000" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/IntegerBreak.py">
@@ -504,9 +466,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
     <entry file="file://$PROJECT_DIR$/Decorators.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="306">
@@ -528,9 +487,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Python/Python37/Lib/collections/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/LRUCache.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="527">
+          <caret line="31" column="20" lean-forward="true" selection-start-line="31" selection-start-column="20" selection-end-line="31" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#25#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/Simulation2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="5950">
+        <state relative-caret-position="1731">
           <caret line="356" column="35" selection-start-line="356" selection-start-column="35" selection-end-line="356" selection-end-column="35" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
@@ -538,27 +508,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
+    <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="6545">
-          <caret line="390" selection-start-line="390" selection-end-line="390" />
+        <state relative-caret-position="133">
+          <caret line="58" selection-start-line="58" selection-end-line="58" />
           <folding>
-            <element signature="e#0#25#0" expanded="true" />
+            <element signature="e#0#33#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Python/Python37/Lib/collections/__init__.py">
+    <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1751">
-          <caret line="110" column="40" selection-start-line="110" selection-start-column="40" selection-end-line="110" selection-end-column="40" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/LRUCache.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="527">
-          <caret line="31" column="20" lean-forward="true" selection-start-line="31" selection-start-column="20" selection-end-line="31" selection-end-column="20" />
+        <state relative-caret-position="266">
+          <caret line="127" column="20" lean-forward="true" selection-start-line="127" selection-start-column="20" selection-end-line="127" selection-end-column="20" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
