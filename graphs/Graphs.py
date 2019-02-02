@@ -115,10 +115,10 @@ def digraph_strongly_connected_components(graph):
         visited_stack.append(u)
 
         for v in graph.adjacent_vertices(u):
-            if v not in discovery:
+            if v not in discovery:                          # Tree edges
                 visit(v)
                 lowest[u] = min(lowest[u], lowest[v])
-            elif v in current_path:
+            elif v in current_path:                         # Back edges
                 lowest[u] = min(lowest[u], discovery[v])
 
         current_path.remove(u)
@@ -161,16 +161,16 @@ def articulation_points(graph):
         lowest[u] = time
 
         for v in graph.adjacent_vertices(u):
-            if v not in discovery:
+            if v not in discovery:                          # Tree edges
                 visit(v, source=u)
                 lowest[u] = min(lowest[u], lowest[v])
                 if parent[u] and lowest[v] >= discovery[u]:
-                    result.add(u)
-            if v != parent[u]:
+                    result.add(u)                           # If one child is disconnected
+            elif v != parent[u]:                            # Back edges / cross edges: TODO - cross?
                 lowest[u] = min(lowest[u], discovery[v])
 
     start_vertex = list(graph.vertices())[0]
-    visit(start_vertex, None)
+    visit(start_vertex, source=None)
 
     if len([u for u, p in parent.items() if p == start_vertex]) > 1:
         result.add(start_vertex)

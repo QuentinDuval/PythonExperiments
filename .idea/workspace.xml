@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/graphs/Graphs.py" beforeDir="false" afterPath="$PROJECT_DIR$/graphs/Graphs.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
@@ -36,8 +35,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="266">
-              <caret line="127" column="20" lean-forward="true" selection-start-line="127" selection-start-column="20" selection-end-line="127" selection-end-column="20" />
+            <state relative-caret-position="246">
+              <caret line="168" column="101" selection-start-line="168" selection-start-column="101" selection-end-line="168" selection-end-column="101" />
               <folding>
                 <element signature="e#0#25#0" expanded="true" />
               </folding>
@@ -49,7 +48,7 @@
         <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="133">
-              <caret line="58" selection-start-line="58" selection-end-line="58" />
+              <caret line="58" column="82" selection-start-line="58" selection-start-column="82" selection-end-line="58" selection-end-column="82" />
               <folding>
                 <element signature="e#0#33#0" expanded="true" />
               </folding>
@@ -97,9 +96,9 @@
         <option value="$PROJECT_DIR$/graphs/Debugging.py" />
         <option value="$PROJECT_DIR$/graphs/.hypothesis/IndexHeap.py" />
         <option value="$PROJECT_DIR$/graphs/IndexHeap.py" />
-        <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
         <option value="$PROJECT_DIR$/Decorators.py" />
         <option value="$PROJECT_DIR$/LRUCache.py" />
+        <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
         <option value="$PROJECT_DIR$/graphs/Graphs.py" />
       </list>
     </option>
@@ -292,15 +291,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 27m 20s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 28m 58s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 30m 51s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 31m 11s.xml">
       <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
     </history-entry>
@@ -320,6 +310,15 @@
       <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
     </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 25m 08s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 26m 04s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 27m 43s.xml">
+      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 31m 02s.xml">
       <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
     </history-entry>
   </component>
@@ -511,7 +510,7 @@
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="133">
-          <caret line="58" selection-start-line="58" selection-end-line="58" />
+          <caret line="58" column="82" selection-start-line="58" selection-start-column="82" selection-end-line="58" selection-end-column="82" />
           <folding>
             <element signature="e#0#33#0" expanded="true" />
           </folding>
@@ -520,8 +519,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/graphs/Graphs.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
-          <caret line="127" column="20" lean-forward="true" selection-start-line="127" selection-start-column="20" selection-end-line="127" selection-end-column="20" />
+        <state relative-caret-position="246">
+          <caret line="168" column="101" selection-start-line="168" selection-start-column="101" selection-end-line="168" selection-end-column="101" />
           <folding>
             <element signature="e#0#25#0" expanded="true" />
           </folding>
