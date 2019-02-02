@@ -112,3 +112,38 @@ def keypad_words(digits, dictionary) -> List[str]:
     backtrack(0)
     return ["".join(solution) for solution in solutions]
 
+
+"""
+Minimum coin change:
+https://leetcode.com/problems/coin-change/
+"""
+
+
+def min_coin_change(coins, amount):
+    pass
+
+
+def min_coin_change_dp_top_bottom(coins, amount):
+    @functools.lru_cache(maxsize=None)
+    def visit(remaining):
+        if remaining == 0: return 0
+        if remaining < 0: return float('inf')
+        return 1 + min((visit(remaining-coin) for coin in coins if coin <= amount), default=float('inf'))
+    return visit(amount)
+
+
+def min_coin_change_dp_bottom_up(coins, amount):
+    memo = [float('inf')] * (amount + 1)
+    memo[0] = 0
+    for remaining in range(1, amount+1):
+        subs = (memo[remaining-coin] for coin in coins if coin <= amount)
+        memo[remaining] = 1 + min(subs, default=float('inf'))
+    return memo[-1]
+
+
+
+"""
+Combinations of coin changes:
+https://leetcode.com/problems/coin-change-2/
+"""
+
