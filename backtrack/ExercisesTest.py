@@ -1,6 +1,7 @@
 import unittest
 
 from backtrack.Exercises import *
+from dictionaries.tries import NodeTrie
 
 
 class TestBackTrack(unittest.TestCase):
@@ -13,6 +14,8 @@ class TestBackTrack(unittest.TestCase):
         expected = [[1, 1, 2, 2], [1, 2, 1, 2], [1, 2, 2, 1], [2, 1, 1, 2], [2, 1, 2, 1], [2, 2, 1, 1]]
         self.assertListEqual(expected, multiset_permutations([1, 1, 2, 2]))
 
-
-
+    def test_keypad_words(self):
+        dico = NodeTrie()
+        dico.add("hello")
+        self.assertListEqual(["hello"], keypad_words([4, 3, 5, 5, 6], dico))
 

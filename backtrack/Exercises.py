@@ -1,6 +1,7 @@
 from collections import Counter
 import functools
 import itertools
+from typing import *
 
 
 """
@@ -59,3 +60,44 @@ def multiset_permutations(multiset):
 
     backtrack(1)
     return solutions
+
+
+"""
+Exercise 7.17 of "The algorithm design manual"
+Generate all possible words from translating a given digit sequence of a telephone keypad
+"""
+
+keypad_letters = {
+    1: "",
+    2: "abc",
+    3: "def",
+    4: "ghi",
+    5: "jkl",
+    6: "mno",
+    7: "pqrs",
+    8: "tuv",
+    9: "wxyz",
+    0: " "
+}
+
+
+def keypad_words(digits, dictionary) -> List[str]:
+    n = len(digits)
+    partial = []
+    solutions = []
+
+    def backtrack(i):
+        if i >= n:
+            if dictionary.is_member(partial):
+                solutions.append(list(partial))
+            return
+
+        for letter in keypad_letters[digits[i]]:
+            partial.append(letter)
+            if dictionary.is_prefix(partial):
+                backtrack(i+1)
+            partial.pop()
+
+    backtrack(0)
+    return ["".join(solution) for solution in solutions]
+

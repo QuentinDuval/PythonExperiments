@@ -2,10 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/backtrack/Exercises.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backtrack/ExercisesTest.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backtrack/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dictionaries/__init__.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/dictionaries/tries.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtrack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/Exercises.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtrack/ExercisesTest.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/ExercisesTest.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -47,26 +48,35 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="730">
-              <caret line="57" column="16" selection-start-line="57" selection-start-column="16" selection-end-line="57" selection-end-column="16" />
+            <state relative-caret-position="240">
+              <caret line="95" column="34" lean-forward="true" selection-start-line="95" selection-start-column="34" selection-end-line="95" selection-end-column="34" />
               <folding>
-                <element signature="e#0#4#0" expanded="true" />
+                <element signature="e#0#31#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/backtrack/ExercisesTest.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="120">
-              <caret line="8" column="20" selection-start-line="8" selection-start-column="20" selection-end-line="8" selection-end-column="20" />
+            <state relative-caret-position="279">
+              <caret line="19" column="38" selection-start-line="19" selection-start-column="38" selection-end-line="19" selection-end-column="38" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/dictionaries/tries.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="230">
+              <caret line="18" column="71" lean-forward="true" selection-start-line="18" selection-start-column="40" selection-end-line="18" selection-end-column="71" />
             </state>
           </provider>
         </entry>
@@ -127,8 +137,10 @@
         <option value="$PROJECT_DIR$/LRUCache.py" />
         <option value="$PROJECT_DIR$/graphs/GraphTests.py" />
         <option value="$PROJECT_DIR$/graphs/Graphs.py" />
-        <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
+        <option value="$PROJECT_DIR$/dictionaries/Trie.py" />
+        <option value="$PROJECT_DIR$/dictionaries/tries.py" />
         <option value="$PROJECT_DIR$/backtrack/ExercisesTest.py" />
+        <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
       </list>
     </option>
   </component>
@@ -155,6 +167,11 @@
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="backtrack" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="dictionaries" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
@@ -326,27 +343,6 @@
     <servers />
   </component>
   <component name="TestHistory">
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 32m 57s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 33m 59s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph_test_bellman_ford_with_negative_weights - 2019.01.22 at 22h 34m 19s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph.test_bellman_ford_with_negative_weights" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.01.22 at 22h 34m 42s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 25m 08s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 26m 04s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
-    <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 27m 43s.xml">
-      <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
-    </history-entry>
     <history-entry file="Unittests_for_GraphTests_TestGraph - 2019.02.02 at 10h 31m 02s.xml">
       <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
     </history-entry>
@@ -354,6 +350,27 @@
       <configuration name="Unittests for GraphTests.TestGraph" configurationId="tests" />
     </history-entry>
     <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 10h 59m 35s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 11h 00m 27s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 11h 00m 43s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 11h 01m 16s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 11h 10m 18s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 17h 00m 27s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 17h 00m 38s.xml">
+      <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
+    </history-entry>
+    <history-entry file="Unittests_for_ExercisesTest_TestBackTrack - 2019.02.02 at 17h 01m 35s.xml">
       <configuration name="Unittests for ExercisesTest.TestBackTrack" configurationId="tests" />
     </history-entry>
   </component>
@@ -552,16 +569,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="730">
-          <caret line="57" column="16" selection-start-line="57" selection-start-column="16" selection-end-line="57" selection-end-column="16" />
-          <folding>
-            <element signature="e#0#4#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/graphs/GraphTests.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="165">
@@ -572,12 +579,29 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/dictionaries/tries.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="230">
+          <caret line="18" column="71" lean-forward="true" selection-start-line="18" selection-start-column="40" selection-end-line="18" selection-end-column="71" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/backtrack/ExercisesTest.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" column="20" selection-start-line="8" selection-start-column="20" selection-end-line="8" selection-end-column="20" />
+        <state relative-caret-position="279">
+          <caret line="19" column="38" selection-start-line="19" selection-start-column="38" selection-end-line="19" selection-end-column="38" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="240">
+          <caret line="95" column="34" lean-forward="true" selection-start-line="95" selection-start-column="34" selection-end-line="95" selection-end-column="34" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
           </folding>
         </state>
       </provider>
