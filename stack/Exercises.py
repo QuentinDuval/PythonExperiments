@@ -24,3 +24,11 @@ Max histogram column
 
 # TODO
 
+
+"""
+Exercise with maximum at the head???
+"""
+
+
+# TODO
+
