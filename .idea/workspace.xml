@@ -2,7 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/optim.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/two_pointers/Exercises.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/two_pointers/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/stack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/stack/Exercises.py" afterDir="false" />
     </list>
@@ -22,20 +23,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/stack/Exercises.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="84">
-              <caret line="17" lean-forward="true" selection-start-line="17" selection-end-line="17" />
-            </state>
-          </provider>
-        </entry>
-      </file>
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/optim.py">
+        <entry file="file://$PROJECT_DIR$/two_pointers/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="752">
-              <caret line="54" column="7" lean-forward="true" selection-start-line="54" selection-start-column="7" selection-end-line="54" selection-end-column="7" />
+            <state relative-caret-position="148">
+              <caret line="78" column="3" lean-forward="true" selection-start-line="78" selection-start-column="3" selection-end-line="78" selection-end-column="3" />
             </state>
           </provider>
         </entry>
@@ -92,6 +84,7 @@
         <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
         <option value="$PROJECT_DIR$/stack/Exercises.py" />
         <option value="$PROJECT_DIR$/optim.py" />
+        <option value="$PROJECT_DIR$/two_pointers/Exercises.py" />
       </list>
     </option>
   </component>
@@ -139,6 +132,11 @@
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="stack" type="462c0819:PsiDirectoryNode" />
             </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="two_pointers" type="462c0819:PsiDirectoryNode" />
+            </path>
           </expand>
           <select />
         </subPane>
@@ -151,6 +149,7 @@
   </component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/two_pointers" />
       <recent name="$PROJECT_DIR$/graphs" />
     </key>
     <key name="CopyFile.RECENT_KEYS">
@@ -337,6 +336,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="19" y="42" width="1400" height="757" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24945612" />
       <window_info id="Structure" order="1" weight="0.25" />
@@ -604,10 +604,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/optim.py">
+    <entry file="file://$PROJECT_DIR$/two_pointers/Exercises.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="752">
-          <caret line="54" column="7" lean-forward="true" selection-start-line="54" selection-start-column="7" selection-end-line="54" selection-end-column="7" />
+        <state relative-caret-position="148">
+          <caret line="78" column="3" lean-forward="true" selection-start-line="78" selection-start-column="3" selection-end-line="78" selection-end-column="3" />
         </state>
       </provider>
     </entry>

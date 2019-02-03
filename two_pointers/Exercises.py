@@ -74,3 +74,47 @@ def water_max_area(heights: List[int]) -> int:
 input = [1,8,6,2,5,4,8,3,7]
 print(water_max_area(input))
 
+
+"""
+3 sum closest:
+https://leetcode.com/problems/3sum-closest
+Given an array of number, find a triplet whose sum is closest to 'target'
+"""
+
+
+def three_sum_closest(nums: List[int], target: int) -> int:
+    """
+    The key is to rely on sorting
+    - Move a first pointer 'neg' through the list in increasing order
+    - For each 'neg' value:
+      - Initialize a "low" pointer at 'neg + 1'
+      - Initialize a "high" pointer at 'len(nums) - 1'
+      - If the sum at these three positions is higher than target, move 'high' to left
+      - Else move 'low' to right
+
+    Why does this work?
+    Just consider that if 'low' gets bigger, 'high' has to go smaller to become closer to the target
+    This is what you would expect from a binary search point of view.
+    """
+    n = len(nums)
+    nums.sort()
+
+    closest = sum(nums[:3])
+    for neg in range(n - 2):
+        low, high = neg + 1, n - 1
+        while low < high:
+            triplet_sum = nums[neg] + nums[low] + nums[high]
+            closest = triplet_sum if abs(triplet_sum - target) < abs(closest - target) else closest
+            if triplet_sum == target:
+                return target
+            elif triplet_sum > target:
+                high -= 1
+                while low < high and nums[high] == nums[high + 1]:
+                    high -= 1
+            else:
+                low += 1
+                while low < high and nums[low - 1] == nums[low]:
+                    low += 1
+
+    return closest
+
