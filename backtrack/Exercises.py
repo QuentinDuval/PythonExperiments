@@ -374,5 +374,51 @@ def combination_sum(candidates: List[int], target: int) -> List[List[int]]:
     # TODO
 
 
+"""
+COMBINATION SUM 2: https://leetcode.com/problems/combination-sum-2/
+- Return all combinations of the list of candidates that sum to the target
+- Each number can be used at much ONE TIME
+"""
 
+
+def combination_sums_2(candidates: List[int], target: int) -> List[List[int]]:
+    """
+    Backtracking:
+    - Avoid visiting the same solutions twice by grouping number
+    - Alternatively, you can skip equal number when ignore the first one
+
+    Possible optimizations:
+    - Sorting the number allows to prune quickly (works)
+    - Keeping a cumulative right sum to prune quickly (almost no effect)
+    """
+
+    cumulative_sum = sum(candidates)
+    if cumulative_sum < target: return []
+    if cumulative_sum == target: return [candidates]
+    candidates = list(sorted(Counter(candidates).items()))
+
+    partial = []
+    solutions = []
+
+    def backtrack(remaining, position):
+        if remaining == 0:
+            solutions.append(list(partial))
+
+        if position == len(candidates):
+            return
+
+        candidate, count = candidates[position]
+        if candidate > remaining:
+            return
+
+        count = min(count, remaining // candidate)
+        partial.extend([candidate] * count)
+        while count >= 0:
+            backtrack(remaining - candidate * count, position + 1)
+            if count > 0:
+                partial.pop()
+            count -= 1
+
+    backtrack(target, 0)
+    return solutions
 
