@@ -69,7 +69,7 @@ Generate all combination of valid parenthesis for size N
 """
 
 
-def generateParenthesis(self, n: int) -> List[int]:
+def generateParenthesis(n: int) -> List[int]:
     """
     The first challenge here is to generate each combination once and just once
 
@@ -137,6 +137,16 @@ Solve the minimum vertex coloring problem:
 
 
 # TODO
+
+
+"""
+Who wins?
+"""
+
+
+# TODO - game https://leetcode.com/problems/nim-game/
+# TODO - game https://leetcode.com/problems/can-i-win/
+# TODO - game https://leetcode.com/problems/predict-the-winner/
 
 
 """
