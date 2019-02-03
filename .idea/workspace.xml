@@ -2,10 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/two_pointers/Exercises.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/two_pointers/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/stack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/stack/Exercises.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backtrack/Exercises.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/Exercises.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -24,10 +21,13 @@
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
       <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/two_pointers/Exercises.py">
+        <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="148">
-              <caret line="78" column="3" lean-forward="true" selection-start-line="78" selection-start-column="3" selection-end-line="78" selection-end-column="3" />
+            <state relative-caret-position="369">
+              <caret line="306" column="10" selection-start-line="306" selection-start-column="10" selection-end-line="306" selection-end-column="10" />
+              <folding>
+                <element signature="e#0#31#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -81,10 +81,10 @@
         <option value="$PROJECT_DIR$/backtrack/ExercisesTest.py" />
         <option value="$PROJECT_DIR$/divide/ExercisesTest.py" />
         <option value="$PROJECT_DIR$/divide/Exercises.py" />
-        <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
         <option value="$PROJECT_DIR$/stack/Exercises.py" />
         <option value="$PROJECT_DIR$/optim.py" />
         <option value="$PROJECT_DIR$/two_pointers/Exercises.py" />
+        <option value="$PROJECT_DIR$/backtrack/Exercises.py" />
       </list>
     </option>
   </component>
@@ -587,16 +587,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="169">
-          <caret line="76" column="3" lean-forward="true" selection-start-line="76" selection-start-column="3" selection-end-line="76" selection-end-column="3" />
-          <folding>
-            <element signature="e#0#31#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/stack/Exercises.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="84">
@@ -606,8 +596,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/two_pointers/Exercises.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="148">
-          <caret line="78" column="3" lean-forward="true" selection-start-line="78" selection-start-column="3" selection-end-line="78" selection-end-column="3" />
+        <state relative-caret-position="312">
+          <caret line="116" column="28" lean-forward="true" selection-start-line="116" selection-start-column="28" selection-end-line="116" selection-end-column="28" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/backtrack/Exercises.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="369">
+          <caret line="306" column="10" selection-start-line="306" selection-start-column="10" selection-end-line="306" selection-end-column="10" />
+          <folding>
+            <element signature="e#0#31#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

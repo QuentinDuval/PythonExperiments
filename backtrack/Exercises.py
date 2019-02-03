@@ -225,3 +225,86 @@ def count_change(coins, amount):
         for remaining in range(coin, amount + 1):
             memo[remaining] += memo[remaining - coin]
     return memo[-1]
+
+
+
+"""
+"""
+
+
+def combination_sum(candidates: List[int], target: int) -> List[List[int]]:
+    """
+    This is quite similar to the coin change problem:
+    How to exchange a given amount of money with the provided coins
+
+    The key aspect is to avoid double counting:
+    Consider the candidates in order to avoid having [2,2,3] and [2,3,2] for instance
+
+    Optimizations:
+    - Sorting the candidates allows to prune early, so it is a good bargain
+    - Memoization is not that useful (sub-solutions will be duplicated in terms of memory anyway)
+    => This is what makes it a backtracking problem more than a dynamic programming problem
+    """
+    candidates.sort()
+
+    partial = []
+    solutions = []
+
+    def backtrack(remaining, position):
+        if remaining == 0:
+            solutions.append(list(partial))
+
+        if position >= len(candidates):
+            return
+
+        q, r = divmod(remaining, candidates[position])
+        if q == 0:
+            return
+
+        partial.extend([candidates[position]] * q)
+
+        while True:
+            backtrack(r, position + 1)
+            r += candidates[position]
+            q -= 1
+            if q >= 0:
+                partial.pop()
+            else:
+                break
+
+    backtrack(remaining=target, position=0)
+    return solutions
+
+    """
+    Equivalent implementation (perhaps less obvious for the non duplication of candidates)
+    """
+
+    '''
+    candidates.sort()
+    partial = []
+
+    def visit(start_candidate, target):
+        if target == 0:
+            yield list(partial)
+            return
+
+        for i in range(start_candidate, len(candidates)):
+            c = candidates[i]
+            if c > target:
+                break
+
+            partial.append(c)
+            yield from visit(start_candidate=i, target - c)
+            partial.pop()
+
+    return list(visit(0, target))
+    '''
+
+    """
+    Try with memoization
+    """
+
+    # TODO
+
+
+
