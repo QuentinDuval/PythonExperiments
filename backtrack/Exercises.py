@@ -307,4 +307,69 @@ def combination_sum(candidates: List[int], target: int) -> List[List[int]]:
     # TODO
 
 
+"""
+Generate parenthesis: https://leetcode.com/problems/generate-parentheses/
+Generate all combination of valid parenthesis for size N
+"""
+
+
+def generateParenthesis(self, n: int) -> List[int]:
+    """
+    The first challenge here is to generate each combination once and just once
+
+    The second challenge is to reuse sub-problems (memoization) also it is less
+    useful (because the solutions will be copied for each combinations anyway)
+
+    One way to generate unique pair is to rely on the recurrence of catalan numbers.
+    To solve the problem for N, named G(N):
+    - Solve the problem for G(K) and wrap it in parentheses
+    - Solve the problem for G(N-1-K) (do not wrap it)
+    - Combine these sub-problems for each K in 1..N-1
+
+    This can be seen as:
+    1) Choosing when to close the parenthesis we first opened
+    2) Recurring on each side of this parenthesis
+
+    BEWARE: if you just recurse for K and N-K and not wrap parenthesis, you just
+    double count solutions such as ()()().
+    """
+
+    '''
+    def backtrack(n):
+        if n == 0: return [""]
+        
+        solutions = []
+        for k in range(0,n):
+            for left in backtrack(k):
+                for right in backtrack(n-1-k):
+                    solutions.append("(" + left + ")" + right)
+        return solutions
+    return backtrack(n)
+    '''
+
+    """
+    The second way to generate all combinations just once is to do
+    a backtracking based on keeping a count of open and closed parenthesis
+    """
+    partial = []
+    solutions = []
+
+    def backtrack(opened, closed):
+        if opened == n:
+            solutions.append("".join(partial) + ")" * (opened - closed))
+            return
+
+        partial.append("(")
+        backtrack(opened+1, closed)
+        partial.pop()
+
+        if closed < opened:
+            partial.append(")")
+            backtrack(opened, closed+1)
+            partial.pop()
+
+    backtrack(0, 0)
+    return solutions
+
+
 
