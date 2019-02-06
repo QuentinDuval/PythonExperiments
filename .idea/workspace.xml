@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="DP">
-      <change afterPath="$PROJECT_DIR$/dp/ShortestSupersequence.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/dp/ShortestSuperstringNPHard.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stocks/StockPrices.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/stocks/__init__.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -73,11 +72,20 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dp/ShortestSupersequence.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="15">
               <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/stocks/StockPrices.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state>
+              <caret column="9" selection-start-column="9" selection-end-column="9" />
             </state>
           </provider>
         </entry>
@@ -140,6 +148,7 @@
         <option value="$PROJECT_DIR$/dp/TrappingWater.py" />
         <option value="$PROJECT_DIR$/dp/ShortestSuperstringNPHard.py" />
         <option value="$PROJECT_DIR$/dp/ShortestSupersequence.py" />
+        <option value="$PROJECT_DIR$/stocks/StockPrices.py" />
       </list>
     </option>
   </component>
@@ -191,6 +200,11 @@
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="stack" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="stocks" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
@@ -707,6 +721,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="15">
           <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/stocks/StockPrices.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state>
+          <caret column="9" selection-start-column="9" selection-end-column="9" />
         </state>
       </provider>
     </entry>
