@@ -13,7 +13,6 @@ def trap_water(heights: List[int]) -> int:
     Then for each point, just compute the difference between the minimum
     between these heights and the current height
     """
-
     def cumulative_heights(heights):
         cum = []
         prev = 0
@@ -23,9 +22,11 @@ def trap_water(heights: List[int]) -> int:
         return cum
 
     l_heights = cumulative_heights(heights)
-    r_heights = cumulative_heights(reversed(heights))[::-1]
 
     trapped = 0
-    for i, h in enumerate(heights):
-        trapped += min(l_heights[i], r_heights[i]) - h
+    max_right = 0
+    for i in reversed(range(len(heights))):
+        h = heights[i]
+        max_right = max(max_right, h)
+        trapped += min(l_heights[i], max_right) - h
     return trapped
