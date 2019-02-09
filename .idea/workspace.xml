@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
-      <change beforePath="$PROJECT_DIR$/stocks/StockPrices.py" beforeDir="false" afterPath="$PROJECT_DIR$/stocks/StockPrices.py" afterDir="false" />
-    </list>
+    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings" />
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -50,8 +48,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/stocks/StockPrices.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="73" column="3" lean-forward="true" selection-start-line="73" selection-start-column="3" selection-end-line="73" selection-end-column="3" />
+            <state relative-caret-position="-272">
+              <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="67" selection-end-column="32" />
             </state>
           </provider>
         </entry>
@@ -473,7 +471,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="19" y="42" width="1400" height="757" extended-state="0" />
-    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24945612" />
       <window_info id="Structure" order="1" weight="0.25" />
@@ -821,8 +818,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/stocks/StockPrices.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="73" column="3" lean-forward="true" selection-start-line="73" selection-start-column="3" selection-end-line="73" selection-end-column="3" />
+        <state relative-caret-position="-272">
+          <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="67" selection-end-column="32" />
         </state>
       </provider>
     </entry>
