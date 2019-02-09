@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings" />
+    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
+      <change beforePath="$PROJECT_DIR$/linked/Cycle.py" beforeDir="false" afterPath="$PROJECT_DIR$/linked/Cycle.py" afterDir="false" />
+    </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -28,15 +30,6 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/dp/LongestSubsequence.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="391">
-              <caret line="29" selection-start-line="29" selection-end-line="29" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/dp/ShortestSupersequence.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="15">
@@ -45,11 +38,20 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/stocks/StockPrices.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="-272">
               <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="67" selection-end-column="32" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/linked/Cycle.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-651">
+              <caret line="20" column="23" lean-forward="true" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
             </state>
           </provider>
         </entry>
@@ -176,6 +178,7 @@
         <option value="$PROJECT_DIR$/dp/ValidParenthesisWithWildcards.py" />
         <option value="$PROJECT_DIR$/dp/InterleavingStrings.py" />
         <option value="$PROJECT_DIR$/stocks/StockPrices.py" />
+        <option value="$PROJECT_DIR$/linked/Cycle.py" />
       </list>
     </option>
   </component>
@@ -227,6 +230,11 @@
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
               <item name="Experiments" type="462c0819:PsiDirectoryNode" />
               <item name="graphs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
+              <item name="Experiments" type="462c0819:PsiDirectoryNode" />
+              <item name="linked" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
               <item name="Experiments" type="b2602c69:ProjectViewProjectNode" />
@@ -471,6 +479,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="19" y="42" width="1400" height="757" extended-state="0" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.24945612" />
       <window_info id="Structure" order="1" weight="0.25" />
@@ -507,7 +516,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Substrings" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file:///usr/local/Cellar/python/3.7.1/Frameworks/Python.framework/Versions/3.7/lib/python3.7/collections/__init__.py" />
     <entry file="file://$PROJECT_DIR$/NLP.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-94">
@@ -820,6 +828,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-272">
           <caret line="20" column="4" selection-start-line="20" selection-start-column="4" selection-end-line="67" selection-end-column="32" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/linked/Cycle.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-651">
+          <caret line="20" column="23" lean-forward="true" selection-start-line="20" selection-start-column="23" selection-end-line="20" selection-end-column="23" />
         </state>
       </provider>
     </entry>
