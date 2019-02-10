@@ -19,7 +19,12 @@ def minMoves2(nums: List[int]) -> int:
     [1,3,4,4] => median is 3 or 4... both cases lead to 4, the correct answer
     [1,2,4,4] => median is 2 or 4... both cases load to 5, the correct answer
 
-    It actually works, with both lower and upper median!
+    It actually works, with both lower and upper median.
+    Why?
+    - The median partitions on both sides to be in equal number
+    - Moving the median left increases the counts on the right elements
+    - Moving the median right increases the counts on the left elements
+    - The median is the only place where the 'derivative' is 0.
     """
     if len(nums) < 1:
         return 0

@@ -40,7 +40,7 @@ def connect(root: TreeLinkNode):
                 if right.next:
                     break
                 right_parent = right_parent.next
-        
+
         # Depth first search
         if node.left:
             toVisit.append(node.left)
