@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
-      <change afterPath="$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/arrays/WordBreak.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
@@ -39,11 +39,23 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="870">
-              <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
+            <state relative-caret-position="249">
+              <caret line="91" column="17" lean-forward="true" selection-start-line="66" selection-end-line="91" selection-end-column="17" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/arrays/WordBreak.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="165">
+              <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
+              <folding>
+                <element signature="e#0#4#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -70,7 +82,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/Fibo.py" />
         <option value="$PROJECT_DIR$/Yiedling.py" />
         <option value="$PROJECT_DIR$/IntegerBreak.py" />
         <option value="$PROJECT_DIR$/MultiplySparseVectors.py" />
@@ -121,6 +132,7 @@
         <option value="$PROJECT_DIR$/arrays/LongestContinuousSequenceHard.py" />
         <option value="$PROJECT_DIR$/arrays/MinimumMoves.py" />
         <option value="$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py" />
+        <option value="$PROJECT_DIR$/arrays/WordBreak.py" />
       </list>
     </option>
   </component>
@@ -463,7 +475,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Substrings" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file:///usr/local/lib/python3.7/site-packages/simpy/resources/store.py" />
     <entry file="file://$USER_HOME$/Library/Caches/PyCharm2016.2/python_stubs/1437855905/itertools.py" />
     <entry file="file://$PROJECT_DIR$/Simulation.py">
       <provider selected="true" editor-type-id="text-editor">
@@ -783,8 +794,18 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="870">
-          <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
+        <state relative-caret-position="249">
+          <caret line="91" column="17" lean-forward="true" selection-start-line="66" selection-end-line="91" selection-end-column="17" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/arrays/WordBreak.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="165">
+          <caret line="11" lean-forward="true" selection-start-line="11" selection-end-line="11" />
+          <folding>
+            <element signature="e#0#4#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
