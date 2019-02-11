@@ -2,10 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
-      <change afterPath="$PROJECT_DIR$/arrays/LongestContinuousSequenceHard.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/arrays/MinimumMoves.py" beforeDir="false" afterPath="$PROJECT_DIR$/arrays/MinimumMoves.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/binary_tree/ConnectNextPointer.py" beforeDir="false" afterPath="$PROJECT_DIR$/binary_tree/ConnectNextPointer.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -32,11 +30,20 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/arrays/MinimumMoves.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="294">
-              <caret line="26" column="62" selection-start-line="26" selection-start-column="62" selection-end-line="26" selection-end-column="62" />
+            <state relative-caret-position="249">
+              <caret line="23" column="63" lean-forward="true" selection-start-line="23" selection-start-column="63" selection-end-line="23" selection-end-column="63" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="870">
+              <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -113,6 +120,7 @@
         <option value="$PROJECT_DIR$/binary_tree/ConnectNextPointer.py" />
         <option value="$PROJECT_DIR$/arrays/LongestContinuousSequenceHard.py" />
         <option value="$PROJECT_DIR$/arrays/MinimumMoves.py" />
+        <option value="$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py" />
       </list>
     </option>
   </component>
@@ -455,13 +463,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Substrings" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/NLPFastText.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="388">
-          <caret line="29" column="46" selection-start-line="29" selection-start-column="46" selection-end-line="29" selection-end-column="46" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file:///usr/local/lib/python3.7/site-packages/simpy/resources/store.py" />
     <entry file="file://$USER_HOME$/Library/Caches/PyCharm2016.2/python_stubs/1437855905/itertools.py" />
     <entry file="file://$PROJECT_DIR$/Simulation.py">
@@ -775,8 +776,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/arrays/MinimumMoves.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="294">
-          <caret line="26" column="62" selection-start-line="26" selection-start-column="62" selection-end-line="26" selection-end-column="62" />
+        <state relative-caret-position="249">
+          <caret line="23" column="63" lean-forward="true" selection-start-line="23" selection-start-column="63" selection-end-line="23" selection-end-column="63" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="870">
+          <caret line="58" column="25" lean-forward="true" selection-start-line="58" selection-start-column="25" selection-end-line="58" selection-end-column="25" />
         </state>
       </provider>
     </entry>
