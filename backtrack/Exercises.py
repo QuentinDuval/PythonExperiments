@@ -129,6 +129,14 @@ def generateParenthesis(n: int) -> List[int]:
 
 
 """
+Generate all parenthesisation of an arithmetic expression
+"""
+
+
+# TODO
+
+
+"""
 Exercise 7.10 of "The algorithm design manual"
 Solve the minimum vertex coloring problem:
 - Return the minimum number of colors needed to color each vertex
