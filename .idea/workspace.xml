@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
-      <change beforePath="$PROJECT_DIR$/backtrack/ScrambleStrings.py" beforeDir="false" afterPath="$PROJECT_DIR$/backtrack/ScrambleStrings.py" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/backtrack/TargetSum.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -19,12 +19,12 @@
     <session id="-839036985">
       <usages-collector id="statistics.file.extensions.open">
         <counts>
-          <entry key="py" value="1" />
+          <entry key="py" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.open">
         <counts>
-          <entry key="Python" value="1" />
+          <entry key="Python" value="2" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
@@ -116,7 +116,7 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/backtrack/ScrambleStrings.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="175">
@@ -124,6 +124,15 @@
               <folding>
                 <element signature="e#0#31#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/backtrack/TargetSum.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="153">
+              <caret line="9" column="42" lean-forward="true" selection-start-line="9" selection-start-column="42" selection-end-line="9" selection-end-column="42" />
             </state>
           </provider>
         </entry>
@@ -155,7 +164,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/IntegerBreak.py" />
         <option value="$PROJECT_DIR$/MultiplySparseVectors.py" />
         <option value="$PROJECT_DIR$/CoolTricks.py" />
         <option value="$PROJECT_DIR$/NLP.py" />
@@ -206,6 +214,7 @@
         <option value="$PROJECT_DIR$/arrays/QueueReconstructionByHeight.py" />
         <option value="$PROJECT_DIR$/arrays/WordBreak.py" />
         <option value="$PROJECT_DIR$/backtrack/ScrambleStrings.py" />
+        <option value="$PROJECT_DIR$/backtrack/TargetSum.py" />
       </list>
     </option>
   </component>
@@ -508,13 +517,6 @@
     <option name="LAST_COMMIT_MESSAGE" value="Substrings" />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/Simulation.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="331">
-          <caret line="43" column="15" selection-start-line="43" selection-start-column="15" selection-end-line="43" selection-end-column="52" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/CoolTricks.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="93">
@@ -835,6 +837,13 @@
           <folding>
             <element signature="e#0#31#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/backtrack/TargetSum.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="153">
+          <caret line="9" column="42" lean-forward="true" selection-start-line="9" selection-start-column="42" selection-end-line="9" selection-end-column="42" />
         </state>
       </provider>
     </entry>
