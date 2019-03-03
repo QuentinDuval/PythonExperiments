@@ -3,9 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import random
+from torch.utils.data import DataLoader
 import matplotlib.pyplot as plot
+
+from dl.SplitDataset import *
 
 
 class LinearRegression(nn.Module):
@@ -46,28 +47,7 @@ class MultiLayerRegression(nn.Module):
         return self.fc(x)
 
 
-class RegressionDataset(Dataset):
-    def __init__(self, xs, ys):
-        self.xs = xs
-        self.ys = ys
-
-    def __len__(self):
-        return len(self.xs)
-
-    def __getitem__(self, item):
-        return self.xs[item], self.ys[item]
-
-    def split(self, ratio: float):
-        indices = list(range(len(self)))
-        split_point = int(ratio * len(indices))
-        random.shuffle(indices)
-        lhs, rhs = indices[:split_point], indices[split_point:]
-        lhs_xs, rhs_xs = [self.xs[i] for i in lhs], [self.xs[i] for i in rhs]
-        lhs_ys, rhs_ys = [self.ys[i] for i in lhs], [self.ys[i] for i in rhs]
-        return RegressionDataset(lhs_xs, lhs_ys), RegressionDataset(rhs_xs, rhs_ys)
-
-
-def fit_regression(model: nn.Module, data_set: RegressionDataset, epoch, learning_rate):
+def fit_regression(model: nn.Module, data_set: SplitDataset, epoch, learning_rate):
     loss_fct = nn.MSELoss()
     optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
 
@@ -111,7 +91,7 @@ def test_linear(f):
 
     inputs = np.array([[np.random.uniform(-5, 5)] for _ in range(200)], dtype=np.float32)
     outputs = np.array([f(x) for x in inputs], dtype=np.float32)
-    fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
+    fit_regression(model, data_set=SplitDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
 
     print("Linear weights:", model.fc.weight.data)
     print("Linear bias:", model.fc.bias.data)
@@ -130,7 +110,7 @@ def test_feed_forward(f):
 
     inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
     outputs = np.array([f(x) for x in inputs], dtype=np.float32)
-    fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
+    fit_regression(model, data_set=SplitDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
 
     xs = np.arange(-20.0, 20.0, .2)
     ys = np.array([predict_regression(model, x) for x in xs])
