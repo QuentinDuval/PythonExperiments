@@ -124,7 +124,7 @@ def test_linear(f):
     plot.show()
 
 
-def test_quadratic(f):
+def test_feed_forward(f):
     model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
     # model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
 
@@ -141,7 +141,11 @@ def test_quadratic(f):
 
 
 # test_linear(lambda x: x+1)
-# test_quadratic(lambda x: x**3 + 5 * x**2 + 10*x + 5)
+# test_feed_forward(lambda x: x**3 + 5 * x**2 + 10*x + 5 + np.random.uniform(-1000, 1000))
+# test_feed_forward(lambda x: 20 + np.random.uniform(-10, 10))
+# test_feed_forward(lambda x: x + np.random.uniform(-x, x))
+
+# TODO - feed it with inputs from outside
 # TODO - show that it is still easier to go for sklearn polynomial regression
 
 
