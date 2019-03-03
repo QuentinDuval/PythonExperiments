@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Substrings">
+    <list default="true" id="97a27f1b-deb6-428d-a749-c348cdf1e1bb" name="Default" comment="Showing how regression with Deep Learning fails outside of the bounds">
       <change beforePath="$PROJECT_DIR$/dl/Regression.py" beforeDir="false" afterPath="$PROJECT_DIR$/dl/Regression.py" afterDir="false" />
     </list>
     <ignored path="Experiments.iws" />
@@ -23,8 +23,8 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/dl/Regression.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="199">
-              <caret line="119" column="30" selection-start-line="119" selection-start-column="30" selection-end-line="119" selection-end-column="30" />
+            <state relative-caret-position="172">
+              <caret line="127" column="48" selection-start-line="127" selection-start-column="48" selection-end-line="127" selection-end-column="48" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -423,7 +423,8 @@
     <MESSAGE value="Balloons" />
     <MESSAGE value="Rand" />
     <MESSAGE value="Substrings" />
-    <option name="LAST_COMMIT_MESSAGE" value="Substrings" />
+    <MESSAGE value="Showing how regression with Deep Learning fails outside of the bounds" />
+    <option name="LAST_COMMIT_MESSAGE" value="Showing how regression with Deep Learning fails outside of the bounds" />
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/dictionaries/tries.py">
@@ -791,8 +792,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/dl/Regression.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="199">
-          <caret line="119" column="30" selection-start-line="119" selection-start-column="30" selection-end-line="119" selection-end-column="30" />
+        <state relative-caret-position="172">
+          <caret line="127" column="48" selection-start-line="127" selection-start-column="48" selection-end-line="127" selection-end-column="48" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>

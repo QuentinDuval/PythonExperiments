@@ -18,7 +18,7 @@ class LinearRegression(nn.Module):
         return x
 
 
-class MultilayerRegression(nn.Module):
+class TwoLayerRegression(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(in_features=input_size, out_features=hidden_size)
@@ -29,6 +29,21 @@ class MultilayerRegression(nn.Module):
         x = fn.relu(x)
         x = self.fc2(x)
         return x
+
+
+class MultiLayerRegression(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
+
+    def forward(self, x):
+        return self.fc(x)
 
 
 class RegressionDataset(Dataset):
@@ -107,7 +122,8 @@ def test_linear():
 
 
 def test_quadratic():
-    model = MultilayerRegression(input_size=1, hidden_size=20, output_size=1)
+    model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
+    # model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
 
     inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
     outputs = np.array([x*x for x in inputs], dtype=np.float32)
