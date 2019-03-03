@@ -135,6 +135,7 @@ def test_feed_forward(f):
     xs = np.arange(-20.0, 20.0, .2)
     ys = np.array([predict_regression(model, x) for x in xs])
     real_ys = np.array([f(x) for x in xs])
+    plot.plot(inputs, outputs, 'g.')
     plot.plot(xs, ys, 'ro')
     plot.plot(xs, real_ys, 'b.')
     plot.show()
