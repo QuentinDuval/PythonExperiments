@@ -1,9 +1,11 @@
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as fn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader
 import random
+import matplotlib.pyplot as plot
 
 
 class LinearRegression(nn.Module):
@@ -13,6 +15,19 @@ class LinearRegression(nn.Module):
 
     def forward(self, x):
         x = self.fc(x)
+        return x
+
+
+class MultilayerRegression(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(in_features=input_size, out_features=hidden_size)
+        self.fc2 = nn.Linear(in_features=hidden_size, out_features=output_size)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = fn.relu(x)
+        x = self.fc2(x)
         return x
 
 
@@ -73,10 +88,10 @@ def fit_regression(model: nn.Module, data_set: RegressionDataset, epoch, learnin
 def predict_regression(model: nn.Module, number: float):
     input = torch.FloatTensor([[number]])
     output = model(input)
-    print(output.item())
+    return output.item()
 
 
-def test():
+def test_linear():
     model = LinearRegression(input_size=1, output_size=1)
 
     inputs = np.array([[np.random.uniform(-5, 5)] for _ in range(200)], dtype=np.float32)
@@ -88,10 +103,26 @@ def test():
 
     while True:
         i = int(input("number"))
-        predict_regression(model, i)
+        print(predict_regression(model, i))
 
 
-test()
+def test_quadratic():
+    model = MultilayerRegression(input_size=1, hidden_size=20, output_size=1)
+
+    inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
+    outputs = np.array([x*x for x in inputs], dtype=np.float32)
+    fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
+
+    xs = np.arange(-20.0, 20.0, .2)
+    ys = np.array([predict_regression(model, x) for x in xs])
+    real_ys = np.array([x ** 2 for x in xs])
+    plot.plot(xs, ys, 'ro')
+    plot.plot(xs, real_ys, 'b.')
+    plot.show()
+
+
+# test_linear()
+test_quadratic()
 
 
 
