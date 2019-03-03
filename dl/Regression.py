@@ -106,39 +106,43 @@ def predict_regression(model: nn.Module, number: float):
     return output.item()
 
 
-def test_linear():
+def test_linear(f):
     model = LinearRegression(input_size=1, output_size=1)
 
     inputs = np.array([[np.random.uniform(-5, 5)] for _ in range(200)], dtype=np.float32)
-    outputs = np.array([x+1 for x in inputs], dtype=np.float32)
+    outputs = np.array([f(x) for x in inputs], dtype=np.float32)
     fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
 
     print("Linear weights:", model.fc.weight.data)
     print("Linear bias:", model.fc.bias.data)
 
-    while True:
-        i = int(input("number"))
-        print(predict_regression(model, i))
-
-
-def test_quadratic():
-    model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
-    # model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
-
-    inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
-    outputs = np.array([x*x for x in inputs], dtype=np.float32)
-    fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
-
     xs = np.arange(-20.0, 20.0, .2)
     ys = np.array([predict_regression(model, x) for x in xs])
-    real_ys = np.array([x ** 2 for x in xs])
+    real_ys = np.array([f(x) for x in xs])
     plot.plot(xs, ys, 'ro')
     plot.plot(xs, real_ys, 'b.')
     plot.show()
 
 
-# test_linear()
-test_quadratic()
+def test_quadratic(f):
+    model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
+    # model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
+
+    inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
+    outputs = np.array([f(x) for x in inputs], dtype=np.float32)
+    fit_regression(model, data_set=RegressionDataset(inputs, outputs), epoch=200, learning_rate=1e-1)
+
+    xs = np.arange(-20.0, 20.0, .2)
+    ys = np.array([predict_regression(model, x) for x in xs])
+    real_ys = np.array([f(x) for x in xs])
+    plot.plot(xs, ys, 'ro')
+    plot.plot(xs, real_ys, 'b.')
+    plot.show()
+
+
+# test_linear(lambda x: x+1)
+# test_quadratic(lambda x: x**3 + 5 * x**2 + 10*x + 5)
+# TODO - show that it is still easier to go for sklearn polynomial regression
 
 
 
