@@ -1,3 +1,4 @@
+from collections import defaultdict
 import copy
 import matplotlib.pyplot as plot
 import numpy as np
@@ -73,42 +74,46 @@ class ClassificationPredictor:
         return predicted.item()
 
 
-def show_result(points, classif):
-    blue_x = [points[i][0] for i in range(len(classif)) if classif[i] == 1]
-    blue_y = [points[i][1] for i in range(len(classif)) if classif[i] == 1]
-    green_x = [points[i][0] for i in range(len(classif)) if classif[i] == 0]
-    green_y = [points[i][1] for i in range(len(classif)) if classif[i] == 0]
+def show_result(points, expected, predicted):
+    # https://matplotlib.org/api/markers_api.html
+    by_categories_x = defaultdict(list)
+    by_categories_y = defaultdict(list)
+    for i, (x, y) in enumerate(points):
+        if expected[i] != predicted[i]:
+            color = "r"
+        elif expected[i] == 1:
+            color = "b"
+        else:
+            color = "g"
+        marker = '+' if expected[i] == 1 else '_'
+        by_categories_x[(color, marker)].append(x)
+        by_categories_y[(color, marker)].append(y)
 
-    plot.scatter(blue_x, blue_y, c='b')
-    plot.scatter(green_x, green_y, c='g')
+    for (color, marker), xs in by_categories_x.items():
+        ys = by_categories_y[(color, marker)]
+        plot.scatter(xs, ys, c=color, marker=marker)
     plot.show()
 
 
 def test_classif_product_positive():
     points = []
-    classif = []
+    expected = []
     for _ in range(1000):
         x = np.random.uniform(-1, 1)
         y = np.random.uniform(-1, 1)
         points.append(np.array([x, y], dtype=np.float32))
-        classif.append(1 if x * y > 0 else 0)
+        expected.append(1 if x * y > 0 else 0)
     points = np.stack(points)
-    classif = np.stack(classif)
+    expected = np.stack(expected)
 
     model = MultilayerClassifier(input_size=2, hidden_size=10, output_size=2)
     predictor = ClassificationPredictor(model=model)
-    predictor.fit(data_set=SplitDataset(points, classif), epoch=100, learning_rate=0.1)
-
-    '''
-    Show the results :)
-    '''
-
-    # show_result(points, classif)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
     predicted = []
     for p in points:
         predicted.append(predictor.predict(p))
-    show_result(points, predicted)
+    show_result(points, expected, predicted)
 
 
 def test_classif_two_x2():
@@ -131,11 +136,11 @@ def test_classif_two_x2():
     predicted = []
     for p in points:
         predicted.append(predictor.predict(p))
-    show_result(points, predicted)
+    show_result(points, expected, predicted)
 
 
 # test_classif_product_positive()
-# test_classif_two_x2()
+test_classif_two_x2()
 
 
 
