@@ -21,7 +21,7 @@ class LinearClassifier(nn.Module):
         return fn.softmax(x, dim=-1)
 
 
-class MultilayerClassifier(nn.Module):
+class TwoLayerClassifier(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.fc = nn.Sequential(
@@ -131,13 +131,28 @@ def test_classif_circle(model):
     show_result(points, expected, predicted)
 
 
-# test_classif_product_positive(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+def test_classif_circle_border(model):
+    classif = lambda x, y: 1 if 0.8 <= x ** 2 + y ** 2 <= 1.2 else 0
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
+    predicted = [predictor.predict(p) for p in points]
+    show_result(points, expected, predicted)
+
+
+# test_classif_product_positive(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_product_positive(model=LinearClassifier(input_size=2, output_size=2))
 
-# test_classif_two_x2(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_two_x2(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_two_x2(model=LinearClassifier(input_size=2, output_size=2))
 
-# test_classif_circle(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle(model=LinearClassifier(input_size=2, output_size=2))
+
+# test_classif_circle_border(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle_border(model=LinearClassifier(input_size=2, output_size=2))
 
 
