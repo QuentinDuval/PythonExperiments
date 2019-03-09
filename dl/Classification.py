@@ -111,7 +111,31 @@ def test_classif_product_positive():
     show_result(points, predicted)
 
 
-test_classif_product_positive()
+def test_classif_two_x2():
+    points = []
+    expected = []
+
+    for _ in range(2000):
+        x = np.random.uniform(-2, 2)
+        y = np.random.uniform(-1, 3)
+        points.append(np.array([x, y], dtype=np.float32))
+        expected.append(1 if y > x ** 2 else 0)
+
+    points = np.stack(points)
+    expected = np.stack(expected)
+
+    model = MultilayerClassifier(input_size=2, hidden_size=10, output_size=2)
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
+
+    predicted = []
+    for p in points:
+        predicted.append(predictor.predict(p))
+    show_result(points, predicted)
+
+
+# test_classif_product_positive()
+# test_classif_two_x2()
 
 
 
