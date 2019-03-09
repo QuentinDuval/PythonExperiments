@@ -98,9 +98,7 @@ def test_classif_product_positive(model):
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
-    predicted = []
-    for p in points:
-        predicted.append(predictor.predict(p))
+    predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
 
@@ -120,9 +118,7 @@ def test_classif_two_x2(model):
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
-    predicted = []
-    for p in points:
-        predicted.append(predictor.predict(p))
+    predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
 
