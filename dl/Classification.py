@@ -39,9 +39,9 @@ class ClassificationPredictor:
     def __init__(self, model: nn.Module):
         self.model = model
 
-    def fit(self, data_set: SplitDataset, epoch: int, learning_rate: float):
+    def fit(self, data_set: SplitDataset, epoch: int, learning_rate: float, weight_decay: float = 0):
         loss_fct = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(params=self.model.parameters(), lr=learning_rate)
+        optimizer = optim.Adam(params=self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         training_set, validation_set = data_set.split(ratio=0.9)
         training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
         validation_loader = DataLoader(validation_set, batch_size=100, shuffle=False)
@@ -96,29 +96,48 @@ def sample_points(classifier, x_bounds=(-1,1), y_bounds=(-1,1), count=1000):
 
 
 def test_classif_product_positive(model):
-    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0, x_bounds=(-1, 1), y_bounds=(-1, 1), count=2000)
+    classif = lambda x, y: 1 if x * y > 0 else 0
+
+    points, expected = sample_points(classif, x_bounds=(-1, 1), y_bounds=(-1, 1), count=2000)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
-    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0, x_bounds=(-1, 1), y_bounds=(-1, 1), count=400)
+    points, expected = sample_points(classif, x_bounds=(-1, 1), y_bounds=(-1, 1), count=400)
     predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
 
 def test_classif_two_x2(model):
-    points, expected = sample_points(lambda x, y: 1 if y > x * x else 0, x_bounds=(-2, 2), y_bounds=(-1, 3), count=2000)
+    classif = lambda x, y: 1 if y > x * x else 0
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-1, 3), count=2000)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
-    points, expected = sample_points(lambda x, y: 1 if y > x * x else 0, x_bounds=(-2, 2), y_bounds=(-1, 3), count=400)
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-1, 3), count=400)
+    predicted = [predictor.predict(p) for p in points]
+    show_result(points, expected, predicted)
+
+
+def test_classif_circle(model):
+    classif = lambda x, y: 1 if x ** 2 + y ** 2 <= 1 else 0
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
     predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
 
 # test_classif_product_positive(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_product_positive(model=LinearClassifier(input_size=2, output_size=2))
+
 # test_classif_two_x2(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_two_x2(model=LinearClassifier(input_size=2, output_size=2))
 
+# test_classif_circle(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle(model=LinearClassifier(input_size=2, output_size=2))
 
 
