@@ -132,11 +132,17 @@ def test_classif_circle(model):
 
 
 def test_classif_circle_border(model):
-    classif = lambda x, y: 1 if 0.8 <= x ** 2 + y ** 2 <= 1.2 else 0
+    def classif(x, y):
+        norm = x ** 2 + y ** 2
+        if norm <= 0.7:
+            return 0
+        if norm <= 1.3:
+            return 1
+        return 2
 
     points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
     predictor = ClassificationPredictor(model=model)
-    predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=200, learning_rate=0.01)
 
     points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
     predicted = [predictor.predict(p) for p in points]
@@ -152,7 +158,10 @@ def test_classif_circle_border(model):
 # test_classif_circle(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle(model=LinearClassifier(input_size=2, output_size=2))
 
-# test_classif_circle_border(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
-# test_classif_circle_border(model=LinearClassifier(input_size=2, output_size=2))
+# TODO - finish this
+# TODO - it should be able to classify this without having to resort to 3 classes
+# TODO (since it is able to do out-circle, in-circle, and that it is just a IF
+# test_classif_circle_border(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=3))
+# test_classif_circle_border(model=LinearClassifier(input_size=2, output_size=3))
 
 
