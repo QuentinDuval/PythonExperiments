@@ -1,6 +1,5 @@
-from collections import defaultdict
 import copy
-import matplotlib.pyplot as plot
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,6 +7,7 @@ import torch.nn.functional as fn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 
+from dl.ClassificationVisualization import *
 from dl.SplitDataset import *
 
 
@@ -82,27 +82,6 @@ class ClassificationPredictor:
         y = self.model(x)
         _, predicted = torch.max(y, 1)
         return predicted.item()
-
-
-def show_result(points, expected, predicted):
-    # https://matplotlib.org/api/markers_api.html
-    by_categories_x = defaultdict(list)
-    by_categories_y = defaultdict(list)
-    for i, (x, y) in enumerate(points):
-        if expected[i] != predicted[i]:
-            color = "r"
-        elif expected[i] == 1:
-            color = "b"
-        else:
-            color = "g"
-        marker = '+' if predicted[i] == 1 else '_'
-        by_categories_x[(color, marker)].append(x)
-        by_categories_y[(color, marker)].append(y)
-
-    for (color, marker), xs in by_categories_x.items():
-        ys = by_categories_y[(color, marker)]
-        plot.scatter(xs, ys, c=color, marker=marker)
-    plot.show()
 
 
 def test_classif_product_positive(model):
