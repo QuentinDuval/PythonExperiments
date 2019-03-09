@@ -1,11 +1,11 @@
+import copy
+import matplotlib.pyplot as plot
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader
-import random
-import matplotlib.pyplot as plot
+from torch.utils.data import DataLoader
 
 from dl.SplitDataset import *
 
@@ -35,6 +35,9 @@ class ClassificationPredictor:
         training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
         validation_loader = DataLoader(validation_set, batch_size=100, shuffle=False)
 
+        best_model = copy.deepcopy(self.model)
+        best_validation = float('inf')
+
         for epoch in range(epoch):
 
             training_loss = 0
@@ -54,8 +57,14 @@ class ClassificationPredictor:
                 loss = loss_fct(outputs, target)
                 validation_loss += loss.item()
 
+            if validation_loss < best_validation:
+                best_validation = validation_loss
+                best_model = copy.deepcopy(self.model)
+
             print("Training:", training_loss)
             print("Validation:", validation_loss)
+
+        self.model = best_model
 
     def predict(self, x):
         x = torch.FloatTensor([x])
