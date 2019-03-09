@@ -96,27 +96,21 @@ def sample_points(classifier, x_bounds=(-1,1), y_bounds=(-1,1), count=1000):
 
 
 def test_classif_product_positive(model):
-    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0,
-                                     x_bounds=(-1, 1),
-                                     y_bounds=(-1, 1),
-                                     count=1000)
-
+    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0, x_bounds=(-1, 1), y_bounds=(-1, 1), count=2000)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
+    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0, x_bounds=(-1, 1), y_bounds=(-1, 1), count=400)
     predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
 
 def test_classif_two_x2(model):
-    points, expected = sample_points(lambda x, y: 1 if y > x ** 2 else 0,
-                                     x_bounds=(-2, 2),
-                                     y_bounds=(-1, 3),
-                                     count=1000)
-
+    points, expected = sample_points(lambda x, y: 1 if y > x * x else 0, x_bounds=(-2, 2), y_bounds=(-1, 3), count=2000)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
+    points, expected = sample_points(lambda x, y: 1 if y > x * x else 0, x_bounds=(-2, 2), y_bounds=(-1, 3), count=400)
     predicted = [predictor.predict(p) for p in points]
     show_result(points, expected, predicted)
 
