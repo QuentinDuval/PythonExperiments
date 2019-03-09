@@ -11,6 +11,16 @@ from torch.utils.data import DataLoader
 from dl.SplitDataset import *
 
 
+class LinearClassifier(nn.Module):
+    def __init__(self, input_size, output_size):
+        super().__init__()
+        self.fc = nn.Linear(input_size, output_size)
+
+    def forward(self, x):
+        x = self.fc(x)
+        return fn.softmax(x, dim=-1)
+
+
 class MultilayerClassifier(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
@@ -85,7 +95,7 @@ def show_result(points, expected, predicted):
             color = "b"
         else:
             color = "g"
-        marker = '+' if expected[i] == 1 else '_'
+        marker = '+' if predicted[i] == 1 else '_'
         by_categories_x[(color, marker)].append(x)
         by_categories_y[(color, marker)].append(y)
 
@@ -95,7 +105,7 @@ def show_result(points, expected, predicted):
     plot.show()
 
 
-def test_classif_product_positive():
+def test_classif_product_positive(model):
     points = []
     expected = []
     for _ in range(1000):
@@ -106,7 +116,6 @@ def test_classif_product_positive():
     points = np.stack(points)
     expected = np.stack(expected)
 
-    model = MultilayerClassifier(input_size=2, hidden_size=10, output_size=2)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
@@ -116,7 +125,7 @@ def test_classif_product_positive():
     show_result(points, expected, predicted)
 
 
-def test_classif_two_x2():
+def test_classif_two_x2(model):
     points = []
     expected = []
 
@@ -129,7 +138,6 @@ def test_classif_two_x2():
     points = np.stack(points)
     expected = np.stack(expected)
 
-    model = MultilayerClassifier(input_size=2, hidden_size=10, output_size=2)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
@@ -139,8 +147,10 @@ def test_classif_two_x2():
     show_result(points, expected, predicted)
 
 
-# test_classif_product_positive()
-test_classif_two_x2()
+# test_classif_product_positive(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_product_positive(model=LinearClassifier(input_size=2, output_size=2))
+# test_classif_two_x2(model=MultilayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_two_x2(model=LinearClassifier(input_size=2, output_size=2))
 
 
 
