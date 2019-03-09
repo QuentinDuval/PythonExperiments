@@ -84,16 +84,22 @@ class ClassificationPredictor:
         return predicted.item()
 
 
-def test_classif_product_positive(model):
+def sample_points(classifier, x_bounds=(-1,1), y_bounds=(-1,1), count=1000):
     points = []
     expected = []
-    for _ in range(1000):
-        x = np.random.uniform(-1, 1)
-        y = np.random.uniform(-1, 1)
+    for _ in range(count):
+        x = np.random.uniform(x_bounds[0], x_bounds[1])
+        y = np.random.uniform(y_bounds[0], y_bounds[1])
         points.append(np.array([x, y], dtype=np.float32))
-        expected.append(1 if x * y > 0 else 0)
-    points = np.stack(points)
-    expected = np.stack(expected)
+        expected.append(classifier(x, y))
+    return np.stack(points), np.stack(expected)
+
+
+def test_classif_product_positive(model):
+    points, expected = sample_points(lambda x, y: 1 if x * y > 0 else 0,
+                                     x_bounds=(-1, 1),
+                                     y_bounds=(-1, 1),
+                                     count=1000)
 
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
@@ -103,17 +109,10 @@ def test_classif_product_positive(model):
 
 
 def test_classif_two_x2(model):
-    points = []
-    expected = []
-
-    for _ in range(2000):
-        x = np.random.uniform(-2, 2)
-        y = np.random.uniform(-1, 3)
-        points.append(np.array([x, y], dtype=np.float32))
-        expected.append(1 if y > x ** 2 else 0)
-
-    points = np.stack(points)
-    expected = np.stack(expected)
+    points, expected = sample_points(lambda x, y: 1 if y > x ** 2 else 0,
+                                     x_bounds=(-2, 2),
+                                     y_bounds=(-1, 3),
+                                     count=1000)
 
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
