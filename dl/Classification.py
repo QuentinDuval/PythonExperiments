@@ -24,10 +24,13 @@ class MultilayerClassifier(nn.Module):
         return fn.softmax(x, dim=-1)
 
 
-def fit_classification(model: nn.Module, data_set: SplitDataset, epoch: int, learning_rate: float):
-        loss_fct = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(params=model.parameters(), lr=learning_rate)
+class ClassificationPredictor:
+    def __init__(self, model: nn.Module):
+        self.model = model
 
+    def fit(self, data_set: SplitDataset, epoch: int, learning_rate: float):
+        loss_fct = nn.CrossEntropyLoss()
+        optimizer = optim.Adam(params=self.model.parameters(), lr=learning_rate)
         training_set, validation_set = data_set.split(ratio=0.9)
         training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
         validation_loader = DataLoader(validation_set, batch_size=100, shuffle=False)
@@ -35,9 +38,9 @@ def fit_classification(model: nn.Module, data_set: SplitDataset, epoch: int, lea
         for epoch in range(epoch):
 
             training_loss = 0
-            model.train()
+            self.model.train()
             for x, target in training_loader:
-                outputs = model(x)
+                outputs = self.model(x)
                 loss = loss_fct(outputs, target)
                 optimizer.zero_grad()
                 loss.backward()
@@ -45,23 +48,20 @@ def fit_classification(model: nn.Module, data_set: SplitDataset, epoch: int, lea
                 training_loss += loss.item()
 
             validation_loss = 0
-            model.eval()
+            self.model.eval()
             for x, target in validation_loader:
-                outputs = model(x)
+                outputs = self.model(x)
                 loss = loss_fct(outputs, target)
                 validation_loss += loss.item()
 
             print("Training:", training_loss)
             print("Validation:", validation_loss)
 
-        return model
-
-
-def predict_classification(model, point):
-    input = torch.FloatTensor([point])
-    output = model(input)
-    _, predicted = torch.max(output, 1)
-    return predicted.item()
+    def predict(self, x):
+        x = torch.FloatTensor([x])
+        y = self.model(x)
+        _, predicted = torch.max(y, 1)
+        return predicted.item()
 
 
 def show_result(points, classif):
@@ -75,7 +75,7 @@ def show_result(points, classif):
     plot.show()
 
 
-def test_classif():
+def test_classif_product_positive():
     points = []
     classif = []
     for _ in range(1000):
@@ -87,7 +87,8 @@ def test_classif():
     classif = np.stack(classif)
 
     model = MultilayerClassifier(input_size=2, hidden_size=10, output_size=2)
-    fit_classification(model, data_set=SplitDataset(points, classif), epoch=100, learning_rate=0.1)
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set=SplitDataset(points, classif), epoch=100, learning_rate=0.1)
 
     '''
     Show the results :)
@@ -97,12 +98,11 @@ def test_classif():
 
     predicted = []
     for p in points:
-        predicted.append(predict_classification(model, p))
-
+        predicted.append(predictor.predict(p))
     show_result(points, predicted)
 
 
-test_classif()
+test_classif_product_positive()
 
 
 
