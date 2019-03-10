@@ -134,7 +134,7 @@ def test_classif_circle(model):
     show_result(points, expected, predicted)
 
 
-def test_classif_circle_border(model, nb_classes=2, polar_coordinates=False):
+def test_classif_circle_border(model, nb_classes=2, polar=False):
     def classif(x, y):
         norm = x ** 2 + y ** 2
         if norm <= 0.7:
@@ -153,13 +153,13 @@ def test_classif_circle_border(model, nb_classes=2, polar_coordinates=False):
         return np.stack(points)
 
     points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
-    if polar_coordinates:
+    if polar:
         points = to_polars(points)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=200, learning_rate=1e-3)
 
     points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
-    predicted = [predictor.predict(p if not polar_coordinates else to_polar(p)) for p in points]
+    predicted = [predictor.predict(p if not polar else to_polar(p)) for p in points]
     show_result(points, expected, predicted)
 
 
@@ -181,8 +181,9 @@ Recognizing the border is much harder than finding the circle with only 2 classe
 Whereas, 3 classes makes it easy to optimize, and the solution is found easily.
 """
 # test_classif_circle_border(nb_classes=2, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
-# test_classif_circle_border(nb_classes=2, polar_coordinates=True, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle_border(nb_classes=2, polar=True, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle_border(nb_classes=3, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=3))
 # test_classif_circle_border(nb_classes=2, model=LinearClassifier(input_size=2, output_size=2))
+# test_classif_circle_border(nb_classes=2, polar=True, model=LinearClassifier(input_size=2, output_size=2))
 
 
