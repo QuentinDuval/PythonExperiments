@@ -33,10 +33,20 @@ index.build(5)
 
 # index.load('annoy.ann')
 while True:
-    a, b, c = input("query>").split(' ')
-    if a in known_words and b in known_words and c in known_words:
-        a, b, c = [model.get_word_vector(w) for w in [a, b, c]]
-        result = index.get_nns_by_vector(vector=c + (b - a), n=10)
+    query = input("query>").split(' ')
+
+    # analogy query
+    if len(query) == 3:
+        a, b, c = query
+        if a in known_words and b in known_words and c in known_words:
+            a, b, c = [model.get_word_vector(w) for w in [a, b, c]]
+            result = index.get_nns_by_vector(vector=c + (b - a), n=10)
+            print([model.get_words()[word_i] for word_i in result])
+        else:
+            print('unknown words', {a, b, c} - known_words)
+
+    # proximity query
+    elif len(query) == 1:
+        v = model.get_word_vector(query[0])
+        result = index.get_nns_by_vector(vector=v, n=10)
         print([model.get_words()[word_i] for word_i in result])
-    else:
-        print('unknown words', {a, b, c} - known_words)
