@@ -11,6 +11,12 @@ for word in model.get_words():
     embedding = model.get_word_vector(word)
     print(word, word_id, embedding)
 
+print("-" * 50)
+print(model.get_input_matrix())     # The embedding matrix apparently
+print("-" * 50)
+print(model.get_output_matrix())    # No idea what this is
+print("-" * 50)
+
 
 # To query for nearest neighbors
 
