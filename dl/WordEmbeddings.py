@@ -3,7 +3,7 @@ import fastText
 
 # https://fasttext.cc/docs/en/english-vectors.html
 
-embedding_size = 10
+embedding_size = 20
 
 model = fastText.train_unsupervised(input='WordEmbeddingsInput.txt', dim=embedding_size, model='skipgram')
 known_words = set(model.get_words())
