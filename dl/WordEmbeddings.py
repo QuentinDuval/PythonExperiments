@@ -64,6 +64,13 @@ def promixity_queries():
             result = index.get_nns_by_vector(vector=v, n=10)
             print([model.get_words()[word_i] for word_i in result])
 
+        # context query
+        else:
+            context = [model.get_word_vector(w) for w in query]
+            vector = sum(context) / len(context)
+            result = index.get_nns_by_vector(vector=vector, n=10)
+            print([model.get_words()[word_i] for word_i in result])
+
 
 # clean_text()
 # promixity_queries()
