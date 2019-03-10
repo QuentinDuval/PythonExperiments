@@ -162,7 +162,10 @@ def test_classif_circle_border(model, nb_classes=2):
 
 """
 This example is really interesting.
-Recognizing the border is much harder than finding the circle with only 2 classes. It seems much harder to optimize.
+
+Recognizing the border is much harder than finding the circle with only 2 classes.
+- It seems much harder to optimize: the initial condition makes everything (stuck in local minima or not)
+
 Whereas, 3 classes makes it easy to optimize, and the solution is found easily.
 """
 # test_classif_circle_border(nb_classes=2, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
