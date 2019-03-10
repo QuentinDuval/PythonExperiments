@@ -1,6 +1,7 @@
 import copy
-
+import math
 import numpy as np
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
@@ -133,7 +134,7 @@ def test_classif_circle(model):
     show_result(points, expected, predicted)
 
 
-def test_classif_circle_border(model, nb_classes=2):
+def test_classif_circle_border(model, nb_classes=2, polar_coordinates=False):
     def classif(x, y):
         norm = x ** 2 + y ** 2
         if norm <= 0.7:
@@ -142,12 +143,23 @@ def test_classif_circle_border(model, nb_classes=2):
             return 1 % nb_classes
         return 2 % nb_classes
 
-    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
-    predictor = ClassificationPredictor(model=model)
-    predictor.fit(data_set=SplitDataset(points, expected), epoch=200, learning_rate=0.05)
+    def to_polar(point):
+        r = math.sqrt(point[0] ** 2 + point[1] ** 2)
+        t = math.acos(point[0] / r)
+        return np.array([r, t], dtype=np.float32)
+
+    def to_polars(points):
+        points = [to_polar(p) for p in points]
+        return np.stack(points)
 
     points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
-    predicted = [predictor.predict(p) for p in points]
+    if polar_coordinates:
+        points = to_polars(points)
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set=SplitDataset(points, expected), epoch=200, learning_rate=1e-3)
+
+    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-2, 2), count=2000)
+    predicted = [predictor.predict(p if not polar_coordinates else to_polar(p)) for p in points]
     show_result(points, expected, predicted)
 
 
@@ -169,6 +181,7 @@ Recognizing the border is much harder than finding the circle with only 2 classe
 Whereas, 3 classes makes it easy to optimize, and the solution is found easily.
 """
 # test_classif_circle_border(nb_classes=2, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle_border(nb_classes=2, polar_coordinates=True, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle_border(nb_classes=3, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=3))
 # test_classif_circle_border(nb_classes=2, model=LinearClassifier(input_size=2, output_size=2))
 
