@@ -38,8 +38,8 @@ def test_model_3(split_seed=None):
     vocab_len = vectorizer.get_vocabulary_len()
 
     """
-    Training (max): 3902/4244 (91.94156456173421%)
-    Validation (max): 376/472 (79.66101694915254%)
+    Training (max): 3779/4244 (89.04335532516494%)
+    Validation (max): 371/472 (78.60169491525424%)
     ------------------------------
     Accuracy: 75.69955817378498 %
     """
@@ -53,10 +53,12 @@ def test_model_3(split_seed=None):
     '''
 
     """
-    Training (max): 3803/4244 (89.60885956644675%)
-    Validation (max): 373/472 (79.02542372881356%)
+    Training: 4064/4244 (95.75871819038643%)
+    Validation: 355/472 (75.21186440677965%)
+    Training (max): 3711/4244 (87.44109330819981%)
+    Validation (max): 380/472 (80.50847457627118%)
     ------------------------------
-    Accuracy: 75.84683357879234 %
+    Accuracy: 75.25773195876289 %
     """
 
     '''
@@ -67,31 +69,35 @@ def test_model_3(split_seed=None):
     '''
 
     """
-    Training (max): 3647/4244 (85.93308199811499%)
-    Validation (max): 380/472 (80.50847457627118%)
+    Training: 3659/4244 (86.21583411875588%)
+    Validation: 386/472 (81.77966101694916%)
+    Training (max): 3687/4244 (86.875589066918%)
+    Validation (max): 386/472 (81.77966101694916%)
     ------------------------------
-    Accuracy: 76.73048600883654 %
+    Accuracy: 75.40500736377025 %
     """
 
     '''
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=25, nb_classes=4, drop_out=0.5)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=40, nb_classes=4, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=3e-3)
+    predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
-    model.save('models/double_preceptron.model')
+    # model.save('models/double_preceptron.model')
     '''
 
     """
-    Training (max): 3904/4244 (91.98868991517436%)
-    Validation (max): 373/472 (79.02542372881356%)
+    Training: 4079/4244 (96.11215834118755%)
+    Validation: 359/472 (76.0593220338983%)
+    Training (max): 3992/4244 (94.062205466541%)
+    Validation (max): 366/472 (77.54237288135593%)
     ------------------------------
-    Accuracy: 75.69955817378498 %
+    Accuracy: 75.40500736377025 %
     """
 
     '''
     model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-4)
+    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3)
     predictor.evaluate(test_corpus=test_corpus)
     '''
 
@@ -114,9 +120,26 @@ def test_model_3_interactive():
     """
     > quantity was wrong
     fix
-    > add new screen for the collateral agreements
+    > add new screen for collateral agreements
     feat
-    > move CollateralAgreement class to new folder
+    > move CollateralAgreement to folder X
+    refactor
+    > extract computeQuantity from Contract class
+    refactor
+    """
+
+    # TODO - bad results below
+
+    """
+    > memory corruption in MasterAgreement
+    refactor
+    > memory corruption
+    refactor
+    > corruption
+    feat
+    > memory fix
+    fix
+    > memory
     refactor
     """
 
