@@ -39,11 +39,12 @@ class PerceptronModel(nn.Module):
 
 
 class MultiPerceptronModel(nn.Module):
-    def __init__(self, vocabulary_len, hidden_dimension, nb_classes):
+    def __init__(self, vocabulary_len, hidden_dimension, nb_classes, drop_out=0.0):
         super().__init__()
         self.input_dimension = vocabulary_len
         self.hidden_dimension = hidden_dimension
         self.nb_classes = nb_classes
+        self.drop_out_p = drop_out
         self.input_layer = nn.Linear(self.input_dimension, self.hidden_dimension)
         self.output_layer = nn.Linear(self.hidden_dimension, self.nb_classes)
         torch.nn.init.xavier_normal_(self.input_layer.weight)
@@ -51,16 +52,23 @@ class MultiPerceptronModel(nn.Module):
 
     def forward(self, x):
         x = self.input_layer(x)
+        x = self.drop_out(x)
         x = self.output_layer(fn.relu(x))
         return fn.softmax(x, dim=-1)
 
+    def drop_out(self, x):
+        if self.drop_out_p > 0:
+            return fn.dropout(x, p=self.drop_out_p, training=self.training)
+        return x
+
 
 class TriplePerceptronModel(nn.Module):
-    def __init__(self, vocabulary_len, hidden_dimension, nb_classes):
+    def __init__(self, vocabulary_len, hidden_dimension, nb_classes, drop_out=0.0):
         super().__init__()
         self.input_dimension = vocabulary_len
         self.hidden_dimension = hidden_dimension
         self.nb_classes = nb_classes
+        self.drop_out_p = drop_out
         self.input_layer = nn.Linear(self.input_dimension, self.hidden_dimension)
         self.middle_layer = nn.Linear(self.hidden_dimension, self.hidden_dimension)
         self.output_layer = nn.Linear(self.hidden_dimension, self.nb_classes)
@@ -69,9 +77,16 @@ class TriplePerceptronModel(nn.Module):
 
     def forward(self, x):
         x = self.input_layer(x)
+        x = self.drop_out(x)
         x = self.middle_layer(fn.relu(x))
+        x = self.drop_out(x)
         x = self.output_layer(fn.relu(x))
         return fn.softmax(x, dim=-1)
+
+    def drop_out(self, x):
+        if self.drop_out_p > 0:
+            return fn.dropout(x, p=self.drop_out_p, training=self.training)
+        return x
 
 
 """
