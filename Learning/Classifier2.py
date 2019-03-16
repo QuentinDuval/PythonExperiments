@@ -28,24 +28,39 @@ class RegexVectorizer(Vectorizer):
 class PerceptronModel(nn.Module):
     def __init__(self, vocabulary_len, nb_classes):
         super().__init__()
-        self.input_dimension = vocabulary_len
+        self.vocabulary_len = vocabulary_len
         self.nb_classes = nb_classes
-        self.output_layer = nn.Linear(self.input_dimension, self.nb_classes)
+        self.output_layer = nn.Linear(self.vocabulary_len, self.nb_classes)
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x):
         x = self.output_layer(x)
         return fn.softmax(x, dim=-1)
 
+    def save(self, file_name):
+        dump = {
+            'vocabulary_len': self.vocabulary_len,
+            'nb_classes': self.nb_classes,
+            'state_dict': self.state_dict()
+        }
+        torch.save(dump, file_name)
 
-class MultiPerceptronModel(nn.Module):
+    @classmethod
+    def load(cls, file_name):
+        dump = torch.load(file_name)
+        model = cls(vocabulary_len=dump['vocabulary_len'], nb_classes=dump['nb_classes'])
+        model.load_state_dict(dump['state_dict'])
+        return model
+
+
+class DoublePerceptronModel(nn.Module):
     def __init__(self, vocabulary_len, hidden_dimension, nb_classes, drop_out=0.0):
         super().__init__()
-        self.input_dimension = vocabulary_len
+        self.vocabulary_len = vocabulary_len
         self.hidden_dimension = hidden_dimension
         self.nb_classes = nb_classes
         self.drop_out_p = drop_out
-        self.input_layer = nn.Linear(self.input_dimension, self.hidden_dimension)
+        self.input_layer = nn.Linear(self.vocabulary_len, self.hidden_dimension)
         self.output_layer = nn.Linear(self.hidden_dimension, self.nb_classes)
         torch.nn.init.xavier_normal_(self.input_layer.weight)
         torch.nn.init.xavier_normal_(self.output_layer.weight)
@@ -61,15 +76,35 @@ class MultiPerceptronModel(nn.Module):
             return fn.dropout(x, p=self.drop_out_p, training=self.training)
         return x
 
+    def save(self, file_name):
+        dump = {
+            'vocabulary_len': self.vocabulary_len,
+            'hidden_dimension': self.hidden_dimension,
+            'nb_classes': self.nb_classes,
+            'drop_out': self.drop_out_p,
+            'state_dict': self.state_dict()
+        }
+        torch.save(dump, file_name)
+
+    @classmethod
+    def load(cls, file_name):
+        dump = torch.load(file_name)
+        model = cls(vocabulary_len=dump['vocabulary_len'],
+                    hidden_dimension=dump['hidden_dimension'],
+                    nb_classes=dump['nb_classes'],
+                    drop_out=dump['drop_out'])
+        model.load_state_dict(dump['state_dict'])
+        return model
+
 
 class TriplePerceptronModel(nn.Module):
     def __init__(self, vocabulary_len, hidden_dimension, nb_classes, drop_out=0.0):
         super().__init__()
-        self.input_dimension = vocabulary_len
+        self.vocabulary_len = vocabulary_len
         self.hidden_dimension = hidden_dimension
         self.nb_classes = nb_classes
         self.drop_out_p = drop_out
-        self.input_layer = nn.Linear(self.input_dimension, self.hidden_dimension)
+        self.input_layer = nn.Linear(self.vocabulary_len, self.hidden_dimension)
         self.middle_layer = nn.Linear(self.hidden_dimension, self.hidden_dimension)
         self.output_layer = nn.Linear(self.hidden_dimension, self.nb_classes)
         torch.nn.init.xavier_normal_(self.input_layer.weight)
@@ -108,7 +143,7 @@ def test_model_2(split_seed=None):
 
     print("-" * 50)
 
-    model = MultiPerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus)
     predictor.evaluate(test_corpus=test_corpus)

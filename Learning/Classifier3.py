@@ -49,6 +49,7 @@ def test_model_3(split_seed=None):
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus)
     predictor.evaluate(test_corpus=test_corpus)
+    model.save('models/preceptron.model')
     '''
 
     """
@@ -59,7 +60,7 @@ def test_model_3(split_seed=None):
     """
 
     '''
-    model = MultiPerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=0)
     predictor.evaluate(test_corpus=test_corpus)
@@ -73,10 +74,11 @@ def test_model_3(split_seed=None):
     """
 
     '''
-    model = MultiPerceptronModel(vocabulary_len=vocab_len, hidden_dimension=25, nb_classes=4, drop_out=0.5)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=25, nb_classes=4, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=3e-3)
     predictor.evaluate(test_corpus=test_corpus)
+    model.save('models/double_preceptron.model')
     '''
 
     """
@@ -109,16 +111,21 @@ def test_model_3(split_seed=None):
 
 
 def test_model_3_interactive():
+    """
+    > quantity was wrong
+    fix
+    > add new screen for the collateral agreements
+    feat
+    > move CollateralAgreement class to new folder
+    refactor
+    """
+
+    # TODO - save the vocabulary as well?
+
+    model = DoublePerceptronModel.load('models/double_preceptron.model')
     training_corpus = CommitMessageCorpus.from_split('train')
-    test_corpus = CommitMessageCorpus.from_split('test')
-
     vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, NltkTokenizer())
-    vocab_len = vectorizer.get_vocabulary_len()
-
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
     predictor = Predictor(model=model, vectorizer=vectorizer)
-    predictor.fit(training_corpus, learning_rate=0.001, weight_decay=0.0002)
-    predictor.evaluate(test_corpus)
 
     while True:
         sentence = input("> ")
