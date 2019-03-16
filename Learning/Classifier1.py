@@ -27,6 +27,7 @@ class HardCodedClassifier:
         print("Feature len:", len(self.refactoring_list + self.revert_list + self.fixes_list + self.features_list))
 
     def predict(self, fix_description):
+        fix_description = fix_description.lower()
         for token in self.refactoring_list:
             if token in fix_description:
                 return 0

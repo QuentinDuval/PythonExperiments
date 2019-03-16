@@ -1,44 +1,25 @@
 import torch.nn.functional as fn
 
+from Learning.Classifier1 import *
 from Learning.Predictor import *
 
 
-class Vectorizer2(Vectorizer):
+class RegexVectorizer(Vectorizer):
     """
-    Extract a given set of words and tag with 1 or 0 whether this word is there or not
+    The terms are selected by expertise and also statistical correlation
+    The model tries to find correct weights for these terms, to best predict the class of the commit
     """
 
     def __init__(self):
-        self.features = []
-
-        # Terms related to refactoring
-        self.features += ["util", "extract", "refact", "rework", "minor", "clean", "raii", "mef", "technical",
-                          "function", "move", "renam", "simplif", "split", "dead", "code", "enabler", "use", "miss",
-                          "call", "private", "fitness", "cucumber", "decoupl", "modular", "get", "set", "layout", "sonar"]
-
-        # Terms related to fixes
-        self.features += ["fix", "solve", "correct", "rather", "possibility", "crash", "bau", "check", "mlk"]
-
-        # Terms related to features
-        self.features += ["feature", "improve", "enhance", "modif", "add", "to", "allow", "now", "require", "should",
-                          "must", "as", "log", "audit", "user", "client", "view", "display", "configur"]
-
-        # Terms related to revert
-        self.features += ["revert"]
-
-        # Terms related to performance
-        self.features += ["perform", "optim", "improve", "increas", "latency", "caching", "speed", "throughput",
-                          "bulk", "index", "group", "sav", "load", "store"]
-
-        # General terms
-        self.features += ["algorithm", "class", "api", "depend", "warn", "change", "handle"]
+        self.features = HardCodedClassifier.features_list +\
+                        HardCodedClassifier.fixes_list +\
+                        HardCodedClassifier.refactoring_list +\
+                        HardCodedClassifier.revert_list
 
     def vectorize(self, fix_description):
-        data_point = []
         fix_description = fix_description.lower()
-        for feat in self.features:
-            data_point.append(1 if feat in fix_description else 0)
-        return torch.LongTensor(data_point)
+        vector = [1 if feat in fix_description else 0 for feat in self.features]
+        return torch.FloatTensor(vector)
 
     def get_vocabulary_len(self):
         return len(self.features)
@@ -53,7 +34,7 @@ class PerceptronModel(nn.Module):
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x):
-        x = self.output_layer(x.float())
+        x = self.output_layer(x)
         return fn.softmax(x, dim=-1)
 
 
@@ -69,9 +50,8 @@ class MultiPerceptronModel(nn.Module):
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x):
-        x = self.input_layer(x.float())
-        x = fn.relu(x)
-        x = self.output_layer(x)
+        x = self.input_layer(x)
+        x = self.output_layer(fn.relu(x))
         return fn.softmax(x, dim=-1)
 
 
@@ -88,11 +68,9 @@ class TriplePerceptronModel(nn.Module):
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x):
-        x = self.input_layer(x.float())
-        x = fn.relu(x)
-        x = self.middle_layer(x)
-        x = fn.relu(x)
-        x = self.output_layer(x)
+        x = self.input_layer(x)
+        x = self.middle_layer(fn.relu(x))
+        x = self.output_layer(fn.relu(x))
         return fn.softmax(x, dim=-1)
 
 
@@ -102,7 +80,7 @@ Testing...
 
 
 def test_model_2(split_seed=None):
-    vectorizer = Vectorizer2()
+    vectorizer = RegexVectorizer()
     vocab_len = vectorizer.get_vocabulary_len()
 
     training_corpus = CommitMessageCorpus.from_split('train')
