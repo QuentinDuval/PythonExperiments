@@ -4,9 +4,11 @@ from Learning.Evaluation import *
 
 class HardCodedClassifier:
     """
-    Manually hardcoded classifier
+    Manually hardcoded classifier:
     - Uses a list of terms to search, and a series of 'if statements' to predict the type of the commit
     - Serves as baseline for all our future evaluations
+
+    The terms are selected by expertise and also statistical correlation
     """
 
     refactoring_list =\
@@ -20,6 +22,9 @@ class HardCodedClassifier:
         ["feature", "improve", "enhance", "modif", "add", "to", "allow", "now", "require", "should", "must",
         "as", "log", "audit", "user", "client", "view", "display", "configur", "perform", "optim", "improve",
         "increas", "latency", "caching", "speed", "throughput", "bulk", "index", "group", "sav", "load", "store"]
+
+    def __init__(self):
+        print("Feature len:", len(self.refactoring_list + self.revert_list + self.fixes_list + self.features_list))
 
     def predict(self, fix_description):
         for token in self.refactoring_list:
@@ -36,24 +41,19 @@ class HardCodedClassifier:
                 return 3
         return 1
 
-    @classmethod
-    def evaluate(cls):
-        print("Feature len:", len(cls.refactoring_list + cls.revert_list + cls.fixes_list + cls.features_list))
-
+    def evaluate(self):
         corpus = CommitMessageCorpus.from_split('test')
-        model = cls()
         predicted = []
         expected = []
         for x, y in corpus:
-            predicted.append(model.predict(x))
+            predicted.append(self.predict(x))
             expected.append(corpus.target_class_index(y))
-
-        # TODO - investigate why it is so weird for the fixes (because it is at the end...)
         print_confusion_matrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES)
 
 
 def test_model_1():
-    HardCodedClassifier.evaluate()
+    predictor = HardCodedClassifier()
+    predictor.evaluate()
 
 
 # test_model_1()
