@@ -53,104 +53,121 @@ class OneHotAugmentation:
             data_set.ys.append(target_index)
 
 
+class Classifier3Test:
+    def __init__(self, with_bi_grams, split_seed=None):
+        self.split_seed = split_seed
+        self.training_corpus = CommitMessageCorpus.from_split('train')
+        self.test_corpus = CommitMessageCorpus.from_split('test')
+
+        self.vectorizer = CollapsedOneHotVectorizer.from_corpus(self.training_corpus, NltkTokenizer(), min_freq=2)
+        self.vocab_len = self.vectorizer.get_vocabulary_len()
+
+        if with_bi_grams:
+            self.vectorizer = CollapsedOneHotVectorizer.from_corpus(
+                self.training_corpus, tokenizer=BiGramTokenizer(NltkTokenizer()), min_freq=2)
+            self.vocab_len = self.vectorizer.get_vocabulary_len()
+
+    def predictor_for(self, model: nn.Module) -> Predictor:
+        return Predictor(model, vectorizer=self.vectorizer, with_gradient_clipping=True, split_seed=self.split_seed)
+
+    def train(self, predictor: Predictor, **kwargs):
+        predictor.fit(training_corpus=self.training_corpus, **kwargs)
+        predictor.evaluate(test_corpus=self.test_corpus)
+
+    def test_single_layer(self):
+        model = PerceptronModel(vocabulary_len=self.vocab_len, nb_classes=3)
+        self.train(self.predictor_for(model))
+        # model.save('models/preceptron.model')
+
+    def test_double_layers(self):
+        model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
+        self.train(self.predictor_for(model))
+
+        model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
+        self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
+        # model.save('models/double_preceptron.model')
+
+    def test_triple_layers(self):
+        model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
+        self.train(self.predictor_for(model))
+
+        model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=20, nb_classes=3, drop_out=0.5)
+        self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
+
+
 def test_model_3(with_bi_grams=False, split_seed=None):
-    training_corpus = CommitMessageCorpus.from_split('train')
-    test_corpus = CommitMessageCorpus.from_split('test')
+    tester = Classifier3Test(with_bi_grams=with_bi_grams, split_seed=split_seed)
 
-    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, NltkTokenizer(), min_freq=2)
-    vocab_len = vectorizer.get_vocabulary_len()
-
-    if with_bi_grams:
-        vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus,
-                                                           tokenizer=BiGramTokenizer(NltkTokenizer()),
-                                                           min_freq=2)
-        vocab_len = vectorizer.get_vocabulary_len()
-
+    print("single layer")
+    tester.test_single_layer()
 
     """
-    Training (max): 3779/4244 (89.04335532516494%)
-    Validation (max): 371/472 (78.60169491525424%)
+    Training (max): 3718/4221 (88.0833925610045%)
+    Validation (max): 365/470 (77.6595744680851%)
     ------------------------------
-    Accuracy: 75.69955817378498 %
-    """
-
-    '''
-    model = PerceptronModel(vocabulary_len=vocab_len, nb_classes=3)
-    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus)
-    predictor.evaluate(test_corpus=test_corpus)
-    model.save('models/preceptron.model')
-    '''
-
-    """
-    Training: 4064/4244 (95.75871819038643%)
-    Validation: 355/472 (75.21186440677965%)
-    Training (max): 3711/4244 (87.44109330819981%)
-    Validation (max): 380/472 (80.50847457627118%)
-    ------------------------------
-    Accuracy: 75.25773195876289 %
-    """
-
-    '''
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
-    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=0)
-    predictor.evaluate(test_corpus=test_corpus)
-    '''
-
-    """
-    Training: 3659/4244 (86.21583411875588%)
-    Validation: 386/472 (81.77966101694916%)
-    Training (max): 3687/4244 (86.875589066918%)
-    Validation (max): 386/472 (81.77966101694916%)
-    ------------------------------
-    Accuracy: 75.40500736377025 %
+    Accuracy: 77.11738484398218 %
     
-    ** With Bi-grams **
-    Training (max): 3952/4221 (93.62710258232646%)
+    !!! BI GRAMS !!!
+    
+    Training (max): 4013/4221 (95.07225775882492%)
+    Validation (max): 379/470 (80.63829787234043%)
+    ------------------------------
+    Accuracy: 77.4145616641902 %
+    """
+
+    print("double layer")
+    tester.test_double_layers()
+
+    """
+    Training (max): 4015/4221 (95.1196398957593%)
+    Validation (max): 355/470 (75.53191489361703%)
+    ------------------------------
+    Accuracy: 76.67161961367015 %
+    
+    Training (max): 3621/4221 (85.78535891968728%)
+    Validation (max): 364/470 (77.4468085106383%)
+    ------------------------------
+    Accuracy: 76.96879643387817 %
+    
+    !!! BI GRAMS !!!
+    
+    Training (max): 3967/4221 (93.98246860933428%)
+    Validation (max): 391/470 (83.19148936170212%)
+    ------------------------------
+    Accuracy: 76.82020802377416 %
+
+    Training (max): 3732/4221 (88.41506751954513%)
     Validation (max): 385/470 (81.91489361702128%)
     ------------------------------
-    Accuracy: 78.00891530460625 %
+    Accuracy: 75.63150074294205 %
     """
 
-    '''
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
-    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    # predictor.data_augmentation = OneHotAugmentation(ratio=3.0) # Does not bring anything here
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
-    predictor.evaluate(test_corpus=test_corpus)
-    # model.save('models/double_preceptron.model')
-    '''
+    print("triple layer")
+    tester.test_triple_layers()
 
     """
-    Training: 4079/4244 (96.11215834118755%)
-    Validation: 359/472 (76.0593220338983%)
-    Training (max): 3992/4244 (94.062205466541%)
-    Validation (max): 366/472 (77.54237288135593%)
+    Training (max): 3985/4221 (94.40890784174366%)
+    Validation (max): 366/470 (77.87234042553192%)
     ------------------------------
-    Accuracy: 75.40500736377025 %
-    """
-
-    '''
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
-    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3)
-    predictor.evaluate(test_corpus=test_corpus)
-    '''
-
-    """
-    Training (max): 3732/4244 (87.9359095193214%)
-    Validation (max): 372/472 (78.8135593220339%)
+    Accuracy: 75.33432392273403 %
+    
+    Training (max): 3667/4221 (86.87514806917792%)
+    Validation (max): 367/470 (78.08510638297872%)
     ------------------------------
-    Accuracy: 77.46686303387335 %
-    """
+    Accuracy: 77.4145616641902 %
+    
+    !!! BI GRAMS !!!
+    
+    Training (max): 4057/4221 (96.11466477138119%)
+    Validation (max): 356/470 (75.74468085106383%)
+    ------------------------------
+    Accuracy: 75.78008915304606 %
 
-    '''
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=20, nb_classes=3, drop_out=0.5)
-    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
-    predictor.evaluate(test_corpus=test_corpus)
-    '''
+    Training (max): 3898/4221 (92.34778488509832%)
+    Validation (max): 364/470 (77.4468085106383%)
+    ------------------------------
+    Accuracy: 76.67161961367015 %
+    """
 
 
 def test_model_3_interactive():
