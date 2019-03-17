@@ -1,5 +1,6 @@
 .idea/
 .hypothesis/
+*/__pycache__
 Learning/resources
 Learning/models
 Learning/Perforce.*
