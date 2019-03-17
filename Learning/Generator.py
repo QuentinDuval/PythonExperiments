@@ -21,6 +21,7 @@ class CommitGenerationModel(nn.Module):
         self.fc = nn.Linear(hidden_size, self.vocabulary_size)
 
     def forward(self, x):
+        x = x.long()
         x = self.embed(x)           # Shape is batch_size, sequence_len, embedding_size
         x = x.permute(1, 0, 2)      # Shape is sequence_len, batch_size, embedding_size
         outputs, _ = self.rnn(x)
@@ -76,8 +77,8 @@ class CommitGenerationDataSet(Dataset):
 class GeneratorLossFunction:
     def __init__(self, vocabulary: Vocabulary):
         ignore_index = vocabulary.word_lookup(vocabulary.PADDING)
-        self.loss_function = nn.CrossEntropyLoss(ignore_index=ignore_index) # Works better without the ignore index...
-        self.loss_function = nn.CrossEntropyLoss()
+        self.loss_function = nn.CrossEntropyLoss(ignore_index=ignore_index)
+        # self.loss_function = nn.CrossEntropyLoss() # Seems to better without the ignore index... but only put padding
 
     def __call__(self, outputs, labels):
         batch_size, sequence_len, embedding_size = outputs.shape
@@ -86,8 +87,23 @@ class GeneratorLossFunction:
         return self.loss_function(outputs, labels)
 
 
+def predict_next(predictor: Predictor, sentence: str):
+    # TODO - do not vectorize like this... do not add padding!
+    x = torch.FloatTensor(predictor.vectorizer.vectorize(sentence=sentence))
+    x = x.unsqueeze(dim=0)
+    predictor.model.eval()
+    y = predictor.model(x)
+    _, predicted = torch.max(y.data, dim=-1)
+    x = x.view(-1)
+    predicted = predicted.view(-1)
+    print("input:", [predictor.vectorizer.vocabulary.index_lookup(i.item()) for i in x])
+    print("predicted:", [predictor.vectorizer.vocabulary.index_lookup(i.item()) for i in predicted])
+
+
 def test_generator():
     # TODO - do on the full corpus
+    # TODO - does not learn anything but to put the same word over and over again... weird
+
     training_corpus = CommitMessageCorpus.from_file('resources/manual_cl_list.txt', keep_unclassified=True)
     # training_corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
 
@@ -99,11 +115,14 @@ def test_generator():
     model = CommitGenerationModel(len(vocabulary), embedding_size=20, hidden_size=15)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=0)
     predictor.batch_size = 100
+    predictor.min_epoch = 10
+    predictor.max_epoch_no_progress = 10
     predictor.loss_function = GeneratorLossFunction(vocabulary)
     predictor.fit_dataset(data_set=data_set, learning_rate=1e-3, weight_decay=0.0)
 
-    res = predictor.predict("")
-    print(res)
+    while True:
+        start = input("sentence>")
+        print(predict_next(predictor, start))
 
 
 test_generator()

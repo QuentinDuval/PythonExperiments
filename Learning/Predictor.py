@@ -95,7 +95,7 @@ class Predictor:
         x = x.unsqueeze(dim=0)
         self.model.eval()
         y = self.model(x)
-        confidence, predicted = torch.max(y.data, 1)
+        confidence, predicted = torch.max(y.data, dim=-1)
         target_label = CommitMessageCorpus.target_class_label(predicted.item())
         return Prediction(target_label, confidence.item())
 
