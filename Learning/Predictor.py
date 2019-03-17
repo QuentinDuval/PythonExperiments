@@ -70,7 +70,7 @@ class Predictor:
             optimizer.zero_grad()
             loss.backward()
             if self.with_gradient_clipping:
-                nn.utils.clip_grad_norm(self.model.parameters(), 0.25)
+                nn.utils.clip_grad_norm_(self.model.parameters(), 0.25)
             optimizer.step()
             train_accuracy += self._compute_accuracy(outputs, labels)
         return train_accuracy

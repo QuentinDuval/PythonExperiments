@@ -125,6 +125,6 @@ def test_generator():
         print(predict_next(predictor, start))
 
 
-test_generator()
+# test_generator()
 
 
