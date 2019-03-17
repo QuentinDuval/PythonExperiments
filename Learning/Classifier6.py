@@ -50,6 +50,7 @@ class RnnClassifier(nn.Module):
         # nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x):
+        x = x.long()
         batch_size, sequence_len = x.shape
         x = self.embed(x)       # Shape is batch_size, sequence_len, embedding_size
         x = x.permute(1, 0, 2)  # Shape is sequence_len, batch_size, embedding_size
@@ -79,17 +80,26 @@ def test_model_6(split_seed=None):
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-2, weight_decay=1e-4)
     predictor.evaluate(test_corpus=test_corpus)
+    return predictor
+
+
+def test_model_6_interactive():
+    predictor = test_model_6()
+    while True:
+        sentence = input("> ")
+        print(predictor.predict(sentence))
 
 
 """
 embedding_size=20, hidden_size=20, nb_classes=4, drop_out=0.5
 learning_rate=1e-2, weight_decay=1e-4
 ------------------------------
-Training (max): 3579/4244 (84.33081998114986%)
-Validation (max): 369/472 (78.17796610169492%)
+Training (max): 3576/4221 (84.71926083866383%)
+Validation (max): 362/470 (77.02127659574468%)
 ------------------------------
-Accuracy: 72.45949926362297 %
+Accuracy: 74.33234421364985 %
 """
 
 # test_model_6(split_seed=0)
+# test_model_6_interactive()
 
