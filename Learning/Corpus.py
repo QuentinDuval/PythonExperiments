@@ -5,37 +5,16 @@ from Learning.Utils import *
 
 
 class CommitMessageCorpus:
-    TARGET_CLASSES = ["refactor", "feat", "revert", "fix"]
+    REFACTOR = "refactor"
+    FEAT = "feat"
+    REVERT = "revert"
+    FIX = "fix"
+    TARGET_CLASSES = [REFACTOR, FEAT, REVERT, FIX]
 
     def __init__(self, xs, ys, unclassified=None):
         self.xs = xs
         self.ys = ys
         self.unclassified = unclassified or []
-
-    @classmethod
-    def from_file(cls, file_name, keep_unclassified=False):
-        xs = []
-        ys = []
-        unclassified = []
-        with open(file_name, 'r') as inputs:
-            for fix_description in inputs:
-                matched = False
-                for target_class in ["revert", "fix", "feat", "refactor"]:
-                    matcher = get_target_matcher(target_class)
-                    match = matcher(fix_description)
-                    if match:
-                        xs.append(match)
-                        ys.append(target_class)
-                        matched = True
-                        break
-                if not matched and keep_unclassified:
-                    unclassified.append(fix_description)
-        return cls(xs, ys, unclassified)
-
-    @classmethod
-    def from_split(cls, split_name):
-        file_path = 'resources/perforce_cl_test.txt' if split_name == 'test' else 'resources/perforce_cl_train.txt'
-        return cls.from_file(file_path)
 
     def __len__(self):
         return len(self.xs)
@@ -63,6 +42,36 @@ class CommitMessageCorpus:
     def split(self, ratio):
         lhs, rhs = join_split(self.xs, self.ys, ratio)
         return CommitMessageCorpus(*lhs), CommitMessageCorpus(*rhs)
+
+    @staticmethod
+    def match_fix(fix_description):
+        for target_class in ["revert", "fix", "feat", "refactor"]:
+            matcher = get_target_matcher(target_class)
+            match = matcher(fix_description)
+            if match:
+                return target_class, match
+        return None, fix_description
+
+    @classmethod
+    def from_file(cls, file_name, keep_unclassified=False):
+        xs = []
+        ys = []
+        unclassified = []
+        with open(file_name, 'r') as inputs:
+            for fix_description in inputs:
+                fix_description = fix_description.strip()
+                target_class, fix_description = cls.match_fix(fix_description)
+                if target_class:
+                    xs.append(fix_description)
+                    ys.append(target_class)
+                elif keep_unclassified:
+                    unclassified.append(fix_description)
+        return cls(xs, ys, unclassified)
+
+    @classmethod
+    def from_split(cls, split_name):
+        file_path = 'resources/perforce_cl_test.txt' if split_name == 'test' else 'resources/perforce_cl_train.txt'
+        return cls.from_file(file_path)
 
 
 class Matcher:
