@@ -33,6 +33,19 @@ class CommitGenerationModel(nn.Module):
         return outputs.view(batch_size, sequence_len, self.vocabulary_size)
 
 
+class CommitGenerationVectorizer(Vectorizer):
+    def __init__(self, vocabulary: Vocabulary, tokenizer: Tokenizer, max_length=None):
+        self.vocabulary = vocabulary
+        self.tokenizer = tokenizer
+        self.max_length = max_length
+
+    def vectorize(self, sentence):
+        tokens = [Vocabulary.START] + self.tokenizer(sentence) + [Vocabulary.END]
+        tokens = tokens[:self.max_length] + (self.max_length - len(tokens)) * [Vocabulary.PADDING]
+        tokens = [self.vocabulary.word_lookup(token) for token in tokens]
+        return np.array(tokens, dtype=np.int64)
+
+
 class CommitGenerationDataSet(Dataset):
     def __init__(self, prev, curr):
         self.prev = prev
@@ -50,49 +63,49 @@ class CommitGenerationDataSet(Dataset):
         return CommitGenerationDataSet(*lhs), CommitGenerationDataSet(*rhs)
 
     @classmethod
-    def from_corpus(cls, corpus: CommitMessageCorpus, vocabulary: Vocabulary, tokenizer: NltkTokenizer):
+    def from_corpus(cls, corpus: CommitMessageCorpus, vectorizer: CommitGenerationVectorizer):
         prev = []
         curr = []
-
         for line in itertools.chain(corpus.get_inputs(), corpus.get_unclassified()):
-            tokens = [Vocabulary.START] + tokenizer(line) + [Vocabulary.END]
-            tokens = [vocabulary.word_lookup(token) for token in tokens]
+            tokens = vectorizer.vectorize(line)
             prev.append(np.array(tokens[:-1], dtype=np.int64))
             curr.append(np.array(tokens[1:], dtype=np.int64))
-
         return cls(prev, curr)
 
 
 class GeneratorLossFunction:
-    def __init__(self):
+    def __init__(self, vocabulary: Vocabulary):
+        ignore_index = vocabulary.word_lookup(vocabulary.PADDING)
+        self.loss_function = nn.CrossEntropyLoss(ignore_index=ignore_index) # Works better without the ignore index...
         self.loss_function = nn.CrossEntropyLoss()
 
     def __call__(self, outputs, labels):
-        # _, predicted = torch.max(outputs, 2)
-        # print(predicted.shape, expected.shape)
-        outputs = outputs.squeeze(0)    # TODO - flatten to matrix instead (when batch size is not 1)
-        labels = labels.squeeze(0)      # TODO - flatten to vector instead (when batch size is not 1)
-        # print(outputs.shape, labels.shape)
+        batch_size, sequence_len, embedding_size = outputs.shape
+        outputs = outputs.view(batch_size * sequence_len, embedding_size)
+        labels = labels.view(batch_size * sequence_len)
         return self.loss_function(outputs, labels)
 
 
 def test_generator():
     # TODO - do on the full corpus
-    corpus = CommitMessageCorpus.from_file('resources/manual_cl_list.txt', keep_unclassified=True)
-    # corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
+    training_corpus = CommitMessageCorpus.from_file('resources/manual_cl_list.txt', keep_unclassified=True)
+    # training_corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
 
     tokenizer = NltkTokenizer()
-    vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=tokenizer, min_freq=1, add_unknowns=True)
+    vocabulary = Vocabulary.from_corpus(corpus=training_corpus, tokenizer=tokenizer, min_freq=1, add_unknowns=True)
+    vectorizer = CommitGenerationVectorizer(vocabulary=vocabulary, tokenizer=tokenizer, max_length=50)
+    data_set = CommitGenerationDataSet.from_corpus(corpus=training_corpus, vectorizer=vectorizer)
 
-    data_set = CommitGenerationDataSet.from_corpus(corpus=corpus, vocabulary=vocabulary, tokenizer=tokenizer)
     model = CommitGenerationModel(len(vocabulary), embedding_size=20, hidden_size=15)
-    predictor = Predictor(model=model, vectorizer=None, with_gradient_clipping=True, split_seed=0)
-    predictor.batch_size = 1    # TODO - deal with the batch_size appropriately
-    predictor.loss_function = GeneratorLossFunction()
-
+    predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=0)
+    predictor.batch_size = 100
+    predictor.loss_function = GeneratorLossFunction(vocabulary)
     predictor.fit_dataset(data_set=data_set, learning_rate=1e-3, weight_decay=0.0)
 
+    res = predictor.predict("")
+    print(res)
 
-# test_generator()
+
+test_generator()
 
 
