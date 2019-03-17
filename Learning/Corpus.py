@@ -52,20 +52,39 @@ class CommitMessageCorpus:
                 return target_class, match
         return None, fix_description
 
+    @staticmethod
+    def read_manual_exceptions():
+        with open('resources/manual_exceptions.txt', 'r') as f:
+            exceptions = {}
+            commit_description = None
+            for line in f:
+                if commit_description is None:
+                    commit_description = line.strip()
+                else:
+                    exceptions[commit_description] = line.strip().lower()
+                    commit_description = None
+            return exceptions
+
     @classmethod
     def from_file(cls, file_name, keep_unclassified=False):
         xs = []
         ys = []
         unclassified = []
+        manual_exceptions = cls.read_manual_exceptions()
         with open(file_name, 'r') as inputs:
             for fix_description in inputs:
                 fix_description = fix_description.strip()
-                target_class, fix_description = cls.match_fix(fix_description)
-                if target_class:
+                if fix_description in manual_exceptions:
+                    print("Manual exception", fix_description)
                     xs.append(fix_description)
-                    ys.append(target_class)
-                elif keep_unclassified:
-                    unclassified.append(fix_description)
+                    ys.append(manual_exceptions[fix_description])
+                else:
+                    target_class, fix_description = cls.match_fix(fix_description)
+                    if target_class:
+                        xs.append(fix_description)
+                        ys.append(target_class)
+                    elif keep_unclassified:
+                        unclassified.append(fix_description)
         return cls(xs, ys, unclassified)
 
     @classmethod
