@@ -19,6 +19,8 @@ class Predictor:
         self.split_seed = split_seed
         self.batch_size = 100
         self.loss_function = nn.CrossEntropyLoss()
+        self.min_epoch = 20
+        self.max_epoch_no_progress = 30
 
     def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0):
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
@@ -36,7 +38,7 @@ class Predictor:
         max_valid_accuracy = Ratio()
 
         for epoch in itertools.count(0):
-            if epoch - best_epoch > min(max(20, epoch // 5), 30):  # TODO - extract constants
+            if epoch - best_epoch > min(max(self.min_epoch, epoch // 5), self.max_epoch_no_progress):
                 break
 
             train_accuracy = self._training_pass(training_loader, optimizer)
