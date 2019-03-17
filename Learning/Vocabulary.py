@@ -30,6 +30,9 @@ class Vocabulary:
     def __len__(self):
         return len(self.word_to_index)
 
+    def __repr__(self):
+        return repr(self.words())
+
     @classmethod
     def from_words(cls, words, add_unknowns=False):
         all_words = cls.RESERVED + list(words) if add_unknowns else words

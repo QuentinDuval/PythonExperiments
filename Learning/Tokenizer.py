@@ -6,12 +6,15 @@ import unicodedata
 
 
 class Tokenizer:
-    def __call__(self, sentence):
+    def __call__(self, sentence: str) -> List[str]:
+        return self.tokenize(sentence)
+
+    def tokenize(self, sentence: str) -> List[str]:
         pass
 
 
 class SplitTokenizer(Tokenizer):
-    def __call__(self, sentence):
+    def tokenize(self, sentence: str) -> List[str]:
         return [token for token in sentence.split(" ") if token not in string.punctuation]
 
 
@@ -27,9 +30,6 @@ class NltkTokenizer(Tokenizer):
         self.issue = re.compile("^[a-zA-Z]+[\-]?[0-9]+$")
         self.abbreviations = {"url", "ci", "raii", "bau", "slo", "api", "stl"}
         self.languages = {"c++", "mef", "java", "c", "cpp", "ant", "groovy", "js", "scala"}
-
-    def __call__(self, sentence):
-        return self.tokenize(sentence)
 
     def tokenize(self, sentence: str) -> List[str]:
         tokens = []
@@ -82,3 +82,18 @@ class NltkTokenizer(Tokenizer):
         if lemma == "\n":
             return True
         return all(unicodedata.category(c).startswith('P') for c in lemma)
+
+
+class BiGramTokenizer(Tokenizer):
+    def __init__(self, tokenizer: Tokenizer):
+        self.tokenizer = tokenizer
+        self.stop_words = {"the", "in", "a"} # TODO - stop words at the level above? Or compose it :)
+
+    def tokenize(self, sentence: str) -> List[str]:
+        single_tokens = self.tokenizer.tokenize(sentence)
+        single_tokens = [t for t in single_tokens if t not in self.stop_words]
+        tokens = [single_tokens[0]]
+        for i in range(1, len(single_tokens)):
+            tokens.append(single_tokens[i-1] + " " + single_tokens[i])
+            tokens.append(single_tokens[i])
+        return tokens

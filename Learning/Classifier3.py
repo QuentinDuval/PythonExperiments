@@ -6,6 +6,9 @@ from Learning.Tokenizer import *
 from Learning.Vocabulary import *
 
 
+# TODO - try with N-GRAMS to catch things like "memory corruption" (with the bag-of-words model)
+
+
 class CollapsedOneHotVectorizer(Vectorizer):
     """
     Vectorize a sentence by transforming each sentence to a vector filled with 1 for each word present, 0 otherwise
@@ -25,17 +28,24 @@ class CollapsedOneHotVectorizer(Vectorizer):
         return len(self.vocabulary)
 
     @classmethod
-    def from_corpus(cls, corpus: CommitMessageCorpus, tokenizer):
-        vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=tokenizer, min_freq=2, add_unknowns=True)
+    def from_corpus(cls, corpus: CommitMessageCorpus, tokenizer, min_freq=2):
+        vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=tokenizer, min_freq=min_freq, add_unknowns=True)
         return cls(vocabulary=vocabulary, tokenizer=tokenizer)
 
 
-def test_model_3(split_seed=None):
+def test_model_3(with_bi_grams=False, split_seed=None):
     training_corpus = CommitMessageCorpus.from_split('train')
     test_corpus = CommitMessageCorpus.from_split('test')
 
-    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, NltkTokenizer())
+    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, NltkTokenizer(), min_freq=2)
     vocab_len = vectorizer.get_vocabulary_len()
+
+    if with_bi_grams:
+        vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus,
+                                                           tokenizer=BiGramTokenizer(NltkTokenizer()),
+                                                           min_freq=2)
+        vocab_len = vectorizer.get_vocabulary_len()
+
 
     """
     Training (max): 3779/4244 (89.04335532516494%)
@@ -75,6 +85,12 @@ def test_model_3(split_seed=None):
     Validation (max): 386/472 (81.77966101694916%)
     ------------------------------
     Accuracy: 75.40500736377025 %
+    
+    ** With Bi-grams **
+    Training (max): 3846/4244 (90.62205466540999%)
+    Validation (max): 389/472 (82.41525423728814%)
+    ------------------------------
+    Accuracy: 75.69955817378498 %
     """
 
     '''
@@ -82,7 +98,7 @@ def test_model_3(split_seed=None):
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
-    # model.save('models/double_preceptron.model')
+    model.save('models/double_preceptron.model')
     '''
 
     """
@@ -117,37 +133,36 @@ def test_model_3(split_seed=None):
 
 
 def test_model_3_interactive():
+
+    # TODO - encode this in unit tests
+
     """
     > quantity was wrong
     fix
     > add new screen for collateral agreements
     feat
-    > move CollateralAgreement to folder X
+    > move CollateralAgreement to module collateral
     refactor
-    > extract computeQuantity from Contract class
+    > extract computeQuantity from Trade class
     refactor
-    """
-
-    # TODO - bad results below
-
-    """
-    > memory corruption in MasterAgreement
-    refactor
-    > memory corruption
-    refactor
-    > corruption
+    > improve performance of cash sweeping
     feat
-    > memory fix
+    > improve performance of CashSweeping method sweepAllPastCash
+    feat
+    > memory corruption
     fix
-    > memory
+    > use smart pointer to simplify memory management
+    refactor
+    > clean code in getQuantity
+    refactor
+    > delete useless method getQuantity
     refactor
     """
-
-    # TODO - save the vocabulary as well?
 
     model = DoublePerceptronModel.load('models/double_preceptron.model')
     training_corpus = CommitMessageCorpus.from_split('train')
-    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, NltkTokenizer())
+    bi_gram_tokenizer = BiGramTokenizer(NltkTokenizer())
+    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
     predictor = Predictor(model=model, vectorizer=vectorizer)
 
     while True:
@@ -155,5 +170,5 @@ def test_model_3_interactive():
         print(predictor.predict(sentence))
 
 
-# test_model_3(split_seed=0)
+# test_model_3(split_seed=0, with_bi_grams=True)
 # test_model_3_interactive()

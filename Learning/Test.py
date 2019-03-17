@@ -13,6 +13,15 @@ def test_tokenization():
     for w in ["doubleAverageA1DivA2KAdjust", "COMDI-67", "FPB-75", "DEF0889790", "getQuantityOfTrade", "getQuantity", "get_quantity"]:
         print(tokenizer.clean_token(w))
 
+    bi_gram = BiGramTokenizer(tokenizer)
+    print(bi_gram.tokenize("fix a nasty memory corruption"))
+
+    corpus = CommitMessageCorpus.from_split('train')
+    vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=bi_gram, min_freq=5, add_unknowns=True)
+    print(len(vocabulary))
+    print(vocabulary)
+
+    '''
     corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
 
     tokenizer = NltkTokenizer()
@@ -24,6 +33,7 @@ def test_tokenization():
     vocab = Vocabulary.from_corpus(corpus, tokenizer=tokenizer, min_freq=2, add_unknowns=True)
     print(vocab.words())
     print(len(vocab))
+    '''
 
 
 # test_tokenization()
