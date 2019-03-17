@@ -25,7 +25,7 @@ class Predictor:
 
     def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0):
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
-        self.fit_dataset(data_set, learning_rate, weight_decay)
+        return self.fit_dataset(data_set, learning_rate, weight_decay)
 
     def fit_dataset(self, data_set: Dataset, learning_rate=1e-3, weight_decay=0):
         training_set, validation_set = data_set.split(0.9, seed=self.split_seed)
@@ -61,6 +61,7 @@ class Predictor:
         self.model.load_state_dict(best_model)
         print("Training (max):", self._validation_pass(training_loader))
         print("Validation (max):", max_valid_accuracy)
+        return max_valid_accuracy.to_percentage()
 
     def _training_pass(self, training_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer):
         self.model.train()
@@ -114,4 +115,4 @@ class Predictor:
             all_expected.extend(labels)
             all_predicted.extend(predicted)
 
-        print_confusion_matrix(all_expected, all_predicted, CommitMessageCorpus.TARGET_CLASSES)
+        ConfusionMatrix(all_expected, all_predicted, CommitMessageCorpus.TARGET_CLASSES).show()

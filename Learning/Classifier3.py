@@ -71,21 +71,27 @@ class Classifier3Test:
         return Predictor(model, vectorizer=self.vectorizer, with_gradient_clipping=True, split_seed=self.split_seed)
 
     def train(self, predictor: Predictor, **kwargs):
-        predictor.fit(training_corpus=self.training_corpus, **kwargs)
+        max_accuracy = predictor.fit(training_corpus=self.training_corpus, **kwargs)
         predictor.evaluate(test_corpus=self.test_corpus)
+        return max_accuracy
 
     def test_single_layer(self):
         model = PerceptronModel(vocabulary_len=self.vocab_len, nb_classes=3)
         self.train(self.predictor_for(model))
         # model.save('models/preceptron.model')
 
-    def test_double_layers(self):
+    def test_double_layers(self, rounds=1):
         model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
         self.train(self.predictor_for(model))
 
-        model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
-        self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
-        # model.save('models/double_preceptron.model')
+        best_accuracy = 0.81
+        for _ in range(rounds):
+            model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
+            accuracy = self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
+            if accuracy >= best_accuracy:
+                best_accuracy = accuracy
+                print("SAVING MODEL WITH ACCURACY", best_accuracy)
+                model.save('models/double_preceptron.model')
 
     def test_triple_layers(self):
         model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
@@ -99,7 +105,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     tester = Classifier3Test(with_bi_grams=with_bi_grams, split_seed=split_seed)
 
     print("single layer")
-    tester.test_single_layer()
+    # tester.test_single_layer()
 
     """
     Training (max): 3718/4221 (88.0833925610045%)
@@ -116,7 +122,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     print("double layer")
-    tester.test_double_layers()
+    tester.test_double_layers(rounds=1)
 
     """
     Training (max): 4015/4221 (95.1196398957593%)
@@ -136,14 +142,14 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     ------------------------------
     Accuracy: 76.82020802377416 %
 
-    Training (max): 3732/4221 (88.41506751954513%)
-    Validation (max): 385/470 (81.91489361702128%)
-    ------------------------------
-    Accuracy: 75.63150074294205 %
+    Training (max): 4052/4221 (95.99620942904525%)
+    Validation (max): 390/470 (82.97872340425532%)
+    --------------------------------------------------
+    Accuracy: 78.00891530460625 %
     """
 
     print("triple layer")
-    tester.test_triple_layers()
+    # tester.test_triple_layers()
 
     """
     Training (max): 3985/4221 (94.40890784174366%)
