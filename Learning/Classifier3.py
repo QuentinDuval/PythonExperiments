@@ -138,6 +138,8 @@ def test_model_3_interactive():
     fix
     > add new screen for collateral agreements
     feat
+    > refactor screen of collateral agreements
+    refactor
     > move CollateralAgreement to module collateral
     refactor
     > extract computeQuantity from Trade class
@@ -213,4 +215,4 @@ def test_model_3_interactive():
 
 
 # test_model_3(split_seed=0, with_bi_grams=True)
-# test_model_3_interactive()
+test_model_3_interactive()

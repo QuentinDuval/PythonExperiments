@@ -75,7 +75,6 @@ class CommitMessageCorpus:
             for fix_description in inputs:
                 fix_description = fix_description.strip()
                 if fix_description in manual_exceptions:
-                    print("Manual exception", fix_description)
                     xs.append(fix_description)
                     ys.append(manual_exceptions[fix_description])
                 else:
