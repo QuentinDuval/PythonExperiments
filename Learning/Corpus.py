@@ -78,9 +78,12 @@ class Matcher:
     def __init__(self):
         self.regex_list = []
 
-    def add(self, regex):
+    def add(self, regex, with_surroundings=True):
         surroundings = "[a-zA-Z0-9_\-+ ]*"
-        regex = surroundings + self.to_case_insensitive(regex) + surroundings
+        if with_surroundings:
+            regex = surroundings + self.to_case_insensitive(regex) + surroundings
+        else:
+            regex = self.to_case_insensitive(regex)
         self.regex_list.append(re.compile("\[" + regex + "\]"))
         self.regex_list.append(re.compile("\(" + regex + "\)"))
         self.regex_list.append(re.compile("\{" + regex + "\}"))
@@ -119,7 +122,7 @@ def get_target_matcher(target_class):
     elif target_class == "fix":
         matcher.add("bugfix")
         matcher.add("mlk")
-        matcher.add("fix")
+        matcher.add("fix", with_surroundings=False)
         matcher.add("bug")
         matcher.add("cwe")
         matcher.add("regression")

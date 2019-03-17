@@ -6,9 +6,6 @@ from Learning.Tokenizer import *
 from Learning.Vocabulary import *
 
 
-# TODO - try with N-GRAMS to catch things like "memory corruption" (with the bag-of-words model)
-
-
 class CollapsedOneHotVectorizer(Vectorizer):
     """
     Vectorize a sentence by transforming each sentence to a vector filled with 1 for each word present, 0 otherwise
@@ -87,10 +84,10 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     Accuracy: 75.40500736377025 %
     
     ** With Bi-grams **
-    Training (max): 3846/4244 (90.62205466540999%)
-    Validation (max): 389/472 (82.41525423728814%)
+    Training (max): 3858/4221 (91.4001421464108%)
+    Validation (max): 383/470 (81.48936170212767%)
     ------------------------------
-    Accuracy: 75.69955817378498 %
+    Accuracy: 76.55786350148368 %
     """
 
     '''
@@ -98,7 +95,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
-    model.save('models/double_preceptron.model')
+    # model.save('models/double_preceptron.model')
     '''
 
     """
@@ -163,11 +160,56 @@ def test_model_3_interactive():
     training_corpus = CommitMessageCorpus.from_split('train')
     bi_gram_tokenizer = BiGramTokenizer(NltkTokenizer())
     vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
+
     predictor = Predictor(model=model, vectorizer=vectorizer)
+
+    test_corpus = CommitMessageCorpus.from_split('test')
+    predictor.evaluate(test_corpus=test_corpus)
+    predictor.show_errors(test_corpus=test_corpus)
 
     while True:
         sentence = input("> ")
         print(predictor.predict(sentence))
+
+    # TODO - implement a kind of exception mechanism for this... based on CL? based on matching the fix description?
+    # TODO - load the exceptions in the CorpusLoader and replace while reading the file...
+
+    """
+    Example of miss classifications:
+    
+    {COLLAT}(Openness): Fix few sonar issues
+    > Predicted fix
+    > Actual refactor
+    
+    {COL_BAU}(Collateral): Replace Calendar by LocalDateTime for start date and end date
+    > Predicted fix
+    > Actual refactor
+    
+    {COLLAT_BAU}(SnapshotGeneration): enhance error message
+    > Predicted feat
+    > Actual fix
+    
+    {COL_BAU}(AgreementInfo): integrate agreementInfo into the static data cache
+    > Predicted feat
+    > Actual refactor
+    
+    {COLLAT}(Agreement config): manage errors in the agreement cache
+    > Predicted fix
+    > Actual feat
+    
+    {COL_BAU}(collat_algo_service target refactoring) Refactor to be able to have a mock dll to be used for other target unit tests.
+    > Predicted refactor
+    > Actual feat
+    
+    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove all backward compatibility code (except migration code).
+    > Predicted refactor
+    > Actual fix
+    
+    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove valuationContext classes.
+    > Predicted refactor
+    > Actual fix
+    """
+
 
 
 # test_model_3(split_seed=0, with_bi_grams=True)
