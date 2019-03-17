@@ -4,6 +4,7 @@ from Learning.Classifier2 import *
 from Learning.Predictor import *
 from Learning.Tokenizer import *
 from Learning.Vocabulary import *
+from Learning.Verification import *
 
 
 class CollapsedOneHotVectorizer(Vectorizer):
@@ -131,35 +132,6 @@ def test_model_3(with_bi_grams=False, split_seed=None):
 
 def test_model_3_interactive():
 
-    # TODO - encode this in unit tests
-
-    """
-    > quantity was wrong
-    fix
-    > add new screen for collateral agreements
-    feat
-    > refactor screen of collateral agreements
-    refactor
-    > move CollateralAgreement to module collateral
-    refactor
-    > extract computeQuantity from Trade class
-    refactor
-    > improve performance of cash sweeping
-    feat
-    > improve performance of CashSweeping method sweepAllPastCash
-    feat
-    > memory corruption
-    fix
-    > use smart pointer to simplify memory management
-    refactor
-    > clean code in getQuantity
-    refactor
-    > delete useless method getQuantity
-    refactor
-    > empty capital structures are not saved anymore
-    fix
-    """
-
     model = DoublePerceptronModel.load('models/double_preceptron.model')
     training_corpus = CommitMessageCorpus.from_split('train')
     bi_gram_tokenizer = BiGramTokenizer(NltkTokenizer())
@@ -169,57 +141,14 @@ def test_model_3_interactive():
 
     test_corpus = CommitMessageCorpus.from_split('test')
     predictor.evaluate(test_corpus=test_corpus)
-    predictor.show_errors(test_corpus=test_corpus)
+    show_errors(predictor=predictor, test_corpus=test_corpus)
+
+    print(verify_predictor(predictor))
 
     while True:
         sentence = input("> ")
         print(predictor.predict(sentence))
 
-    # TODO - implement a kind of exception mechanism for this... based on CL? based on matching the fix description?
-    # TODO - load the exceptions in the CorpusLoader and replace while reading the file...
-
-    """
-    Example of miss classifications:
-    
-    {COLLAT}(Openness): Fix few sonar issues
-    > Predicted fix
-    > Actual refactor
-    
-    {COL_BAU}(Collateral): Replace Calendar by LocalDateTime for start date and end date
-    > Predicted fix
-    > Actual refactor
-    
-    {COLLAT_BAU}(SnapshotGeneration): enhance error message
-    > Predicted feat
-    > Actual fix
-    
-    {COL_BAU}(AgreementInfo): integrate agreementInfo into the static data cache
-    > Predicted feat
-    > Actual refactor
-    
-    {COLLAT}(Agreement config): manage errors in the agreement cache
-    > Predicted fix
-    > Actual feat
-    
-    {COL_BAU}(collat_algo_service target refactoring) Refactor to be able to have a mock dll to be used for other target unit tests.
-    > Predicted refactor
-    > Actual feat
-    
-    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove all backward compatibility code (except migration code).
-    > Predicted refactor
-    > Actual fix
-    
-    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove valuationContext classes.
-    > Predicted refactor
-    > Actual fix
-    """
-
-    # What the fuck fixes
-
-    """
-    [COLLATERAL](Fix): reference returned instead of copy
-    """
-
 
 # test_model_3(split_seed=0, with_bi_grams=True)
-# test_model_3_interactive()
+test_model_3_interactive()

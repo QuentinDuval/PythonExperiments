@@ -91,6 +91,7 @@ class Predictor:
     def predict(self, sentence):
         x = torch.FloatTensor(self.vectorizer.vectorize(sentence=sentence))
         x = x.unsqueeze(dim=0)
+        self.model.eval()
         y = self.model(x)
         confidence, predicted = torch.max(y.data, 1)
         target_label = CommitMessageCorpus.target_class_label(predicted.item())
@@ -110,13 +111,3 @@ class Predictor:
             all_predicted.extend(predicted)
 
         print_confusion_matrix(all_expected, all_predicted, CommitMessageCorpus.TARGET_CLASSES)
-
-    def show_errors(self, test_corpus: CommitMessageCorpus):
-        self.model.eval()
-        for fix_description, target in test_corpus:
-            predicted = self.predict(fix_description)
-            if predicted != target:
-                print(fix_description)
-                print("> Predicted", predicted)
-                print("> Actual", target)
-                print()
