@@ -108,3 +108,13 @@ class Predictor:
             all_predicted.extend(predicted)
 
         print_confusion_matrix(all_expected, all_predicted, CommitMessageCorpus.TARGET_CLASSES)
+
+    def show_errors(self, test_corpus: CommitMessageCorpus):
+        self.model.eval()
+        for fix_description, target in test_corpus:
+            predicted = self.predict(fix_description)
+            if predicted != target:
+                print(fix_description)
+                print("> Predicted", predicted)
+                print("> Actual", target)
+                print()
