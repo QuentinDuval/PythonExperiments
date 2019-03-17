@@ -6,20 +6,27 @@ import unittest
 class CommmitMessageCorpusTest(unittest.TestCase):
 
     def test_target_class_refactor(self):
-        res, fix = CommitMessageCorpus.match_fix("{COL_BAU}[REFAC]:  Use a proxy to sync all FitNesse views")
+        res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFAC]: Use a proxy to sync all the views")
         self.assertEqual(res, CommitMessageCorpus.REFACTOR)
-        self.assertEqual(fix, "{COL_BAU}:  Use a proxy to sync all FitNesse views")
+        self.assertEqual(fix, "{PROJECT}: Use a proxy to sync all FitNesse views")
 
-        res, fix = CommitMessageCorpus.match_fix("{COL_BAU}[REFACTOR]: cleaning and refactoring")
+        res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFACTOR]: cleaning and refactoring")
         self.assertEqual(res, CommitMessageCorpus.REFACTOR)
-        self.assertEqual(fix, "{COL_BAU}: cleaning and refactoring")
+        self.assertEqual(fix, "{PROJECT}: cleaning and refactoring")
 
-        res, fix = CommitMessageCorpus.match_fix("{COL_BAU}[REFACTOR](MRV fixtures): cleaning and refactoring")
+        res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFACTOR](fixtures): cleaning and refactoring")
         self.assertEqual(res, CommitMessageCorpus.REFACTOR)
-        self.assertEqual(fix, "{COL_BAU}(MRV fixtures): cleaning and refactoring")
+        self.assertEqual(fix, "{PROJECT}(fixtures): cleaning and refactoring")
 
     def test_target_class_fix(self):
-        pass # TODO - this and other classes as well
+        res, fix = CommitMessageCorpus.match_fix("{PROJECT} [FIX] refactor and fix the blablabla")
+        self.assertEqual(res, CommitMessageCorpus.FIX)
+        self.assertEqual(fix, "{PROJECT}  refactor and fix the blablabla")
+
+    def test_target_class_feat(self):
+        res, fix = CommitMessageCorpus.match_fix("{PROJECT} [FEAT] (fixing screen) improving the fixing screen")
+        self.assertEqual(res, CommitMessageCorpus.FEAT)
+        self.assertEqual(fix, "{PROJECT}  (fixing screen) improving the fixing screen")
 
     def test_index_vs_label(self):
         for target in CommitMessageCorpus.TARGET_CLASSES:
