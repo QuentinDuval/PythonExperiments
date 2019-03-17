@@ -21,15 +21,17 @@ class Predictor:
         self.loss_function = nn.CrossEntropyLoss()
         self.min_epoch = 20
         self.max_epoch_no_progress = 30
+        self.data_augmentation = lambda x: None
 
     def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0):
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
         self.fit_dataset(data_set, learning_rate, weight_decay)
 
     def fit_dataset(self, data_set: Dataset, learning_rate=1e-3, weight_decay=0):
-        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
         training_set, validation_set = data_set.split(0.9, seed=self.split_seed)
+        self.data_augmentation(training_set)
+
+        optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         training_loader = torch.utils.data.DataLoader(training_set, batch_size=self.batch_size, shuffle=True)
         validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=self.batch_size, shuffle=True)
 

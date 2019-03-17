@@ -31,6 +31,28 @@ class CollapsedOneHotVectorizer(Vectorizer):
         return cls(vocabulary=vocabulary, tokenizer=tokenizer)
 
 
+class OneHotAugmentation:
+    """
+    Attempt at augmenting the data set by combining 2 fixes / 2 refactors / 2 features
+    Beware of not doing this before splitting the data set to avoid snooping
+    """
+
+    def __init__(self, ratio: float):
+        self.ratio = ratio
+
+    def __call__(self, data_set: CommitMessageDataSet):
+        by_target = {}
+        for x, y in zip(data_set.xs, data_set.ys):
+            by_target.setdefault(y, []).append(x)
+        for i in range(int(len(data_set) * self.ratio)):
+            target_index = i % len(CommitMessageCorpus.TARGET_CLASSES)
+            commits = by_target[target_index]
+            a = random.choice(commits)
+            b = random.choice(commits)
+            data_set.xs.append(np.maximum(a, b))
+            data_set.ys.append(target_index)
+
+
 def test_model_3(with_bi_grams=False, split_seed=None):
     training_corpus = CommitMessageCorpus.from_split('train')
     test_corpus = CommitMessageCorpus.from_split('test')
@@ -85,15 +107,16 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     Accuracy: 75.40500736377025 %
     
     ** With Bi-grams **
-    Training (max): 3858/4221 (91.4001421464108%)
-    Validation (max): 383/470 (81.48936170212767%)
+    Training (max): 3952/4221 (93.62710258232646%)
+    Validation (max): 385/470 (81.91489361702128%)
     ------------------------------
-    Accuracy: 76.55786350148368 %
+    Accuracy: 78.00891530460625 %
     """
 
     '''
     model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
+    # predictor.data_augmentation = OneHotAugmentation(ratio=3.0) # Does not bring anything here
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
     # model.save('models/double_preceptron.model')
@@ -150,5 +173,5 @@ def test_model_3_interactive():
         print(predictor.predict(sentence))
 
 
-# test_model_3(split_seed=0, with_bi_grams=True)
+test_model_3(split_seed=0, with_bi_grams=True)
 # test_model_3_interactive()
