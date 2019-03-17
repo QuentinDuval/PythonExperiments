@@ -105,7 +105,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     tester = Classifier3Test(with_bi_grams=with_bi_grams, split_seed=split_seed)
 
     print("single layer")
-    # tester.test_single_layer()
+    tester.test_single_layer()
 
     """
     Training (max): 3718/4221 (88.0833925610045%)
@@ -149,7 +149,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     print("triple layer")
-    # tester.test_triple_layers()
+    tester.test_triple_layers()
 
     """
     Training (max): 3985/4221 (94.40890784174366%)
