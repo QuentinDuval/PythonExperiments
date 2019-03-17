@@ -11,7 +11,7 @@ def test_model_6_pretrained_filling(split_seed=None):
     vectorizer = EmbeddingRnnVectorizer.from_corpus(training_corpus, NltkTokenizer(), min_freq=2, max_length=50)
     vocab_len = vectorizer.get_vocabulary_len()
 
-    model = RnnClassifier(vocabulary_len=vocab_len, embedding_size=20, nb_classes=4)
+    model = RnnClassifier(vocabulary_len=vocab_len, embedding_size=20, nb_classes=3)
 
     # fill the embeddings
     # TODO - does not seem to improve anything...

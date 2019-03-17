@@ -30,17 +30,14 @@ class HardCodedClassifier:
         fix_description = fix_description.lower()
         for token in self.refactoring_list:
             if token in fix_description:
-                return 0
+                return CommitMessageCorpus.REFACTOR
         for token in self.features_list:
             if token in fix_description:
-                return 1
-        for token in self.revert_list:
-            if token in fix_description:
-                return 2
+                return CommitMessageCorpus.FEAT
         for token in self.fixes_list:
             if token in fix_description:
-                return 3
-        return 1
+                return CommitMessageCorpus.FIX
+        return CommitMessageCorpus.FIX
 
     def evaluate(self):
         corpus = CommitMessageCorpus.from_split('test')
@@ -48,7 +45,7 @@ class HardCodedClassifier:
         expected = []
         for x, y in corpus:
             predicted.append(self.predict(x))
-            expected.append(corpus.target_class_index(y))
+            expected.append(y)
         print_confusion_matrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES)
 
 
@@ -56,5 +53,9 @@ def test_model_1():
     predictor = HardCodedClassifier()
     predictor.evaluate()
 
+
+"""
+Accuracy: 50.074294205052006 %
+"""
 
 # test_model_1()

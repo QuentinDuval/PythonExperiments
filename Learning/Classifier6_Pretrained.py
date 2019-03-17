@@ -55,7 +55,7 @@ def test_model_6_pretrained(split_seed=None):
     pretrained_embeddings = WordEmbeddings.load_from(model_path='resources/unsupervised_model.bin')
     vectorizer = EmbeddingRnnVectorizer(pretrained_embeddings.get_vocabulary(), NltkTokenizer(), max_length=50)
 
-    model = PretrainedRnnClassifier(pretrained_embeddings=pretrained_embeddings, nb_classes=4)
+    model = PretrainedRnnClassifier(pretrained_embeddings=pretrained_embeddings, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=0.01, weight_decay=0.0)
     predictor.evaluate(test_corpus=test_corpus)

@@ -76,7 +76,7 @@ def test_model_6(split_seed=None):
     vectorizer = EmbeddingRnnVectorizer.from_corpus(training_corpus, NltkTokenizer(), min_freq=2, max_length=50)
     vocab_len = vectorizer.get_vocabulary_len()
 
-    model = RnnClassifier(vocabulary_len=vocab_len, embedding_size=20, hidden_size=20, nb_classes=4, drop_out=0.5)
+    model = RnnClassifier(vocabulary_len=vocab_len, embedding_size=20, hidden_size=20, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-2, weight_decay=1e-4)
     predictor.evaluate(test_corpus=test_corpus)
@@ -91,7 +91,7 @@ def test_model_6_interactive():
 
 
 """
-embedding_size=20, hidden_size=20, nb_classes=4, drop_out=0.5
+embedding_size=20, hidden_size=20, nb_classes=3, drop_out=0.5
 learning_rate=1e-2, weight_decay=1e-4
 ------------------------------
 Training (max): 3576/4221 (84.71926083866383%)

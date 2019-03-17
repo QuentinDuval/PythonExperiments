@@ -7,9 +7,8 @@ from Learning.Utils import *
 class CommitMessageCorpus:
     REFACTOR = "refactor"
     FEAT = "feat"
-    REVERT = "revert"
     FIX = "fix"
-    TARGET_CLASSES = [REFACTOR, FEAT, REVERT, FIX]
+    TARGET_CLASSES = [REFACTOR, FEAT, FIX]
 
     def __init__(self, xs, ys, unclassified=None):
         self.xs = xs
@@ -43,9 +42,9 @@ class CommitMessageCorpus:
         lhs, rhs = join_split(self.xs, self.ys, ratio)
         return CommitMessageCorpus(*lhs), CommitMessageCorpus(*rhs)
 
-    @staticmethod
-    def match_fix(fix_description):
-        for target_class in ["revert", "fix", "feat", "refactor"]:
+    @classmethod
+    def match_fix(cls, fix_description):
+        for target_class in [cls.FIX, cls.FEAT, cls.REFACTOR]:
             matcher = get_target_matcher(target_class)
             match = matcher(fix_description)
             if match:
@@ -126,9 +125,7 @@ class Matcher:
 @functools.lru_cache(maxsize=None)
 def get_target_matcher(target_class):
     matcher = Matcher()
-    if target_class == "revert":
-        matcher.add("revert")
-    elif target_class == "refactor":
+    if target_class == "refactor":
         matcher.add("refac")
         matcher.add("clean")
         matcher.add("ptech")

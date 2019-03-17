@@ -64,13 +64,13 @@ def test_model_4(split_seed=None):
     vocab_len = vectorizer.get_vocabulary_len()
     sentence_len = vectorizer.max_length
 
-    model = EmbeddingPerceptron(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=30, nb_classes=4)
+    model = EmbeddingPerceptron(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=30, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=0.0001, weight_decay=0.0001)
     predictor.evaluate(test_corpus=test_corpus)
 
     # TODO - pre-trained embeddings do not bring much... (maybe accelerate convergence?)
-    model = EmbeddingPerceptron(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=20, nb_classes=4)
+    model = EmbeddingPerceptron(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=20, nb_classes=3)
     pretrained_embeddings = WordEmbeddings.load_from(model_path='resources/unsupervised_model.bin')
     pretrained_embeddings.transfer_learning_to(vectorizer.vocabulary, model.embed)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)

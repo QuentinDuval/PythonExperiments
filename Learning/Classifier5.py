@@ -59,7 +59,7 @@ def test_model_5(split_seed=None):
     vocab_len = vectorizer.get_vocabulary_len()
     sentence_len = vectorizer.max_length
 
-    model = ConvolutionalModel(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=10, nb_classes=4)
+    model = ConvolutionalModel(vocabulary_len=vocab_len, sentence_size=sentence_len, embedding_size=10, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=1e-4)
     predictor.evaluate(test_corpus=test_corpus)

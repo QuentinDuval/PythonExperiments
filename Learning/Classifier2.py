@@ -143,14 +143,14 @@ def test_model_2(split_seed=None):
 
     print("-" * 50)
 
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus)
     predictor.evaluate(test_corpus=test_corpus)
 
     print("-" * 50)
 
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus)
     predictor.evaluate(test_corpus=test_corpus)

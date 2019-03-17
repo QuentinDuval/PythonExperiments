@@ -52,7 +52,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     '''
-    model = PerceptronModel(vocabulary_len=vocab_len, nb_classes=4)
+    model = PerceptronModel(vocabulary_len=vocab_len, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus)
     predictor.evaluate(test_corpus=test_corpus)
@@ -69,7 +69,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     '''
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=0)
     predictor.evaluate(test_corpus=test_corpus)
@@ -91,7 +91,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     '''
-    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=40, nb_classes=4, drop_out=0.5)
+    model = DoublePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
@@ -108,7 +108,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     '''
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=4)
+    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=100, nb_classes=3)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-3)
     predictor.evaluate(test_corpus=test_corpus)
@@ -122,7 +122,7 @@ def test_model_3(with_bi_grams=False, split_seed=None):
     """
 
     '''
-    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=20, nb_classes=4, drop_out=0.5)
+    model = TriplePerceptronModel(vocabulary_len=vocab_len, hidden_dimension=20, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
     predictor.fit(training_corpus=training_corpus, learning_rate=1e-4, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
