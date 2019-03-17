@@ -173,5 +173,5 @@ def test_model_3_interactive():
         print(predictor.predict(sentence))
 
 
-test_model_3(split_seed=0, with_bi_grams=True)
+# test_model_3(split_seed=0, with_bi_grams=True)
 # test_model_3_interactive()
