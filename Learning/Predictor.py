@@ -7,6 +7,7 @@ import torch.optim as optim
 
 from Learning.Dataset import *
 from Learning.Evaluation import *
+from Learning.Prediction import *
 from Learning.Ratio import *
 
 
@@ -91,8 +92,9 @@ class Predictor:
         x = torch.FloatTensor(self.vectorizer.vectorize(sentence=sentence))
         x = x.unsqueeze(dim=0)
         y = self.model(x)
-        _, predicted = torch.max(y.data, 1)
-        return CommitMessageCorpus.target_class_label(predicted.item())
+        confidence, predicted = torch.max(y.data, 1)
+        target_label = CommitMessageCorpus.target_class_label(predicted.item())
+        return Prediction(target_label, confidence.item())
 
     def evaluate(self, test_corpus: CommitMessageCorpus):
         all_expected = []
