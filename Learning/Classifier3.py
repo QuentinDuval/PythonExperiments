@@ -156,6 +156,8 @@ def test_model_3_interactive():
     refactor
     > delete useless method getQuantity
     refactor
+    > empty capital structures are not saved anymore
+    fix
     """
 
     model = DoublePerceptronModel.load('models/double_preceptron.model')
@@ -212,6 +214,11 @@ def test_model_3_interactive():
     > Actual fix
     """
 
+    # What the fuck fixes
+
+    """
+    [COLLATERAL](Fix): reference returned instead of copy
+    """
 
 
 # test_model_3(split_seed=0, with_bi_grams=True)
