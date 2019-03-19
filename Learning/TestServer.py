@@ -46,7 +46,9 @@ def get_word_neighbors():
         return "Empty fix description!"
     else:
         content = request.data.decode("utf-8")
-        return str(get_embedding_search_index().neighbors(content))
+        neighbors = get_embedding_search_index().neighbors(content)
+        neighbors = [{"key": n, "value": 20} for n in neighbors]
+        return jsonify({"neighbors": neighbors})
 
 
 if __name__ == '__main__':

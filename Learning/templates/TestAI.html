@@ -11,13 +11,8 @@
     <script src="http://d3js.org/d3.v4.min.js"></script>
     <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
 
-    <!--
     <script type="text/javascript" src="{{ url_for('static', filename = 'd3.layout.cloud.js') }}"></script>
-    <script type="text/javascript" src="{{ url_for('static', filename = 'charts.js') }}"></script>
-    -->
-
     <script type="text/javascript" src="{{ url_for('static', filename = 'utils.js') }}"></script>
-
 
     <title>AI Test</title>
 </head>
@@ -64,7 +59,6 @@
         </div>
       </div>
     </div>
-
     <div class="row">
       <div class="col-sm-12">
         <div class="border" style="padding: 25px" id="guess_panel_result"></div>
@@ -73,7 +67,6 @@
   </div>
 
   <!-- Explore panel  -->
-  <!-- TODO - show a word cloud -->
 
   <div id="explore_panel">
     <div class="row" style="margin-top: 25px;">
@@ -88,11 +81,10 @@
         </div>
       </div>
     </div>
-
-    <div class="row">
-      <div class="col-sm-12">
-        <div class="border" style="padding: 25px" id="explore_panel_result"></div>
-      </div>
+    <div class="col-sm-12">
+      <svg id="word_cloud_chart">
+        <g/>
+      </svg>
     </div>
   </div>
 
@@ -100,14 +92,82 @@
 </div>
 
 <script>
+    // Word cloud layout
+
+    let neighbor_words = []
+
+    let fill = d3.scaleOrdinal(d3.schemeCategory20);
+    let w = window.innerWidth / 1.5;
+    let h = window.innerHeight / 1.75;
+
+    function resizeAllCanvas() {
+      w = window.innerWidth / 1.5;
+      h = window.innerHeight / 1.75;
+    }
+
+    let fontSize = d3.scaleSqrt()
+            .range([20, 50]) // The range of font size in display
+            .domain([1, 50]); // The range of value coming from the server
+
+    let layout = d3.layout.cloud()
+            .timeInterval(Infinity)
+            .size([w, h])
+            .fontSize(function(d) { return d.value; })        // How to derive the font size from data
+            .text(function(d) { return d.key; })              // How to derive the text to display from data
+            .on("end", draw)
+            .font('impact')
+            .spiral('archimedean');
+
+    function draw(data, bounds) {
+        let svg = d3.select("#word_cloud_chart").attr("width", w).attr("height", h);
+        let vis = svg.select("g").attr("transform", "translate(" + [w >> 1, h >> 1] + ")");
+
+        let scale = bounds ? Math.min(
+                w / Math.abs(bounds[1].x - w / 2),
+                w / Math.abs(bounds[0].x - w / 2),
+                h / Math.abs(bounds[1].y - h / 2),
+                h / Math.abs(bounds[0].y - h / 2)) / 2 : 1;
+
+        let text = vis.selectAll("text")
+            .data(data, function(d) {
+              return d.text.toLowerCase(); // Add data to current selection
+            });
+
+        text.transition()
+            .duration(1000)
+            .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+            .style("font-size", function(d) { return d.size + "px"; });
+
+        text.exit().remove(); // "exit" selects the removed elements
+        text.enter()          // "enter" selects the added elements
+            .append("text")
+            .attr("text-anchor", "middle")
+            .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+            .style("font-size", function(d) { return d.size + "px"; })
+            .style("opacity", 1e-6)
+            // .on("click", function(d) { addToSearch(d.text); })
+            .transition()
+            .duration(1000)
+            .style("opacity", 1);
+
+        vis.selectAll("text")
+            .style("font-family", function(d) { return d.font; })
+            .style("fill", function(d) { return fill(d.text.toLowerCase()); })
+            .text(function(d) { return d.text; });
+
+        vis.transition().attr("transform", "translate(" + [w >> 1, h >> 1] + ")scale(" + scale + ")");
+    }
+
+    function refreshWordCloud() {
+        layout.stop().words(neighbor_words).start();
+    }
+
+    // Main logic
+
     let guess = false;
 
     function addGuessLine(line) {
       $("#guess_panel_result").append('<p>' + line + '</p>');
-    }
-
-    function addWordLine(line) {
-      $("#explore_panel_result").append('<p>' + line + '</p>');
     }
 
     function onNewGuess() {
@@ -122,7 +182,9 @@
         type: 'POST',
         data: fix_description,
         contentType: "text/plain",
-        success: function(data) { addGuessLine("&gt; " + data); }
+        success: function(data) {
+           addGuessLine("&gt; " + data);
+        }
       });
     }
 
@@ -131,14 +193,16 @@
       if (word === "")
         return;
 
-      addWordLine(word);
       $("#word-input").val("");
       $.ajax({
         url: 'http://{{host}}:{{port}}/devoxx/neighbors',
         type: 'POST',
         data: word,
-        contentType: "text/plain",
-        success: function(data) { addWordLine("&gt; " + data); }
+        contentType: "application/json",
+        success: function(data) {
+           neighbor_words = data["neighbors"];
+           refreshWordCloud();
+        }
       });
     }
 
@@ -165,21 +229,23 @@
     // On ready
 
     $(document).ready(function() {
+      resizeAllCanvas();
+
       window.onhashchange = function() {
         reroute();
-        // refreshWordCloud();
+        refreshWordCloud();
       }
 
       window.onresize = function(event) {
-        // resizeAllCanvas();
-        // refreshWordCloud();
+        resizeAllCanvas();
+        refreshWordCloud();
       };
 
       $("#fix-description-input").change(onNewGuess);
       $("#word-input").change(onWordQuery);
 
       reroute();
-      // refreshWordCloud();
+      refreshWordCloud();
     });
 
 </script>
