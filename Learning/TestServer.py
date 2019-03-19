@@ -1,0 +1,39 @@
+from flask import Flask, render_template, request, jsonify
+from functools import lru_cache
+from Learning.Classifier3 import *
+
+
+app = Flask(__name__)
+
+
+@lru_cache(maxsize=None)
+def get_model():
+    model = DoublePerceptronModel.load('models/double_preceptron.model')
+    training_corpus = CommitMessageCorpus.from_split('train')
+    bi_gram_tokenizer = BiGramTokenizer(NltkTokenizer())
+    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
+    return Predictor(model=model, vectorizer=vectorizer)
+
+
+@app.route("/devoxx")
+def open_gui():
+    return render_template("TestAI.html",
+                           host="dqduv01", # TODO
+                           port=request.environ['SERVER_PORT'])
+
+
+@app.route("/devoxx/guess", methods=['GET', 'POST'])
+def guess_changelist_type():
+    content = request.data
+    if not content:
+        return "Empty fix description!"
+    else:
+        content = request.data.decode("utf-8")
+        return str(get_model().predict(content))
+
+
+if __name__ == '__main__':
+    # For debugging purposes, run on the default port
+    # For production, use "flask run --port=80"
+    app.run(host='0.0.0.0')
+

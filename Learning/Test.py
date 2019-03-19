@@ -58,3 +58,5 @@ feat
 """
 
 # test_model_3_interactive()
+# run_unsupervised_learning(embedding_size=20)
+# test_unsupervised_learning()
