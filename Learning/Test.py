@@ -55,6 +55,8 @@ refactor
 fix
 > add new menu in Collateral agreement screen
 feat
+> purpose of life
+fix
 """
 
 # test_model_3_interactive()

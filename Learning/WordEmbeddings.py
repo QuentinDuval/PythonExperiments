@@ -50,9 +50,6 @@ class WordEmbeddings:
         return self.embedding.weight.data[key] if key is not None else None
 
     def to_search_index(self) -> AnnoyIndex:
-        """
-        To do proximity / analogy queries
-        """
         index = AnnoyIndex(self.embedding_size)
         for word in self.vocabulary.words():
             word_index = self.vocabulary.word_lookup(word)
@@ -83,6 +80,25 @@ class WordEmbeddings:
         return cls(word_to_index, unsupervised_matrix)
 
 
+class WordIndex:
+    """
+    To do proximity / analogy queries
+    """
+    def __init__(self, embeddings: WordEmbeddings):
+        index = AnnoyIndex(embeddings.embedding_size)
+        for word in embeddings.get_vocabulary().words():
+            word_index = embeddings.get_vocabulary().word_lookup(word)
+            index.add_item(word_index, embeddings.get_embedding().weight.data[word_index])
+        index.build(5)
+        self.search_index = index
+        self.embeddings = embeddings
+
+    def neighbors(self, word):
+        word_vector = self.embeddings.get_vector(word)
+        word_indices = self.search_index.get_nns_by_vector(word_vector, n=10)
+        return [self.embeddings.get_vocabulary().index_lookup(word_index) for word_index in word_indices]
+
+
 def run_unsupervised_learning(embedding_size):
     WordEmbeddings.learn_from(input_file='resources/perforce_cl_unsupervised_cleaned.txt',
                               embedding_size=embedding_size,
@@ -91,13 +107,10 @@ def run_unsupervised_learning(embedding_size):
 
 def test_unsupervised_learning():
     embeddings = WordEmbeddings.load_from(model_path='resources/unsupervised_model.bin')
-    search_index = embeddings.to_search_index()
-
+    search_index = WordIndex(embeddings)
     while True:
         query = input("query>")
-        word_vector = embeddings.get_vector(query)
-        word_indices = search_index.get_nns_by_vector(word_vector, n=10)
-        print([embeddings.get_vocabulary().index_lookup(word_index) for word_index in word_indices])
+        print(search_index.neighbors(query))
 
 
 # TODO - seems to have some bugs in the Tokenizer...
