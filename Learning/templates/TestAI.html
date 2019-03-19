@@ -11,11 +11,13 @@
     <script src="http://d3js.org/d3.v4.min.js"></script>
     <script src="http://dimplejs.org/dist/dimple.v2.3.0.min.js"></script>
 
-  <!--
+    <!--
     <script type="text/javascript" src="{{ url_for('static', filename = 'd3.layout.cloud.js') }}"></script>
     <script type="text/javascript" src="{{ url_for('static', filename = 'charts.js') }}"></script>
+    -->
+
     <script type="text/javascript" src="{{ url_for('static', filename = 'utils.js') }}"></script>
-  -->
+
 
     <title>AI Test</title>
 </head>
@@ -142,14 +144,6 @@
 
     function getRoute() {
       return (window.location.hash.split('#')[1] || '').split('?')[0];
-    }
-
-    function setVisible(selector, flag) {
-      if (flag) {
-        $(selector).show();
-      } else {
-        $(selector).hide();
-      }
     }
 
     function reroute() {
