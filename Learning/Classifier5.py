@@ -53,15 +53,15 @@ def test_model_5(split_seed=None):
     model = ConvolutionalModel(vocabulary_len=vocab_len, sentence_size=sentence_len,
                                embedding_size=20, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=1e-4)
+    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=3e-4)
     predictor.evaluate(test_corpus=test_corpus)
 
 
 """
-Training (max): 3842/4221 (91.0210850509358%)
-Validation (max): 367/469 (78.25159914712152%)
+Training (max): 3739/4221 (88.58090499881544%)
+Validation (max): 366/469 (78.03837953091684%)
 --------------------------------------------------
-Accuracy: 75.33432392273403 %
+Accuracy: 75.78008915304606 %
 """
 
 # test_model_5(split_seed=0)
