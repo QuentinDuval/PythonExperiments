@@ -78,7 +78,7 @@ def test_model_6(split_seed=None):
 
     model = RnnClassifier(vocabulary_len=vocab_len, embedding_size=20, hidden_size=20, nb_classes=3, drop_out=0.5)
     predictor = Predictor(model=model, vectorizer=vectorizer, with_gradient_clipping=True, split_seed=split_seed)
-    predictor.fit(training_corpus=training_corpus, learning_rate=1e-2, weight_decay=1e-4)
+    predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=1e-4)
     predictor.evaluate(test_corpus=test_corpus)
     return predictor
 
@@ -99,6 +99,8 @@ Validation (max): 362/470 (77.02127659574468%)
 ------------------------------
 Accuracy: 74.33234421364985 %
 """
+
+# TODO - does not learn anymore...
 
 # test_model_6(split_seed=0)
 # test_model_6_interactive()
