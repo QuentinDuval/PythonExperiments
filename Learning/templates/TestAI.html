@@ -142,7 +142,8 @@
         text.enter()          // "enter" selects the added elements
             .append("text")
             .attr("text-anchor", "middle")
-            .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
+            .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(10)"; })
+            // .attr("transform", function(d) { return "translate(" + [d.x, d.y] + ")rotate(" + d.rotate + ")"; })
             .style("font-size", function(d) { return d.size + "px"; })
             .style("opacity", 1e-6)
             // .on("click", function(d) { addToSearch(d.text); })
@@ -159,7 +160,10 @@
     }
 
     function refreshWordCloud() {
-        layout.stop().words(neighbor_words).start();
+        layout.stop()
+            .words(neighbor_words)
+            .padding(10)
+            .start();
     }
 
     // Main logic
