@@ -9,13 +9,14 @@ class ConvolutionalModel(nn.Module):
         self.sentence_size = sentence_size
         self.nb_classes = nb_classes
         self.drop_out_p = drop_out
+        self.conv_channels = self.embedding_size
 
         self.embed = nn.Embedding(vocabulary_len, self.embedding_size)
         self.convnet = nn.Sequential(
-            nn.Conv1d(in_channels=self.embedding_size, out_channels=self.embedding_size, kernel_size=5, padding=2),
+            nn.Conv1d(in_channels=self.embedding_size, out_channels=self.conv_channels, kernel_size=5, padding=2),
             nn.ELU()
         )
-        self.output_layer = nn.Linear(self.embedding_size * self.sentence_size * 2, self.nb_classes)
+        self.output_layer = nn.Linear((self.embedding_size + self.conv_channels) * self.sentence_size, self.nb_classes)
 
         nn.init.xavier_normal_(self.embed.weight)
         nn.init.xavier_normal_(self.output_layer.weight)
@@ -57,10 +58,10 @@ def test_model_5(split_seed=None):
 
 
 """
-Training (max): 3864/4221 (91.54228855721394%)
-Validation (max): 373/469 (79.53091684434968%)
+Training (max): 3842/4221 (91.0210850509358%)
+Validation (max): 367/469 (78.25159914712152%)
 --------------------------------------------------
-Accuracy: 73.40267459138187 %
+Accuracy: 75.33432392273403 %
 """
 
 # test_model_5(split_seed=0)
