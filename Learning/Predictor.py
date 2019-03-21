@@ -18,7 +18,7 @@ class Predictor:
         self.with_gradient_clipping = with_gradient_clipping
         self.split_seed = split_seed
         self.batch_size = 100
-        self.loss_function = nn.CrossEntropyLoss()
+        self.loss_function = nn.NLLLoss()
         self.min_epoch = 20
         self.max_epoch_no_progress = 30
         self.data_augmentation = lambda x: None
@@ -68,9 +68,9 @@ class Predictor:
         train_accuracy = Ratio()
         for minibatch in training_loader:
             inputs, labels = minibatch['x'], minibatch['y']
+            optimizer.zero_grad()
             outputs = self.model(inputs)
             loss = self.loss_function(outputs, labels)
-            optimizer.zero_grad()
             loss.backward()
             if self.with_gradient_clipping:
                 nn.utils.clip_grad_norm_(self.model.parameters(), 0.25)

@@ -77,7 +77,7 @@ class CommitGenerationDataSet(Dataset):
 class GeneratorLossFunction:
     def __init__(self, vocabulary: Vocabulary):
         ignore_index = vocabulary.word_lookup(vocabulary.PADDING)
-        self.loss_function = nn.CrossEntropyLoss(ignore_index=ignore_index)
+        self.loss_function = nn.NLLLoss(ignore_index=ignore_index)
         # self.loss_function = nn.CrossEntropyLoss() # Seems to better without the ignore index... but only put padding
 
     def __call__(self, outputs, labels):

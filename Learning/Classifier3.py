@@ -84,7 +84,7 @@ class Classifier3Test:
         model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
         self.train(self.predictor_for(model))
 
-        best_accuracy = 0.81
+        best_accuracy = 0.82
         for _ in range(rounds):
             model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
             accuracy = self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
