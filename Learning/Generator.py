@@ -12,6 +12,9 @@ import torch.nn.functional as fn
 from torch.utils.data import Dataset
 
 
+# TODO - try this: https://pytorch.org/tutorials/beginner/nlp/word_embeddings_tutorial.html (language modeler)
+
+
 class CommitGenerationModel(nn.Module):
     def __init__(self, vocabulary_size, embedding_size, hidden_size):
         super().__init__()
