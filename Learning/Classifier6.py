@@ -49,7 +49,7 @@ class RnnClassifier(nn.Module):
         # nn.init.xavier_normal_(self.rnn.all_weights)
         # nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         x = x.long()
         batch_size, sequence_len = x.shape
         x = self.embed(x)       # Shape is batch_size, sequence_len, embedding_size
@@ -61,7 +61,9 @@ class RnnClassifier(nn.Module):
 
         x = self.drop_out(x)
         x = self.output_layer(x)
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
     def drop_out(self, x):
         if self.drop_out_p > 0:
@@ -92,15 +94,13 @@ def test_model_6_interactive():
 
 """
 embedding_size=20, hidden_size=20, nb_classes=3, drop_out=0.5
-learning_rate=1e-2, weight_decay=1e-4
+learning_rate=1e-3, weight_decay=1e-4
 ------------------------------
-Training (max): 3576/4221 (84.71926083866383%)
-Validation (max): 362/470 (77.02127659574468%)
-------------------------------
-Accuracy: 74.33234421364985 %
+Training (max): 3798/4221 (89.97867803837953%)
+Validation (max): 363/470 (77.23404255319149%)
+--------------------------------------------------
+Accuracy: 72.5111441307578 %
 """
-
-# TODO - does not learn anymore...
 
 # test_model_6(split_seed=0)
 # test_model_6_interactive()

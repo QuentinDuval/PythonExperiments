@@ -48,12 +48,14 @@ class EmbeddingPerceptron(nn.Module):
         nn.init.xavier_normal_(self.embed.weight)
         nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         batch_size = x.size()[0]
         x = self.embed(x)
         x = x.view((batch_size, -1))
         x = self.output_layer(x)
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
 
 def test_model_4(split_seed=None):

@@ -28,7 +28,7 @@ class CommitLanguageModeler(nn.Module):
         self.fc1 = nn.Linear(context_size * embedding_size, 128)
         self.fc2 = nn.Linear(128, vocabulary_size)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         # TODO - try to condition it with the type of commit - but then you have much less data...
         x = x.long()
         batch_size, context_size = x.shape
@@ -37,7 +37,9 @@ class CommitLanguageModeler(nn.Module):
         x = self.fc1(x)
         x = fn.relu(x)
         x = self.fc2(x)
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
 
 class CommitLanguageModelVectorizer(Vectorizer):
@@ -84,8 +86,8 @@ def predict_next_1(predictor: Predictor, sentence: str):
 
 
 def test_generator_1(context_size):
-    # training_corpus = CommitMessageCorpus.from_file('resources/manual_cl_list.txt', keep_unclassified=True)
-    training_corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
+    training_corpus = CommitMessageCorpus.from_file('resources/perforce_cl_train.txt', keep_unclassified=True)
+    # training_corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
 
     tokenizer = NltkTokenizer()
     vocabulary = Vocabulary.from_corpus(corpus=training_corpus, tokenizer=tokenizer, min_freq=1, add_unknowns=True)

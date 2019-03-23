@@ -20,7 +20,7 @@ class CommitGenerationModel(nn.Module):
         self.rnn = nn.GRU(input_size=embedding_size, hidden_size=hidden_size, batch_first=False)
         self.fc = nn.Linear(hidden_size, self.vocabulary_size)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         x = x.long()
         x = self.embed(x)           # Shape is batch_size, sequence_len, embedding_size
         x = x.permute(1, 0, 2)      # Shape is sequence_len, batch_size, embedding_size
@@ -30,7 +30,8 @@ class CommitGenerationModel(nn.Module):
         outputs = outputs.contiguous().view(batch_size * sequence_len, feat_size)
 
         outputs = self.fc(outputs)              # Shape is batch_size * sequence_len, vocabulary_size
-        outputs = fn.softmax(outputs, dim=-1)   # Makes sure that the probability sum to 1 at dimension -1
+        if apply_softmax:
+            outputs = fn.softmax(outputs, dim=-1)   # Makes sure that the probability sum to 1 at dimension -1
         return outputs.view(batch_size, sequence_len, self.vocabulary_size)
 
 

@@ -21,7 +21,7 @@ class ConvolutionalModel(nn.Module):
         nn.init.xavier_normal_(self.embed.weight)
         nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         batch_size, sequence_len = x.shape
         x = self.embed(x)                   # Return (batch size, sequence size, embedding size)
 
@@ -34,7 +34,9 @@ class ConvolutionalModel(nn.Module):
 
         x = self.drop_out(x)
         x = self.output_layer(x)
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
     def drop_out(self, x):
         if self.drop_out_p > 0:

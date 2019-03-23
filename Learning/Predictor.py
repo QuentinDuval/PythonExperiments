@@ -18,7 +18,7 @@ class Predictor:
         self.with_gradient_clipping = with_gradient_clipping
         self.split_seed = split_seed
         self.batch_size = 100
-        self.loss_function = nn.NLLLoss()
+        self.loss_function = nn.CrossEntropyLoss()
         self.min_epoch = 20
         self.max_epoch = None
         self.max_epoch_no_progress = 30
@@ -72,7 +72,7 @@ class Predictor:
         for minibatch in training_loader:
             inputs, labels = minibatch['x'], minibatch['y']
             optimizer.zero_grad()
-            outputs = self.model(inputs)
+            outputs = self.model(inputs, apply_softmax=False)
             loss = self.loss_function(outputs, labels)
             loss.backward()
             if self.with_gradient_clipping:

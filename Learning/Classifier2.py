@@ -33,9 +33,11 @@ class PerceptronModel(nn.Module):
         self.output_layer = nn.Linear(self.vocabulary_len, self.nb_classes)
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         x = self.output_layer(x)
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
     def save(self, file_name):
         dump = {
@@ -65,11 +67,13 @@ class DoublePerceptronModel(nn.Module):
         torch.nn.init.xavier_normal_(self.input_layer.weight)
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         x = self.input_layer(x)
         x = self.drop_out(x)
         x = self.output_layer(fn.relu(x))
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
     def drop_out(self, x):
         if self.drop_out_p > 0:
@@ -110,13 +114,15 @@ class TriplePerceptronModel(nn.Module):
         torch.nn.init.xavier_normal_(self.input_layer.weight)
         torch.nn.init.xavier_normal_(self.output_layer.weight)
 
-    def forward(self, x):
+    def forward(self, x, apply_softmax=True):
         x = self.input_layer(x)
         x = self.drop_out(x)
         x = self.middle_layer(fn.relu(x))
         x = self.drop_out(x)
         x = self.output_layer(fn.relu(x))
-        return fn.softmax(x, dim=-1)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
 
     def drop_out(self, x):
         if self.drop_out_p > 0:
