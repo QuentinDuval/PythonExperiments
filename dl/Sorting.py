@@ -24,7 +24,9 @@ class MLPSorting(nn.Module):
             nn.Linear(hidden_size, input_size))
 
     def forward(self, x):
-        return self.fc(x)
+        x = self.fc(x)
+        # x = x.round() # Does not work, cannot be derived
+        return x
 
 
 class RNNSorting(nn.Module):
@@ -44,6 +46,7 @@ class RNNSorting(nn.Module):
         x = x.contiguous().view((batch_size * sequence_len, self.hidden_size))
         x = self.fc(x)
         x = x.view((batch_size, sequence_len))
+        # x = x.round() # Does not work (cannot be derived)
         return x
 
 
@@ -71,30 +74,46 @@ class SortingPredictor:
     def predict(self, sequence):
         sequence = torch.FloatTensor(sequence)
         result = self.model(sequence.unsqueeze(0)).squeeze(0)
-        return [x.item() for x in result]
+        return [x.round().item() for x in result]
 
 
-def test_sorting(input_size, model):
-    xs = []
-    ys = []
-    for _ in range(50000):
-        x = np.random.randint(low=0, high=100, size=input_size)
-        xs.append(x)
-        ys.append(np.array(sorted(x), dtype=np.int64))
-
+def test_algo(xs, ys, model, epoch, learning_rate, weight_decay):
     xs = torch.FloatTensor(np.stack(xs))
     ys = torch.FloatTensor(np.stack(ys))
     data_set = TensorDataset(xs, ys)
 
     predictor = SortingPredictor(model=model)
-    predictor.fit(data_set, epoch=20, learning_rate=1e-2, weight_decay=0)
+    predictor.fit(data_set, epoch=epoch, learning_rate=learning_rate, weight_decay=weight_decay)
 
-    test_x = np.random.randint(low=0, high=100, size=input_size)
+    test_x = np.random.randint(low=0, high=100, size=xs.shape[-1])
     test_y = predictor.predict(test_x)
     print(test_x)
     print(test_y)
 
 
+def test_copying(input_size, model, epoch):
+    xs = []
+    ys = []
+    for _ in range(10000):
+        x = np.random.randint(low=0, high=100, size=input_size)
+        xs.append(x)
+        ys.append(x)
+    test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+
+def test_sorting(input_size, model, epoch):
+    xs = []
+    ys = []
+    for _ in range(10000):
+        x = np.random.randint(low=0, high=100, size=input_size)
+        xs.append(x)
+        ys.append(np.array(sorted(x), dtype=np.int64))
+    test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+
+# test_copying(input_size=5, model=MLPSorting(input_size=5, hidden_size=10), epoch=50)
+# test_copying(input_size=5, model=RNNSorting(hidden_size=10), epoch=50)
+
 # TODO - does not work well, the numbers are sorted, but not the same as the input!
-# test_sorting(input_size=5, model=MLPSorting(input_size=5, hidden_size=50))
-# test_sorting(input_size=5, model=RNNSorting(hidden_size=25))
+# test_sorting(input_size=5, model=MLPSorting(input_size=5, hidden_size=50), epoch=50)
+# test_sorting(input_size=5, model=RNNSorting(hidden_size=25), epoch=50)
