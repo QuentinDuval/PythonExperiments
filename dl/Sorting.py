@@ -10,7 +10,13 @@ import torch.optim as optim
 from torch.utils.data import *
 
 
-# https://datascience.stackexchange.com/questions/29345/how-to-sort-numbers-using-convolutional-neural-network
+# TODO:
+#  For sorting numbers, no permutation seems to be used
+#  https://datascience.stackexchange.com/questions/29345/how-to-sort-numbers-using-convolutional-neural-network
+
+# TODO:
+#  For even and odd numbers, this is hard
+#  https://stats.stackexchange.com/questions/161189/train-a-neural-network-to-distinguish-between-even-and-odd-numbers
 
 
 class MLPPermutation1(nn.Module):
@@ -147,16 +153,15 @@ def test_sorting(input_size, model, epoch):
     fit_regression(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
 
 
-'''
-test_copying(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
-test_copying(input_size=5, model=RNNPermutation1(hidden_size=10), epoch=50)
+# test_copying(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
+# test_copying(input_size=5, model=RNNPermutation1(hidden_size=10), epoch=50)
 
-test_reversing(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
-test_reversing(input_size=5, model=RNNPermutation1(hidden_size=20), epoch=50)
+# test_reversing(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
+# test_reversing(input_size=5, model=RNNPermutation1(hidden_size=20), epoch=50)
 
-test_reversing_evens(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
-test_reversing_evens(input_size=5, model=RNNPermutation1(hidden_size=10), epoch=100)
+# test_reversing_evens(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=10), epoch=50)
+# test_reversing_evens(input_size=5, model=RNNPermutation1(hidden_size=10), epoch=100)
 
-test_sorting(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=50), epoch=50)
-test_sorting(input_size=5, model=RNNPermutation1(hidden_size=25), epoch=50)
-'''
+# test_sorting(input_size=5, model=MLPPermutation1(input_size=5, hidden_size=50), epoch=50)
+# test_sorting(input_size=5, model=RNNPermutation1(hidden_size=25), epoch=50)
+
