@@ -111,6 +111,32 @@ def test_reversing(input_size, model, epoch):
     test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
 
 
+def reverse_evens(xs):
+    ys = list(xs)
+    i = 0
+    j = len(ys) - 1
+    while i < j:
+        while i < len(ys) and ys[i] % 2:
+            i += 1
+        while j >= 0 and ys[j] % 2:
+            j -= 1
+        if i < j:
+            ys[i], ys[j] = ys[j], ys[i]
+            i += 1
+            j -= 1
+    return ys
+
+
+def test_reversing_evens(input_size, model, epoch):
+    xs = []
+    ys = []
+    for _ in range(10000):
+        x = np.random.randint(low=0, high=100, size=input_size)
+        xs.append(x)
+        ys.append(reverse_evens(x))
+    test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+
 def test_sorting(input_size, model, epoch):
     xs = []
     ys = []
@@ -126,6 +152,9 @@ def test_sorting(input_size, model, epoch):
 
 # test_reversing(input_size=5, model=MLPSorting(input_size=5, hidden_size=10), epoch=50)
 # test_reversing(input_size=5, model=RNNSorting(hidden_size=20), epoch=50)
+
+# test_reversing_evens(input_size=5, model=MLPSorting(input_size=5, hidden_size=10), epoch=50)
+# test_reversing_evens(input_size=5, model=RNNSorting(hidden_size=10), epoch=100)
 
 # TODO - does not work well, the numbers are sorted, but not the same as the input!
 # test_sorting(input_size=5, model=MLPSorting(input_size=5, hidden_size=50), epoch=50)
