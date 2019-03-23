@@ -20,6 +20,7 @@ class Predictor:
         self.batch_size = 100
         self.loss_function = nn.NLLLoss()
         self.min_epoch = 20
+        self.max_epoch = None
         self.max_epoch_no_progress = 30
         self.data_augmentation = lambda x: None
 
@@ -40,6 +41,8 @@ class Predictor:
         max_valid_accuracy = Ratio()
 
         for epoch in itertools.count(0):
+            if self.max_epoch and epoch > self.max_epoch:
+                break
             if epoch - best_epoch > min(max(self.min_epoch, epoch // 5), self.max_epoch_no_progress):
                 break
 
@@ -94,6 +97,8 @@ class Predictor:
         return Ratio((predicted == labels).sum().item(), len(labels))
 
     def predict(self, sentence):
+        # TODO - inject a vocabulary to translate the element back to realm of text instead of hard-coding it
+
         x = torch.FloatTensor(self.vectorizer.vectorize(sentence=sentence))
         x = x.unsqueeze(dim=0)
         self.model.eval()
