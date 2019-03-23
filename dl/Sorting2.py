@@ -40,6 +40,29 @@ class MLPPermutation2(nn.Module):
         return x
 
 
+class MLPPermutation3(nn.Module):
+    """
+    Again, we complexify the model to be able to find "odd" numbers: we add a binary representation of numbers
+    """
+    def __init__(self, input_size, binary_size, hidden_size):
+        super().__init__()
+        self.fc = nn.Sequential(
+            nn.Linear(input_size * binary_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, input_size * input_size))
+
+    def forward(self, x, apply_softmax=True):
+        batch_size, sequence_size, repr_size = x.squeeze(-1).shape  # TODO - why the last element is size 1???
+        x = x.view((batch_size, -1))
+        x = self.fc(x)
+        x = x.view((batch_size, sequence_size, sequence_size))
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
+
+
 class ClassificationPredictor:
     def __init__(self, model):
         self.model = model
@@ -119,20 +142,31 @@ def reverse_evens(xs):
     return ys
 
 
+def binary_repr(x):
+    r = np.zeros((5, 1), dtype=np.int64)
+    for i in range(5):
+        if 0x1 & (x >> i):
+            r[i] = 1
+    return r
+
+
 def test_reversing_evens(input_size, model, epoch):
     xs = []
     ys = []
-    # TODO
-    #  detecting the even number is hard! it is hardcoded here
-    #  instead of doing this, let it learn it (cos activation function OR binary representation of numbers)
     for _ in range(10000):
         x = np.random.randint(low=0, high=100, size=input_size)
-        xs.append(np.array([v % 2 for v in x], dtype=np.int64))
+        xs.append(np.array([binary_repr(v) for v in x], dtype=np.int64))
         ys.append(reverse_evens(x))
-    predictor = fit_classification(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+    xs = torch.FloatTensor(np.stack(xs))
+    ys = torch.LongTensor(np.stack(ys))
+    data_set = TensorDataset(xs, ys)
+
+    predictor = ClassificationPredictor(model=model)
+    predictor.fit(data_set, epoch=epoch, learning_rate=1e-2, weight_decay=0)
 
     x = np.random.randint(low=0, high=100, size=input_size)
-    x_encoded = np.array([v % 2 for v in x], dtype=np.int64)
+    x_encoded = np.array([binary_repr(v) for v in x], dtype=np.int64)
     x_encoded = torch.FloatTensor(x_encoded)
 
     result = predictor.model(x_encoded.unsqueeze(0)).squeeze(0)
@@ -160,7 +194,7 @@ def test_sorting(input_size, model, epoch):
 # test_reversing(input_size=5, model=RNNPermutation2(hidden_size=20), epoch=50)
 
 # TODO - does not learn (detection of even numbers... change the encoding?)
-# test_reversing_evens(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=50), epoch=10)
+# test_reversing_evens(input_size=5, model=MLPPermutation3(input_size=5, binary_size=5, hidden_size=50), epoch=10)
 # test_reversing_evens(input_size=5, model=RNNPermutation2(hidden_size=10), epoch=100)
 
 # TODO - does not learn fully
