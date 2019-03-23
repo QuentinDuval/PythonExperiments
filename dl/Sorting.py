@@ -10,6 +10,9 @@ import torch.optim as optim
 from torch.utils.data import *
 
 
+# https://datascience.stackexchange.com/questions/29345/how-to-sort-numbers-using-convolutional-neural-network
+
+
 class MLPSorting(nn.Module):
     def __init__(self, input_size, hidden_size):
         super().__init__()
@@ -24,12 +27,32 @@ class MLPSorting(nn.Module):
         return self.fc(x)
 
 
+class RNNSorting(nn.Module):
+    def __init__(self, hidden_size):
+        super().__init__()
+        self.hidden_size = hidden_size
+        self.rnn = nn.GRU(input_size=1, hidden_size=self.hidden_size)
+        self.fc = nn.Linear(self.hidden_size, 1)
+
+    def forward(self, x):
+        batch_size, sequence_len = x.shape
+        x = x.unsqueeze(dim=2)
+        x = x.permute(1, 0, 2)
+        init_state = torch.zeros(1, batch_size, self.hidden_size)
+        x, final_state = self.rnn(x, init_state)
+        x = x.permute(1, 0, 2)  # batch_size, sequence_len, self.hidden_size
+        x = x.contiguous().view((batch_size * sequence_len, self.hidden_size))
+        x = self.fc(x)
+        x = x.view((batch_size, sequence_len))
+        return x
+
+
 class SortingPredictor:
     def __init__(self, model):
         self.model = model
 
     def fit(self, data_set, epoch: int, learning_rate: float, weight_decay: float):
-        loss_fct = nn.L1Loss()
+        loss_fct = nn.MSELoss()
         optimizer = optim.Adam(params=self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
         training_loader = DataLoader(data_set, batch_size=500, shuffle=True)
 
@@ -51,7 +74,7 @@ class SortingPredictor:
         return [x.item() for x in result]
 
 
-def test_sorting(input_size):
+def test_sorting(input_size, model):
     xs = []
     ys = []
     for _ in range(50000):
@@ -63,7 +86,6 @@ def test_sorting(input_size):
     ys = torch.FloatTensor(np.stack(ys))
     data_set = TensorDataset(xs, ys)
 
-    model = MLPSorting(input_size=input_size, hidden_size=50)
     predictor = SortingPredictor(model=model)
     predictor.fit(data_set, epoch=20, learning_rate=1e-2, weight_decay=0)
 
@@ -74,4 +96,5 @@ def test_sorting(input_size):
 
 
 # TODO - does not work well, the numbers are sorted, but not the same as the input!
-# test_sorting(input_size=5)
+# test_sorting(input_size=5, model=MLPSorting(input_size=5, hidden_size=50))
+# test_sorting(input_size=5, model=RNNSorting(hidden_size=25))
