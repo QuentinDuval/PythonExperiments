@@ -101,6 +101,16 @@ def test_copying(input_size, model, epoch):
     test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
 
 
+def test_reversing(input_size, model, epoch):
+    xs = []
+    ys = []
+    for _ in range(10000):
+        x = np.random.randint(low=0, high=100, size=input_size)
+        xs.append(x)
+        ys.append(x[::-1])
+    test_algo(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+
 def test_sorting(input_size, model, epoch):
     xs = []
     ys = []
@@ -113,6 +123,9 @@ def test_sorting(input_size, model, epoch):
 
 # test_copying(input_size=5, model=MLPSorting(input_size=5, hidden_size=10), epoch=50)
 # test_copying(input_size=5, model=RNNSorting(hidden_size=10), epoch=50)
+
+# test_reversing(input_size=5, model=MLPSorting(input_size=5, hidden_size=10), epoch=50)
+# test_reversing(input_size=5, model=RNNSorting(hidden_size=20), epoch=50)
 
 # TODO - does not work well, the numbers are sorted, but not the same as the input!
 # test_sorting(input_size=5, model=MLPSorting(input_size=5, hidden_size=50), epoch=50)
