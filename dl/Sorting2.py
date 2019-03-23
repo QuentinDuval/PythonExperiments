@@ -141,8 +141,10 @@ def test_sorting(input_size, model, epoch):
 # test_reversing(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=10), epoch=10)
 # test_reversing(input_size=5, model=RNNPermutation1(hidden_size=20), epoch=50)
 
-# test_reversing_evens(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=50), epoch=10) # TODO - does not learn
+# TODO - does not learn (detection of even numbers... change the encoding?)
+# test_reversing_evens(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=50), epoch=10)
 # test_reversing_evens(input_size=5, model=RNNPermutation1(hidden_size=10), epoch=100)
 
-# test_sorting(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=25), epoch=100) # TODO - does not learn fully
+# TODO - does not learn fully
+# test_sorting(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=25), epoch=100)
 # test_sorting(input_size=5, model=RNNPermutation1(hidden_size=25), epoch=50)
