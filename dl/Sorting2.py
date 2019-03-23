@@ -10,6 +10,11 @@ import torch.optim as optim
 from torch.utils.data import *
 
 
+class CosModule(nn.Module):
+    def forward(self, x):
+        return torch.cos(x)
+
+
 class MLPPermutation2(nn.Module):
     """
     Very different model: we want to model the permutations (and not the values) by turning the problem in a
@@ -75,6 +80,7 @@ def fit_classification(xs, ys, model, epoch, learning_rate, weight_decay):
     test_y = predictor.predict(test_x)
     print(test_x)
     print(test_y)
+    return predictor
 
 
 def test_copying(input_size, model, epoch):
@@ -116,11 +122,23 @@ def reverse_evens(xs):
 def test_reversing_evens(input_size, model, epoch):
     xs = []
     ys = []
+    # TODO
+    #  detecting the even number is hard! it is hardcoded here
+    #  instead of doing this, let it learn it (cos activation function OR binary representation of numbers)
     for _ in range(10000):
         x = np.random.randint(low=0, high=100, size=input_size)
-        xs.append(x)
+        xs.append(np.array([v % 2 for v in x], dtype=np.int64))
         ys.append(reverse_evens(x))
-    fit_classification(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+    predictor = fit_classification(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
+
+    x = np.random.randint(low=0, high=100, size=input_size)
+    x_encoded = np.array([v % 2 for v in x], dtype=np.int64)
+    x_encoded = torch.FloatTensor(x_encoded)
+
+    result = predictor.model(x_encoded.unsqueeze(0)).squeeze(0)
+    _, predicted = torch.max(result.data, dim=-1)
+    y = [x[i].item() for i in predicted]
+    print(x, y)
 
 
 def test_sorting(input_size, model, epoch):
