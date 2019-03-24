@@ -25,7 +25,7 @@ def get_embedding_search_index():
 @app.route("/devoxx")
 def open_gui():
     return render_template("TestAI.html",
-                           host="dqduv01", # TODO
+                           host="127.0.0.1", # TODO
                            port=request.environ['SERVER_PORT'])
 
 
