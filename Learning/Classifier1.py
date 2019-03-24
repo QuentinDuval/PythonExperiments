@@ -46,7 +46,7 @@ class HardCodedClassifier:
         for x, y in corpus:
             predicted.append(self.predict(x))
             expected.append(y)
-        print_confusion_matrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES)
+        ConfusionMatrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES).show()
 
 
 def test_model_1():
