@@ -8,35 +8,6 @@ from Learning.Tokenizer import *
 from Learning.Vocabulary import *
 
 
-def test_tokenization():
-    tokenizer = NltkTokenizer()
-    for w in ["doubleAverageA1DivA2KAdjust", "COMDI-67", "FPB-75", "DEF0889790", "getQuantityOfTrade", "getQuantity", "get_quantity"]:
-        print(tokenizer.clean_token(w))
-
-    bi_gram = NGramTokenizer(tokenizer, count=2)
-    print(bi_gram.tokenize("fix a nasty memory corruption"))
-
-    corpus = CommitMessageCorpus.from_split('train')
-    vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=bi_gram, min_freq=5, add_unknowns=True)
-    print(len(vocabulary))
-    print(vocabulary)
-
-    '''
-    corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
-
-    tokenizer = NltkTokenizer()
-    for fix_description in corpus.get_unclassified()[30:60]:
-        print(fix_description.strip())
-        print(">>>", " ".join(tokenizer(fix_description)))
-        print()
-
-    vocab = Vocabulary.from_corpus(corpus, tokenizer=tokenizer, min_freq=2, add_unknowns=True)
-    print(vocab.words())
-    print(len(vocab))
-    '''
-
-
-# test_tokenization()
 # test_model_1()
 # test_model_2(split_seed=0)
 # test_model_3(split_seed=0)
