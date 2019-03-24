@@ -45,18 +45,32 @@ def test_tokenization():
 # test_model_6(split_seed=0)
 
 """
-> introduce crash on purpose
-fix
-> move CollateralAgreement class in traderep module
-refactor
-> extract method X from Y
-refactor
-> quantity was wrong
-fix
-> add new menu in Collateral agreement screen
-feat
-> purpose of life
-fix
+move CollateralAgreement to lib/folder1/folder2
+> refactor (80.04060983657837%)
+
+quantity was wrong
+> fix (58.31055045127869%)
+
+add new tab in collateral screen
+> feat (78.84904742240906%)
+
+add tab in collateral screen
+> feat (63.92854452133179%)
+
+cleaning
+> refactor (53.63123416900635%)
+
+move things around
+> refactor (44.75261867046356%)
+
+rework collateral screen
+> feat (36.6421103477478%)
+
+purpose of life
+> fix (38.80935311317444%)
+
+introduce crash on purpose
+> fix (45.31545341014862%)
 """
 
 # test_model_3_interactive()

@@ -32,11 +32,11 @@
   </button>
   <div class="collapse navbar-collapse" id="navbarSupportedContent">
     <ul class="navbar-nav mr-auto">
-      <li class="nav-item active" id="guess_link">
-        <a class="nav-link" href="#/guess">Guess</a>
+      <li class="nav-item active" id="classification_guess_link">
+        <a class="nav-link" href="#/guess">Classify</a>
       </li>
-      <li class="nav-item active" id="explore_link">
-        <a class="nav-link" href="#/explore">Explore</a>
+      <li class="nav-item active" id="similarities_link">
+        <a class="nav-link" href="#/similarities">Similarities</a>
       </li>
     </ul>
   </div>
@@ -46,22 +46,22 @@
 
   <!-- Guess panel (ask anything to the AI)  -->
 
-  <div id="guess_panel">
+  <div id="classification_guess_panel">
     <div class="row" style="margin-top: 25px;">
       <div class="col-sm-12">
         <div class="input-group mb-3">
           <div class="input-group-prepend">
-            <span class="input-group-text">Fix description</span>
+            <span class="input-group-text">Commit description</span>
           </div>
-          <input id="fix-description-input" type="text" class="form-control"
-                 placeholder="Fix description" aria-label="FixDescription"
-                 aria-describedby="fix-description-input"/>
+          <input id="commit-description-input" type="text" class="form-control"
+                 placeholder="Commit description" aria-label="FixDescription"
+                 aria-describedby="commit-description-input"/>
         </div>
       </div>
     </div>
     <div class="row">
       <div class="col-sm-12">
-        <div class="border" style="padding: 25px" id="guess_panel_result"></div>
+        <div class="border" style="padding: 25px" id="classification_guess_panel_result"></div>
       </div>
     </div>
   </div>
@@ -73,7 +73,7 @@
       <div class="col-sm-12">
         <div class="input-group mb-3">
           <div class="input-group-prepend">
-            <span class="input-group-text">Enter a word</span>
+            <span class="input-group-text">Words around</span>
           </div>
           <input id="word-input" type="text" class="form-control"
                  placeholder="Enter a word" aria-label="Word"
@@ -171,16 +171,16 @@
     let guess = false;
 
     function addGuessLine(line) {
-      $("#guess_panel_result").append('<p>' + line + '</p>');
+      $("#classification_guess_panel_result").append('<p>' + line + '</p>');
     }
 
     function onNewGuess() {
-      fix_description = $("#fix-description-input").val();
+      fix_description = $("#commit-description-input").val();
       if (fix_description === "")
         return;
 
       addGuessLine(fix_description);
-      $("#fix-description-input").val("");
+      $("#commit-description-input").val("");
       $.ajax({
         url: 'http://{{host}}:{{port}}/devoxx/guess',
         type: 'POST',
@@ -218,14 +218,14 @@
       let route = getRoute();
       guess = (route === "/guess");
 
-      setVisible("#guess_panel", guess);
+      setVisible("#classification_guess_panel", guess);
       setVisible("#explore_panel", !guess);
 
       if (guess) {
-        $("#guess_link").addClass("active");
+        $("#classification_guess_link").addClass("active");
         $("#explore_panel").removeClass("active");
       } else {
-        $("#guess_link").removeClass("active");
+        $("#classification_guess_link").removeClass("active");
         $("#explore_panel").addClass("active");
       }
     }
@@ -245,7 +245,7 @@
         refreshWordCloud();
       };
 
-      $("#fix-description-input").change(onNewGuess);
+      $("#commit-description-input").change(onNewGuess);
       $("#word-input").change(onWordQuery);
 
       reroute();

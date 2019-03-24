@@ -4,7 +4,8 @@ class Prediction:
         self.confidence_level = confidence_level
 
     def __repr__(self):
-        return self.prediction + " (" + str(self.confidence_level * 100) + "%)"
+        percentage = round(self.confidence_level * 100, 2)
+        return self.prediction + " (" + str(percentage) + "%)"
 
     def __eq__(self, other):
         if isinstance(other, Prediction):
