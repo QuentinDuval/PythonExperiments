@@ -43,6 +43,8 @@ class MLPPermutation2(nn.Module):
 class MLPPermutation3(nn.Module):
     """
     Again, we complexify the model to be able to find "odd" numbers: we add a binary representation of numbers
+
+    But... this does not work for multiple of 3!
     """
     def __init__(self, sequence_len, binary_size, hidden_size):
         super().__init__()
@@ -61,6 +63,10 @@ class MLPPermutation3(nn.Module):
         if apply_softmax:
             x = fn.softmax(x, dim=-1)
         return x
+
+
+class MLPPermutation4(nn.Module):
+    pass
 
 
 class ClassificationPredictor:
@@ -126,20 +132,28 @@ def test_reversing(input_size, model, epoch):
     fit_classification(xs, ys, model, epoch=epoch, learning_rate=1e-2, weight_decay=0)
 
 
-def reverse_evens(xs):
+def reverse_if(xs, pred):
     ys = list(range(len(xs)))
     i = 0
     j = len(ys) - 1
     while i < j:
-        while i < len(ys) and xs[ys[i]] % 2:
+        while i < len(ys) and pred(xs[ys[i]]):
             i += 1
-        while j >= 0 and xs[ys[j]] % 2:
+        while j >= 0 and pred(xs[ys[j]]):
             j -= 1
         if i < j:
             ys[i], ys[j] = ys[j], ys[i]
             i += 1
             j -= 1
     return ys
+
+
+def reverse_evens(xs):
+    return reverse_if(xs, pred=lambda x: x % 2 == 0)
+
+
+def reverse_multiple_of_3(xs):
+    return reverse_if(xs, pred=lambda x: x % 3 == 0)
 
 
 def binary_repr(x):
@@ -157,6 +171,7 @@ def test_reversing_evens(input_size, model, epoch):
         x = np.random.randint(low=0, high=100, size=input_size)
         xs.append(np.array([binary_repr(v) for v in x], dtype=np.int64))
         ys.append(reverse_evens(x))
+        # ys.append(reverse_multiple_of_3(x)) # Does not work with this...
 
     xs = torch.FloatTensor(np.stack(xs))
     ys = torch.LongTensor(np.stack(ys))
@@ -188,15 +203,9 @@ def test_sorting(input_size, model, epoch):
 
 
 # test_copying(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=10), epoch=10)
-# test_copying(input_size=5, model=RNNPermutation2(hidden_size=10), epoch=50)
 
 # test_reversing(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=10), epoch=10)
-# test_reversing(input_size=5, model=RNNPermutation2(hidden_size=20), epoch=50)
 
-# TODO - does not learn (detection of even numbers... change the encoding?)
-# test_reversing_evens(input_size=5, model=MLPPermutation3(input_size=5, binary_size=5, hidden_size=50), epoch=10)
-# test_reversing_evens(input_size=5, model=RNNPermutation2(hidden_size=10), epoch=100)
+# test_reversing_evens(input_size=5, model=MLPPermutation3(sequence_len=5, binary_size=5, hidden_size=50), epoch=10)
 
-# TODO - does not learn fully
-# test_sorting(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=25), epoch=100)
-# test_sorting(input_size=5, model=RNNPermutation2(hidden_size=25), epoch=50)
+# test_sorting(input_size=5, model=MLPPermutation2(input_size=5, hidden_size=50), epoch=100)
