@@ -66,7 +66,10 @@ class MLPPermutation3(nn.Module):
 
 
 class MLPPermutation4(nn.Module):
-    pass
+    """
+    Trying to use a cosine activation function (to help identify patterns like modulos)
+    """
+    # TODO
 
 
 class ClassificationPredictor:

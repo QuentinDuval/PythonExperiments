@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import torch
 import torch.nn as nn
@@ -23,11 +24,12 @@ class TwoLayerRegression(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super().__init__()
         self.fc1 = nn.Linear(in_features=input_size, out_features=hidden_size)
+        self.relu = nn.LeakyReLU(negative_slope=0.1)
         self.fc2 = nn.Linear(in_features=hidden_size, out_features=output_size)
 
     def forward(self, x):
         x = self.fc1(x)
-        x = fn.relu(x)
+        x = self.relu(x)
         x = self.fc2(x)
         return x
 
@@ -45,6 +47,23 @@ class MultiLayerRegression(nn.Module):
 
     def forward(self, x):
         return self.fc(x)
+
+
+class MultiLayerPeriodicActivation(nn.Module):
+    def __init__(self, input_size, hidden_size, output_size):
+        super().__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.fc2 = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, output_size)
+        )
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = torch.cos(x)
+        x = self.fc2(x)
+        return x
 
 
 def fit_regression(model: nn.Module, data_set: SplitDataset, epoch, learning_rate):
@@ -105,8 +124,9 @@ def test_linear(f):
 
 
 def test_feed_forward(f):
-    model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
-    # model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
+    # model = TwoLayerRegression(input_size=1, hidden_size=20, output_size=1)
+    model = MultiLayerRegression(input_size=1, hidden_size=20, output_size=1)
+    # model = MultiLayerPeriodicActivation(input_size=1, hidden_size=20, output_size=1)
 
     inputs = np.array([[np.random.uniform(-10, 10)] for _ in range(1000)], dtype=np.float32)
     outputs = np.array([f(x) for x in inputs], dtype=np.float32)
@@ -121,15 +141,23 @@ def test_feed_forward(f):
     plot.show()
 
 
+"""
+Polynomials are easy to approximate
+"""
+
 # test_linear(lambda x: x+1)
-# test_feed_forward(lambda x: x**3 + 5 * x**2 + 10*x + 5 + np.random.uniform(-1000, 1000))
+# test_feed_forward(lambda x: x**3 + 5 * x**2 + 10*x + 5 + np.random.uniform(-1, 1))
 # test_feed_forward(lambda x: 20 + np.random.uniform(-10, 10))
 # test_feed_forward(lambda x: x + np.random.uniform(-x, x))
 
 # TODO - feed it with inputs from outside
 # TODO - show that it is still easier to go for sklearn polynomial regression
 
+"""
+Periodic functions are much harder...
+"""
 
+# test_feed_forward(lambda x: math.cos(x))
 
 
 

@@ -180,9 +180,9 @@ Recognizing the border is much harder than finding the circle with only 2 classe
 
 Whereas, 3 classes makes it easy to optimize, and the solution is found easily.
 """
-test_classif_circle_border(nb_classes=2, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_circle_border(nb_classes=2, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle_border(nb_classes=2, polar=True, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
-# test_classif_circle_border(nb_classes=3, model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=3))
+# test_classif_circle_border(nb_classes=3, model=TwoLayerClassifier(input_size=2, hidden_size=25, output_size=3))
 # test_classif_circle_border(nb_classes=2, model=LinearClassifier(input_size=2, output_size=2))
 # test_classif_circle_border(nb_classes=2, polar=True, model=LinearClassifier(input_size=2, output_size=2))
 
