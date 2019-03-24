@@ -64,6 +64,8 @@ def fit_regression(model: nn.Module, data_set: SplitDataset, epoch, learning_rat
 
 
 def test_deduction():
-    # TODO - how do you create the examples? (a language for pattern + generator?)
+    # TODO - how do you create the examples?
+    #  * a language for pattern + generator?
+    #  * give them the beginning of a function (sin?)
     # TODO - how do you make them of the same size for training...
     pass
