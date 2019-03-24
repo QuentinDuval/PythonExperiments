@@ -39,12 +39,13 @@ class RnnClassifier(nn.Module):
         self.embed = nn.Embedding(vocabulary_len, embedding_size)
         self.hidden_size = hidden_size
         self.drop_out_p = drop_out
+        self.rnn_layers = 1
         self.rnn = nn.GRU(input_size=embedding_size,
                           hidden_size=self.hidden_size,
-                          num_layers=1,
+                          num_layers=self.rnn_layers,
                           batch_first=False,
                           dropout=0)
-        self.output_layer = nn.Linear(self.hidden_size, nb_classes)
+        self.output_layer = nn.Linear(self.rnn_layers * self.hidden_size, nb_classes)
         # nn.init.xavier_normal_(self.embed.weight)
         # nn.init.xavier_normal_(self.rnn.all_weights)
         # nn.init.xavier_normal_(self.output_layer.weight)
@@ -55,9 +56,10 @@ class RnnClassifier(nn.Module):
         x = self.embed(x)       # Shape is batch_size, sequence_len, embedding_size
         x = x.permute(1, 0, 2)  # Shape is sequence_len, batch_size, embedding_size
 
-        init_state = torch.zeros(1, batch_size, self.hidden_size)
+        init_state = torch.zeros(self.rnn_layers, batch_size, self.hidden_size)
         outputs, final_state = self.rnn(x, init_state)
-        x = final_state.squeeze(0)  # shape was: 1, batch_size, hidden_size
+        x = final_state.permute(1, 0, 2)  # shape was: rnn_layers, batch_size, hidden_size
+        x = x.contiguous().view((batch_size, -1))
 
         x = self.drop_out(x)
         x = self.output_layer(x)
