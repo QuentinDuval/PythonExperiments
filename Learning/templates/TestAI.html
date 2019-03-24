@@ -61,7 +61,9 @@
     </div>
     <div class="row">
       <div class="col-sm-12">
-        <div class="border" style="padding: 25px" id="classification_guess_panel_result"></div>
+        <div class="border"
+             style="padding: 25px; height:500px; overflow: auto"
+             id="classification_guess_panel_result"></div>
       </div>
     </div>
   </div>
@@ -166,12 +168,34 @@
             .start();
     }
 
-    // Main logic
+    function onWordQuery() {
+      word = $("#word-input").val();
+      if (word === "")
+        return;
 
-    let guess = false;
+      $("#word-input").val("");
+      $.ajax({
+        url: 'http://{{host}}:{{port}}/devoxx/neighbors',
+        type: 'POST',
+        data: word,
+        contentType: "application/json",
+        success: function(data) {
+           neighbor_words = data["neighbors"];
+           refreshWordCloud();
+        }
+      });
+    }
+
+    // Classification logic
+
+    function scrollToLastGuess() {
+      let line_count = $("#classification_guess_panel_result p");
+      $("#classification_guess_panel_result").animate({scrollTop: line_count.length * 50}, 50);
+    }
 
     function addGuessLine(line) {
       $("#classification_guess_panel_result").append('<p>' + line + '</p>');
+      scrollToLastGuess();
     }
 
     function onNewGuess() {
@@ -192,23 +216,9 @@
       });
     }
 
-    function onWordQuery() {
-      word = $("#word-input").val();
-      if (word === "")
-        return;
+    // Main logic
 
-      $("#word-input").val("");
-      $.ajax({
-        url: 'http://{{host}}:{{port}}/devoxx/neighbors',
-        type: 'POST',
-        data: word,
-        contentType: "application/json",
-        success: function(data) {
-           neighbor_words = data["neighbors"];
-           refreshWordCloud();
-        }
-      });
-    }
+    let guess = false;
 
     function getRoute() {
       return (window.location.hash.split('#')[1] || '').split('?')[0];
@@ -229,8 +239,6 @@
         $("#explore_panel").addClass("active");
       }
     }
-
-    // On ready
 
     $(document).ready(function() {
       resizeAllCanvas();

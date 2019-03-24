@@ -52,6 +52,9 @@ def get_word_neighbors():
 
 
 if __name__ == '__main__':
+    # get_classification_model()
+    # get_embedding_search_index()
+
     # For debugging purposes, run on the default port
     # For production, use "flask run --port=80"
     app.run(host='0.0.0.0')
