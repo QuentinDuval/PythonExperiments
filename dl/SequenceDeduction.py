@@ -68,4 +68,7 @@ def test_deduction():
     #  * a language for pattern + generator?
     #  * give them the beginning of a function (sin?)
     # TODO - how do you make them of the same size for training...
+    # TODO - what do you make them deduce?
+    #  * the shape of the sin??? (2 parameters, period + phase?)
+    #  * or the full shape of the curve?
     pass
