@@ -44,14 +44,14 @@ class MLPPermutation3(nn.Module):
     """
     Again, we complexify the model to be able to find "odd" numbers: we add a binary representation of numbers
     """
-    def __init__(self, input_size, binary_size, hidden_size):
+    def __init__(self, sequence_len, binary_size, hidden_size):
         super().__init__()
         self.fc = nn.Sequential(
-            nn.Linear(input_size * binary_size, hidden_size),
+            nn.Linear(sequence_len * binary_size, hidden_size),
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
-            nn.Linear(hidden_size, input_size * input_size))
+            nn.Linear(hidden_size, sequence_len * sequence_len))
 
     def forward(self, x, apply_softmax=True):
         batch_size, sequence_size, repr_size = x.squeeze(-1).shape  # TODO - why the last element is size 1???
