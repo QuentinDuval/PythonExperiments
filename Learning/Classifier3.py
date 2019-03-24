@@ -81,10 +81,11 @@ class Classifier3Test:
         # model.save('models/preceptron.model')
 
     def test_double_layers(self, rounds=1):
-        model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
-        self.train(self.predictor_for(model))
+        # model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
+        # self.train(self.predictor_for(model))
 
-        best_accuracy = 0.84    # Best record so far
+        # best_accuracy = 0.84    # Best record so far
+        best_accuracy = 0.0  # Best record so far
         for _ in range(rounds):
             model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
             accuracy = self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
@@ -105,14 +106,27 @@ def test_model_3(n_grams=1, split_seed=None):
     tester = Classifier3Test(n_grams=n_grams, split_seed=split_seed)
 
     print("single layer")
-    tester.test_single_layer()
+    # tester.test_single_layer()
 
     print("double layer")
     tester.test_double_layers(rounds=10)
 
     print("triple layer")
-    tester.test_triple_layers()
+    # tester.test_triple_layers()
+
+
+def load_best_model():
+    model = DoublePerceptronModel.load('models/double_preceptron.model')
+    training_corpus = CommitMessageCorpus.from_split('train')
+    bi_gram_tokenizer = NGramTokenizer(NltkTokenizer(), count=3)
+    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
+    return Predictor(model=model, vectorizer=vectorizer)
+
+
+def display_best_model_errors():
+    predictor = load_best_model()
+    show_errors(predictor=predictor, test_corpus=CommitMessageCorpus.from_split('train'))
 
 
 # test_model_3(split_seed=0, n_grams=3)
-# test_model_3_interactive()
+# display_best_model_errors()

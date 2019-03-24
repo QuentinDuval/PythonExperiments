@@ -8,7 +8,7 @@ class CommmitMessageCorpusTest(unittest.TestCase):
     def test_target_class_refactor(self):
         res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFAC]: Use a proxy to sync all the views")
         self.assertEqual(res, CommitMessageCorpus.REFACTOR)
-        self.assertEqual(fix, "{PROJECT}: Use a proxy to sync all FitNesse views")
+        self.assertEqual(fix, "{PROJECT}: Use a proxy to sync all the views")
 
         res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFACTOR]: cleaning and refactoring")
         self.assertEqual(res, CommitMessageCorpus.REFACTOR)
@@ -22,6 +22,11 @@ class CommmitMessageCorpusTest(unittest.TestCase):
         res, fix = CommitMessageCorpus.match_fix("{PROJECT} [FIX] refactor and fix the blablabla")
         self.assertEqual(res, CommitMessageCorpus.FIX)
         self.assertEqual(fix, "{PROJECT}  refactor and fix the blablabla")
+
+        res, fix = CommitMessageCorpus.match_fix(
+            "[fix] [CMAKE ISSUES] (unit tests): Shorten the length of the unit test path as CMake has trouble dealing with long paths.")
+        self.assertEqual(res, CommitMessageCorpus.FIX)
+        self.assertEqual(fix, "[CMAKE ISSUES] (unit tests): Shorten the length of the unit test path as CMake has trouble dealing with long paths.")
 
     def test_target_class_feat(self):
         res, fix = CommitMessageCorpus.match_fix("{PROJECT} [FEAT] (fixing screen) improving the fixing screen")

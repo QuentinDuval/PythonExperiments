@@ -9,11 +9,7 @@ app = Flask(__name__)
 
 @lru_cache(maxsize=None)
 def get_classification_model():
-    model = DoublePerceptronModel.load('models/double_preceptron.model')
-    training_corpus = CommitMessageCorpus.from_split('train')
-    bi_gram_tokenizer = NGramTokenizer(NltkTokenizer(), count=3)
-    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
-    return Predictor(model=model, vectorizer=vectorizer)
+    return load_best_model()
 
 
 @lru_cache(maxsize=None)
