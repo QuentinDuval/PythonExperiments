@@ -13,7 +13,7 @@ def test_tokenization():
     for w in ["doubleAverageA1DivA2KAdjust", "COMDI-67", "FPB-75", "DEF0889790", "getQuantityOfTrade", "getQuantity", "get_quantity"]:
         print(tokenizer.clean_token(w))
 
-    bi_gram = BiGramTokenizer(tokenizer)
+    bi_gram = NGramTokenizer(tokenizer, count=2)
     print(bi_gram.tokenize("fix a nasty memory corruption"))
 
     corpus = CommitMessageCorpus.from_split('train')
@@ -45,34 +45,48 @@ def test_tokenization():
 # test_model_6(split_seed=0)
 
 """
-move CollateralAgreement to lib/folder1/folder2
-> refactor (80.04060983657837%)
+move CollateralAgreement to lib/folder/folder
+> refactor (83.93%)
 
 quantity was wrong
-> fix (58.31055045127869%)
-
-add new tab in collateral screen
-> feat (78.84904742240906%)
+> fix (64.35%)
 
 add tab in collateral screen
-> feat (63.92854452133179%)
-
-cleaning
-> refactor (53.63123416900635%)
-
-move things around
-> refactor (44.75261867046356%)
-
-rework collateral screen
-> feat (36.6421103477478%)
+> feat (60.22%)
 
 purpose of life
-> fix (38.80935311317444%)
+> fix (40.64%)
+
+move things around
+> refactor (48.95%)
+
+rework collateral screen
+> feat (39.18%)
 
 introduce crash on purpose
-> fix (45.31545341014862%)
+> fix (50.43%)
+
+memory regression
+> fix (53.33%)
+
+memory corruption
+> fix (46.9%)
+
+cleaning
+> refactor (54.68%)
+
+add new tab in collateral screen
+> feat (73.13%)
+
+optimize performance of getQuantity
+> refactor (46.36%)
+
+optimize performance
+> feat (42.98%)
+
+optimize performance of collateral screen
+> feat (55.41%)
 """
 
-# test_model_3_interactive()
 # run_unsupervised_learning(embedding_size=20)
 # test_unsupervised_learning()

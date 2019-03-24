@@ -84,16 +84,22 @@ class NltkTokenizer(Tokenizer):
         return all(unicodedata.category(c).startswith('P') for c in lemma)
 
 
-class BiGramTokenizer(Tokenizer):
-    def __init__(self, tokenizer: Tokenizer):
+class NGramTokenizer(Tokenizer):
+    def __init__(self, tokenizer: Tokenizer, count=2, with_stop_words=True):
         self.tokenizer = tokenizer
-        self.stop_words = {"the", "in", "a"} # TODO - stop words at the level above? Or compose it :)
+        self.count = count
+        if with_stop_words:
+            self.stop_words = {"the", "in", "a"}    # TODO: enhance or even remove
+        else:
+            self.stop_words = set()
 
     def tokenize(self, sentence: str) -> List[str]:
         single_tokens = self.tokenizer.tokenize(sentence)
+        tokens = list(single_tokens)
+
         single_tokens = [t for t in single_tokens if t not in self.stop_words]
-        tokens = [single_tokens[0]]
-        for i in range(1, len(single_tokens)):
-            tokens.append(single_tokens[i-1] + " " + single_tokens[i])
-            tokens.append(single_tokens[i])
+        for shift in range(1, self.count):
+            for i in range(shift, len(single_tokens)):
+                tokens.append(" ".join(single_tokens[i-shift:i+1]))
         return tokens
+
