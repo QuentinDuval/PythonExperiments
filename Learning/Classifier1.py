@@ -15,7 +15,6 @@ class HardCodedClassifier:
         ["util", "extract", "refact", "rework", "minor", "clean", "raii", "mef", "technical", "function",
         "move", "renam", "simplif", "split", "dead", "code", "enabler", "use", "miss", "call", "private",
         "fitness", "cucumber", "decoupl", "modular", "get", "set", "layout", "sonar"]
-    revert_list = ["revert"]
     fixes_list =\
         ["fix", "solve", "correct", "rather", "possibility", "crash", "bau", "check", "slo"]
     features_list =\
@@ -24,7 +23,7 @@ class HardCodedClassifier:
         "increas", "latency", "caching", "speed", "throughput", "bulk", "index", "group", "sav", "load", "store"]
 
     def __init__(self):
-        print("Feature len:", len(self.refactoring_list + self.revert_list + self.fixes_list + self.features_list))
+        print("Feature len:", len(self.refactoring_list + self.fixes_list + self.features_list))
 
     def predict(self, fix_description):
         fix_description = fix_description.lower()
