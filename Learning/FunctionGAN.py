@@ -32,6 +32,7 @@ class FunctionGenerator(nn.Module):
                                         # TODO - non differentiable... this is bad ! this is why it does not learn
                                         # https://becominghuman.ai/generative-adversarial-networks-for-text-generation-part-1-2b886c8cab10
                                         # https://arxiv.org/abs/1810.06640 (not easy...)
+                                        # TODO - just multiply with the embedding matrix (mix of the characters...) - argmax for production
         return x
 
 
