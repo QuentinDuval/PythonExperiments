@@ -31,6 +31,7 @@ class FunctionGenerator(nn.Module):
         x = torch.argmax(x, dim=-1)     # To output the indices of the vocabulary
                                         # TODO - non differentiable... this is bad ! this is why it does not learn
                                         # https://becominghuman.ai/generative-adversarial-networks-for-text-generation-part-1-2b886c8cab10
+                                        # https://arxiv.org/abs/1810.06640 (not easy...)
         return x
 
 
