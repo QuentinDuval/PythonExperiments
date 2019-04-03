@@ -65,7 +65,6 @@ class WordVectorizer(Vectorizer):
         return x
 
 
-'''
 def extract_functions_from_folder(absolute_path):
     # TODO there are problems: the pattern matches output types from typedef function pointers, class members, etc.
     pattern = re.compile("([\w]+)\(")
@@ -77,7 +76,6 @@ def extract_functions_from_folder(absolute_path):
                     for line in f_in:
                         for match in pattern.findall(line):
                             f_out.writelines([match, "\n"])
-'''
 
 
 def load_corpus():
@@ -110,7 +108,7 @@ class FunctionDataSet(Dataset):
 
 
 def test_gan():
-    seed_size = 4
+    seed_size = 1
     batch_size = 100
     function_name_len = 20
     embedding_size = 10
@@ -128,20 +126,24 @@ def test_gan():
     function_names = load_corpus()
     real_data_set = FunctionDataSet(inputs=corpus_to_data_set(corpus=function_names, vectorizer=vectorizer), target=1)
 
-    for epoch in range(50):
+    for epoch in range(10):
+
+        """
+        Discriminator trains to distinguish fakes from the generator from the real ones
+        """
 
         generator.eval()
         discriminator.train()
 
-        data_set = copy.deepcopy(real_data_set)
+        dis_data_set = copy.deepcopy(real_data_set)
         for _ in range(len(function_names) // batch_size):
             seed = torch.randn(batch_size, seed_size)
             for generated in generator(seed):
-                data_set.xs.append(generated.detach())
-                data_set.ys.append(0)
+                dis_data_set.xs.append(generated.detach())
+                dis_data_set.ys.append(0)
 
         dis_cumulative_loss = 0
-        for minibatch in DataLoader(data_set, batch_size=batch_size, shuffle=True):
+        for minibatch in DataLoader(dis_data_set, batch_size=batch_size, shuffle=True):
             inputs, labels = minibatch['x'], minibatch['y']
             dis_optimizer.zero_grad()
             dis_outputs = discriminator(inputs).squeeze(dim=-1) # TODO - why the squeeze?
@@ -150,22 +152,20 @@ def test_gan():
             dis_optimizer.step()
             dis_cumulative_loss += dis_loss.item()
 
+        """
+        Generator does its best to fool the discriminator
+        """
+
+        # TODO - does not learn - search for non differientiable things
+
         generator.train()
         discriminator.train()   # TODO - needed to propagate gradients?
 
-        data_set = copy.deepcopy(real_data_set)
-        for _ in range(len(function_names) // batch_size):
-            seed = torch.randn(batch_size, seed_size)
-            for generated in generator(seed):
-                data_set.xs.append(generated)   # To propagate gradients
-                data_set.ys.append(1)           # To learn to cheat
-
         gen_cumulative_loss = 0
-        for minibatch in DataLoader(data_set, batch_size=batch_size, shuffle=True):
-            inputs, labels = minibatch['x'], minibatch['y']
-            gen_optimizer.zero_grad()
-            dis_outputs = discriminator(inputs).squeeze(dim=-1) # TODO - why the squeeze?
-            dis_loss = objective(dis_outputs, labels.float())
+        for _ in range(len(function_names) // batch_size):
+            generated = generator(seed)
+            dis_outputs = discriminator(generated).squeeze(dim=-1) # TODO - why the squeeze?
+            dis_loss = objective(dis_outputs, torch.ones(batch_size, dtype=torch.float32))
             dis_loss.backward()
             gen_optimizer.step()
             gen_cumulative_loss += dis_loss.item()
