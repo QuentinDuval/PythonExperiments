@@ -12,6 +12,7 @@ class CommitMessageDataSet(Dataset):
 
     @classmethod
     def from_corpus(cls, corpus: CommitMessageCorpus, vectorizer: Vectorizer):
+        # TODO - not generic while the rest is generic => move it out
         xs = []
         ys = []
         for x, y in corpus:

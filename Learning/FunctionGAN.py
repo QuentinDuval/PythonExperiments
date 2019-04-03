@@ -1,7 +1,15 @@
+import copy
+import fnmatch
+import os
+import re
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+
+from typing import *
 
 from Learning.Vectorizer import *
 from Learning.Vocabulary import *
@@ -32,7 +40,7 @@ class FunctionDiscriminator(nn.Module):
             nn.Linear(input_size * embedding_size, 1)
         )
 
-    def forward(self, x, apply_softmax=False):
+    def forward(self, x, apply_softmax=True):
         batch_size = x.shape[0]
         x = self.embed(x)
         x = x.view((batch_size, -1))
@@ -50,14 +58,55 @@ class WordVectorizer(Vectorizer):
     def vectorize(self, word):
         x = torch.zeros(self.max_word_len, dtype=torch.int64)
         for i, c in enumerate(word):
+            if i >= self.max_word_len:
+                break
             x[i] = self.vocabulary.word_lookup(c)
         x[len(word):] = self.vocabulary.word_lookup(self.vocabulary.PADDING)
         return x
 
 
-def iterate_batches():
-    # TODO - a way to retrieve real functions
-    pass
+'''
+def extract_functions_from_folder(absolute_path):
+    # TODO there are problems: the pattern matches output types from typedef function pointers, class members, etc.
+    pattern = re.compile("([\w]+)\(")
+    with open("resources/function_names.txt", mode='a') as f_out:
+        for root, dirnames, filenames in os.walk(absolute_path):
+            for filename in fnmatch.filter(filenames, '*.h'):
+                print(filename)
+                with open(os.path.join(root, filename), mode='r') as f_in:
+                    for line in f_in:
+                        for match in pattern.findall(line):
+                            f_out.writelines([match, "\n"])
+'''
+
+
+def load_corpus():
+    function_names = []
+    with open("resources\\function_names.txt", mode="r") as f_in:
+        for line in f_in:
+            function_names.append(line.strip())
+    return function_names
+
+
+def corpus_to_data_set(corpus: List[str], vectorizer: Vectorizer):
+    xs = []
+    for function_name in corpus:
+        x = vectorizer.vectorize(function_name)
+        xs.append(x)
+    return xs
+
+
+class FunctionDataSet(Dataset):
+    def __init__(self, inputs, target):
+        self.xs = inputs
+        self.ys = [target for _ in range(len(inputs))]
+
+    def __len__(self):
+        return len(self.xs)
+
+    def __getitem__(self, index):
+        return {'x': self.xs[index],
+                'y': self.ys[index]}
 
 
 def test_gan():
@@ -76,18 +125,70 @@ def test_gan():
     gen_optimizer = optim.Adam(params=generator.parameters(), lr=1e-3)
     dis_optimizer = optim.Adam(params=discriminator.parameters(), lr=1e-3)
 
-    x = vectorizer.vectorize("getQuantity")
-    y = discriminator(x.unsqueeze(dim=0))
-    print(y)
+    function_names = load_corpus()
+    real_data_set = FunctionDataSet(inputs=corpus_to_data_set(corpus=function_names, vectorizer=vectorizer), target=1)
 
-    seed = torch.zeros(seed_size, dtype=torch.float32)
-    x = generator(seed.unsqueeze(dim=0))
-    y = discriminator(x)
-    print(y)
+    for epoch in range(50):
+
+        generator.eval()
+        discriminator.train()
+
+        data_set = copy.deepcopy(real_data_set)
+        for _ in range(len(function_names) // batch_size):
+            seed = torch.randn(batch_size, seed_size)
+            for generated in generator(seed):
+                data_set.xs.append(generated.detach())
+                data_set.ys.append(0)
+
+        dis_cumulative_loss = 0
+        for minibatch in DataLoader(data_set, batch_size=batch_size, shuffle=True):
+            inputs, labels = minibatch['x'], minibatch['y']
+            dis_optimizer.zero_grad()
+            dis_outputs = discriminator(inputs).squeeze(dim=-1) # TODO - why the squeeze?
+            dis_loss = objective(dis_outputs, labels.float())
+            dis_loss.backward()
+            dis_optimizer.step()
+            dis_cumulative_loss += dis_loss.item()
+
+        generator.train()
+        discriminator.train()   # TODO - needed to propagate gradients?
+
+        data_set = copy.deepcopy(real_data_set)
+        for _ in range(len(function_names) // batch_size):
+            seed = torch.randn(batch_size, seed_size)
+            for generated in generator(seed):
+                data_set.xs.append(generated)   # To propagate gradients
+                data_set.ys.append(1)           # To learn to cheat
+
+        gen_cumulative_loss = 0
+        for minibatch in DataLoader(data_set, batch_size=batch_size, shuffle=True):
+            inputs, labels = minibatch['x'], minibatch['y']
+            gen_optimizer.zero_grad()
+            dis_outputs = discriminator(inputs).squeeze(dim=-1) # TODO - why the squeeze?
+            dis_loss = objective(dis_outputs, labels.float())
+            dis_loss.backward()
+            gen_optimizer.step()
+            gen_cumulative_loss += dis_loss.item()
+
+        print("Discriminator loss:", dis_cumulative_loss)
+        print("Generator loss:", gen_cumulative_loss)
+
+        generator.eval()
+        seed = torch.randn(3, seed_size)
+        for sample in generator(seed):
+            s = ""
+            for x in sample:
+                word = vocab.index_lookup(x.item())
+                if word not in vocab.RESERVED:
+                    s += word
+                else:
+                    word += " "
+            print(" -", s)
+
 
 
 test_gan()
-
+# extract_functions_from_folder("D:\\v3.1.build.dev.elm.bi.84806.sweeper\\lib\\bo\\spb\\h")
 
 
 
