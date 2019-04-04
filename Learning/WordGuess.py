@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as fn
 import torch.optim as optim
+import torch.utils.data
 
 from Learning.Ratio import *
 from Learning.Tokenizer import *
@@ -90,7 +91,7 @@ def test_language_modeler(window_size):
     for epoch in range(20):
         total_loss = 0.0
         total_accuracy = Ratio(0, 0)
-        for context, target in torch.utils.data.DataLoader(data_set, shuffle=True, batch_size=1000):
+        for context, target in torch.utils.data.DataLoader(data_set, shuffle=True, batch_size=100): # If you augment the batch size, performance degrades...
             optimizer.zero_grad()
             output = model(context, apply_softmax=False)    # If you forget the =False, trains much less
             loss = objective(output, target)
@@ -106,5 +107,5 @@ def test_language_modeler(window_size):
         print("Accuracy:", total_accuracy)
 
 
-torch.set_num_threads(4)
+# torch.set_num_threads(6)
 test_language_modeler(window_size=5)
