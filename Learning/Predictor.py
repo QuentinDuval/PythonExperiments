@@ -28,7 +28,7 @@ class Predictor:
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
         return self.fit_dataset(data_set, learning_rate, weight_decay)
 
-    def fit_dataset(self, data_set: Dataset, learning_rate=1e-3, weight_decay=0):
+    def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0):
         training_set, validation_set = data_set.split(0.9, seed=self.split_seed)
         self.data_augmentation(training_set)
 
