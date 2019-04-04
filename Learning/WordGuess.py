@@ -58,7 +58,7 @@ def language_modeler_data_set(commits, tokenizer, vocabulary, window_size):
 
 
 # TODO - common bag of word data_set
-# TODO - use the language modeler to generate commits
+# TODO - use the language modeler to generate commits (you have to use padding to do this...)
 
 
 """
