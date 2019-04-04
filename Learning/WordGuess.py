@@ -135,5 +135,5 @@ def test_language_modeler(window_size, data_set_factory: DataSetFactory):
 # Works correctly apparently => TODO - could be used to generate commits
 # test_language_modeler(window_size=3, data_set_factory=LanguageModelingDataSet())
 
-# Works incredibly well (more than 47% at 20 iterations)
+# Works incredibly well (more than 47% at 20 iterations) => TODO - show what it guesses (show examples each iterations)
 # test_language_modeler(window_size=5, data_set_factory=CBOWModelingDataSet())
