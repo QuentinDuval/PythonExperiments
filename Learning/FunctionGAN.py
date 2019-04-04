@@ -230,6 +230,8 @@ def test_gan():
 
         gen_cumulative_loss = 0
         for _ in range(len(function_names) // batch_size):
+            gen_optimizer.zero_grad()
+            dis_optimizer.zero_grad()
             generated = generator(seed, with_argmax=False) # Transmit a full matrix in order to learn
             dis_outputs = discriminator(generated).squeeze(dim=-1) # TODO - why the squeeze?
             dis_loss = objective(dis_outputs, torch.ones(batch_size, dtype=torch.float32))
