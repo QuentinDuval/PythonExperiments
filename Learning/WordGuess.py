@@ -40,26 +40,48 @@ class WordPrediction(nn.Module):
         return x
 
 
-def language_modeler_data_set(commits, tokenizer, vocabulary, window_size):
-    xs = []
-    ys = []
-    for commit in commits:
-        tokens = tokenizer.tokenize(commit)
-        for i in range(len(tokens) - window_size):
-            context = tokens[i:i+window_size-1]
-            next_word = tokens[i+window_size-1]
-            context = np.array([vocabulary.word_lookup(w) for w in context], dtype=np.int64)
-            next_word = vocabulary.word_lookup(next_word)
-            xs.append(context)
-            ys.append(next_word)
-
-    xs = torch.LongTensor(xs)
-    ys = torch.LongTensor(ys)
-    return torch.utils.data.TensorDataset(xs, ys)
+class DataSetFactory:
+    def get_data_set(self, commits, tokenizer, vocabulary, window_size):
+        pass
 
 
-# TODO - common bag of word data_set
-# TODO - use the language modeler to generate commits (you have to use padding to do this...)
+class LanguageModelingDataSet(DataSetFactory):
+    def get_data_set(self, commits, tokenizer, vocabulary, window_size):
+        xs = []
+        ys = []
+        for commit in commits:
+            tokens = tokenizer.tokenize(commit)
+            for i in range(len(tokens) - window_size):
+                context = tokens[i:i+window_size-1]
+                next_word = tokens[i+window_size-1]
+                context = np.array([vocabulary.word_lookup(w) for w in context], dtype=np.int64)
+                next_word = vocabulary.word_lookup(next_word)
+                xs.append(context)
+                ys.append(next_word)
+
+        xs = torch.LongTensor(xs)
+        ys = torch.LongTensor(ys)
+        return torch.utils.data.TensorDataset(xs, ys)
+
+
+class CBOWModelingDataSet(DataSetFactory):
+    def get_data_set(self, commits, tokenizer, vocabulary, window_size):
+        xs = []
+        ys = []
+        middle = window_size // 2
+        for commit in commits:
+            tokens = tokenizer.tokenize(commit)
+            for i in range(len(tokens) - window_size):
+                context = tokens[i:i+middle] + tokens[i+middle+1:i+window_size]
+                next_word = tokens[i+middle]
+                context = np.array([vocabulary.word_lookup(w) for w in context], dtype=np.int64)
+                next_word = vocabulary.word_lookup(next_word)
+                xs.append(context)
+                ys.append(next_word)
+
+        xs = torch.LongTensor(xs)
+        ys = torch.LongTensor(ys)
+        return torch.utils.data.TensorDataset(xs, ys)
 
 
 """
@@ -72,7 +94,7 @@ def get_accuracy(outputs, targets):
     return Ratio((predicted == targets).sum().item(), len(targets))
 
 
-def test_language_modeler(window_size):
+def test_language_modeler(window_size, data_set_factory: DataSetFactory):
     corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
     tokenizer = NltkTokenizer()
     vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=tokenizer, min_freq=5, add_unknowns=True)
@@ -81,7 +103,10 @@ def test_language_modeler(window_size):
 
     # commits = itertools.chain(corpus.get_inputs(), corpus.get_unclassified()) # TODO - use this for real data
     commits = corpus.get_inputs()
-    data_set = language_modeler_data_set(commits, tokenizer, vocabulary, window_size=window_size)
+    data_set = data_set_factory.get_data_set(commits=commits,
+                                             tokenizer=tokenizer,
+                                             vocabulary=vocabulary,
+                                             window_size=window_size)
     print("Data set size:", len(data_set))
 
     model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
@@ -107,5 +132,8 @@ def test_language_modeler(window_size):
         print("Accuracy:", total_accuracy)
 
 
-# torch.set_num_threads(6)
-test_language_modeler(window_size=5)
+# Works correctly apparently => TODO - could be used to generate commits
+# test_language_modeler(window_size=3, data_set_factory=LanguageModelingDataSet())
+
+# Works incredibly well (more than 47% at 20 iterations)
+# test_language_modeler(window_size=5, data_set_factory=CBOWModelingDataSet())
