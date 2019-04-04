@@ -14,12 +14,14 @@ from Learning.Vocabulary import *
 
 
 class FunctionGenerator(nn.Module):
-    def __init__(self, seed_size, output_size, vocab_size):
+    def __init__(self, seed_size, output_size, vocab_size, hidden_size):
         super().__init__()
         self.output_size = output_size
         self.vocab_size = vocab_size
         self.fc = nn.Sequential(
-            nn.Linear(seed_size, self.output_size * self.vocab_size)
+            nn.Linear(seed_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, self.output_size * self.vocab_size)
         )
 
     def forward(self, x, with_argmax=True):
@@ -43,11 +45,13 @@ class FunctionGenerator(nn.Module):
 
 
 class FunctionDiscriminator(nn.Module):
-    def __init__(self, input_size, vocab_size, embedding_size):
+    def __init__(self, input_size, vocab_size, embedding_size, hidden_size):
         super().__init__()
         self.embed = nn.Embedding(num_embeddings=vocab_size, embedding_dim=embedding_size)
         self.fc = nn.Sequential(
-            nn.Linear(input_size * embedding_size, 1)
+            nn.Linear(input_size * embedding_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, 1)
         )
 
     def forward(self, x, apply_softmax=True):
@@ -179,8 +183,10 @@ def test_gan():
     vocab = Vocabulary.from_words("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_1234567890", add_unknowns=True)
     vectorizer = WordVectorizer(vocabulary=vocab, max_word_len=function_name_len)
 
-    generator = FunctionGenerator(seed_size=seed_size, output_size=function_name_len, vocab_size=len(vocab))
-    discriminator = FunctionDiscriminator(input_size=function_name_len, vocab_size=len(vocab), embedding_size=embedding_size)
+    generator = FunctionGenerator(seed_size=seed_size, output_size=function_name_len,
+                                  vocab_size=len(vocab), hidden_size=150)
+    discriminator = FunctionDiscriminator(input_size=function_name_len, vocab_size=len(vocab),
+                                          embedding_size=embedding_size, hidden_size=150)
 
     objective = nn.BCELoss()   # TODO - with or without sigmoid?
     gen_optimizer = optim.Adam(params=generator.parameters(), lr=1e-3)
@@ -189,7 +195,7 @@ def test_gan():
     function_names = load_corpus()
     real_data_set = FunctionDataSet(inputs=corpus_to_data_set(corpus=function_names, vectorizer=vectorizer), target=1)
 
-    for epoch in range(20):
+    for epoch in range(100):
 
         """
         Discriminator trains to distinguish fakes from the generator from the real ones
