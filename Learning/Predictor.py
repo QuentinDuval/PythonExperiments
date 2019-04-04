@@ -16,6 +16,7 @@ class Predictor:
         self.model = model
         self.vectorizer = vectorizer
         self.with_gradient_clipping = with_gradient_clipping
+        self.split_ratio = 0.9
         self.split_seed = split_seed
         self.batch_size = 100
         self.loss_function = nn.CrossEntropyLoss()
@@ -29,7 +30,7 @@ class Predictor:
         return self.fit_dataset(data_set, learning_rate, weight_decay)
 
     def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0):
-        training_set, validation_set = data_set.split(0.9, seed=self.split_seed)
+        training_set, validation_set = data_set.split(self.split_ratio, seed=self.split_seed)
         self.data_augmentation(training_set)
 
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
@@ -46,7 +47,7 @@ class Predictor:
             if epoch - best_epoch > min(max(self.min_epoch, epoch // 5), self.max_epoch_no_progress):
                 break
 
-            train_accuracy = self._training_pass(training_loader, optimizer)
+            train_loss, train_accuracy = self._training_pass(training_loader, optimizer)
             valid_accuracy = self._validation_pass(validation_loader)
 
             if valid_accuracy > max_valid_accuracy:
@@ -58,6 +59,7 @@ class Predictor:
                 print("-" * 50)
                 print("Epoch:", epoch)
                 print("-" * 50)
+                print("Training loss:", train_loss)
                 print("Training:", train_accuracy)
                 print("Validation:", valid_accuracy)
 
@@ -69,6 +71,7 @@ class Predictor:
     def _training_pass(self, training_loader: torch.utils.data.DataLoader, optimizer: torch.optim.Optimizer):
         self.model.train()
         train_accuracy = Ratio()
+        train_loss = 0.0
         for minibatch in training_loader:
             inputs, labels = minibatch['x'], minibatch['y']
             optimizer.zero_grad()
@@ -78,8 +81,9 @@ class Predictor:
             if self.with_gradient_clipping:
                 nn.utils.clip_grad_norm_(self.model.parameters(), 0.25)
             optimizer.step()
+            train_loss += loss.item()
             train_accuracy += self._compute_accuracy(outputs, labels)
-        return train_accuracy
+        return train_loss, train_accuracy
 
     def _validation_pass(self, validation_loader: torch.utils.data.DataLoader):
         self.model.eval()
