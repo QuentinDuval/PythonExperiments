@@ -26,11 +26,11 @@ class Predictor:
         self.max_epoch_no_progress = 30
         self.data_augmentation = lambda x: None
 
-    def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0, learning_rate_decay=0):
+    def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0, learning_rate_decay=1.00):
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
         return self.fit_dataset(data_set, learning_rate, weight_decay, learning_rate_decay)
 
-    def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0, learning_rate_decay=0):
+    def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0, learning_rate_decay=1.00):
         training_set, validation_set = data_set.split(self.split_ratio, seed=self.split_seed)
         self.data_augmentation(training_set)
 
