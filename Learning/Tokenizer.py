@@ -33,8 +33,7 @@ class NltkTokenizer(Tokenizer):
         return tokens
 
     def clean_sentence(self, sentence: str) -> str:
-        # TODO - replace "::" by "." for namespaces?
-        return sentence.replace("&amp;", " and ")
+        return sentence.replace("&amp;", " and ").replace("::", ".")
 
     @staticmethod
     def is_punctuation(lemma: str) -> bool:

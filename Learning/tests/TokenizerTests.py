@@ -4,17 +4,20 @@ from Learning.Tokenizer import *
 
 
 class TokenizerTests(unittest.TestCase):
+    def setUp(self):
+        self.tokenizer = NltkTokenizer()
 
     def test_namespace_tokenization(self):
-        tokenizer = NltkTokenizer()
-        result = tokenizer("move ns::sub_ns::hello_world to lib/hello/world")
-        self.assertEqual(['move', 'ns', '<function>', '<function>', 'to', '<path>'], result)
+        result = self.tokenizer("move ns::sub_ns::hello_world to lib/hello/world")
+        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
 
     def test_package_tokenization(self):
-        tokenizer = NltkTokenizer()
-        result = tokenizer("move pack.package.ClassName to lib/hello/world")
+        result = self.tokenizer("move pack.package.ClassName to lib/hello/world")
         self.assertEqual(['move', '<function>', 'to', '<path>'], result)
-        result = tokenizer("move pack.sub-pack.ClassName to lib/hello/world")
+
+    def test_class_tokenization(self):
+        # TODO - identify class names
+        result = self.tokenizer("move pack.sub-pack.ClassName to lib/hello/world")
         self.assertEqual(['move', '<function>', 'to', '<path>'], result)
 
     def test_n_grams(self):
