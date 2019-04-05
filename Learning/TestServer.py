@@ -7,6 +7,11 @@ from Learning.WordEmbeddings import *
 app = Flask(__name__)
 
 
+# TODO - this page does not work without access to the internet due to the d3.cloud... you need more statics
+
+# TODO - add debugging facilities (show training curve, show parsing result, show all percentages...)
+
+
 @lru_cache(maxsize=None)
 def get_classification_model():
     return load_best_model()
