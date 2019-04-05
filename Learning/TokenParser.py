@@ -16,6 +16,9 @@ class TokenParser:
         self.languages = {"c++", "mef", "java", "c", "cpp", "ant", "groovy", "js", "scala"}
 
     def parse(self, token: str) -> str:
+        if all(c.isdigit() for c in token):
+            return self.NUMBER_TAG
+
         if token.lower() in self.abbreviations:
             return token
 
@@ -26,22 +29,16 @@ class TokenParser:
         if self.issue.match(token):
             return self.ISSUE_TAG
 
-        if all(c.isdigit() for c in token):
-            return self.NUMBER_TAG
-
-        # TODO - collide with next if?
         if token.isupper():
             return self.ENTITY_NAME
-
-        # TODO - improve
-        if "_" in token:
-            return self.ENTITY_NAME if token.isupper() else self.FUNCTION_TAG
 
         # TODO - improve (typically if start with / it is obvious)
         if self.count(token, lambda c: c == "/") >= 2:
             return self.PATH_TAG
 
         # TODO - make function name more... exact
+        if "_" in token and token.islower():
+            return self.FUNCTION_TAG
         if self.count(token[1:], lambda c: c.isupper()) >= 1:
             return self.FUNCTION_TAG if token[0].islower() else self.CLASS_TAG
 
