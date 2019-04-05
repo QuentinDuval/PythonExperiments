@@ -38,10 +38,10 @@ class TokenParserTests(unittest.TestCase):
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("hello_world"))
 
     def test_qualified_function_recognition(self):
-        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::helloWorld"))
-        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::hello_world"))
-        # TODO - make this work
-        # self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("std::transform"))
+        # The tokenizer transforms "::" to "." so we use "." here
+        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns.sub_ns.helloWorld"))
+        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns.sub_ns.hello_world"))
+        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("std.transform"))
 
     def test_class_recognition(self):
         self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("ClassName"))

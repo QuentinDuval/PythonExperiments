@@ -114,9 +114,7 @@ class TokenParser:
             return False
         if "_" in token[1:] and token.islower():
             return True
-        if with_namespace or self.count(token[1:], lambda c: c.isupper()) >= 1:
-            return True
-        return False
+        return with_namespace or self.count(token[1:], lambda c: c.isupper()) >= 1
 
     def is_unqualified_class(self, token: str, with_namespace=False) -> bool:
         if not token:
