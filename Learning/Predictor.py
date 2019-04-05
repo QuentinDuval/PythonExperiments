@@ -26,18 +26,16 @@ class Predictor:
         self.max_epoch_no_progress = 30
         self.data_augmentation = lambda x: None
 
-    def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0):
+    def fit(self, training_corpus: CommitMessageCorpus, learning_rate=1e-3, weight_decay=0, learning_rate_decay=0):
         data_set = CommitMessageDataSet.from_corpus(corpus=training_corpus, vectorizer=self.vectorizer)
-        return self.fit_dataset(data_set, learning_rate, weight_decay)
+        return self.fit_dataset(data_set, learning_rate, weight_decay, learning_rate_decay)
 
-    def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0):
+    def fit_dataset(self, data_set: CommitMessageDataSet, learning_rate=1e-3, weight_decay=0, learning_rate_decay=0):
         training_set, validation_set = data_set.split(self.split_ratio, seed=self.split_seed)
         self.data_augmentation(training_set)
 
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
-
-        # TODO - try an optimizer with learning rate decay
-        # optimizer = optim.Adagrad(self.model.parameters(), lr=5e-3, weight_decay=2e-3, lr_decay=1e-3)
+        scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e:learning_rate_decay ** e)
 
         training_loader = torch.utils.data.DataLoader(training_set, batch_size=self.batch_size, shuffle=True)
         validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=self.batch_size, shuffle=True)
@@ -47,6 +45,7 @@ class Predictor:
         max_valid_accuracy = Ratio()
 
         for epoch in itertools.count(0):
+            scheduler.step(epoch)
             if self.max_epoch and epoch > self.max_epoch:
                 break
             if epoch - best_epoch > min(max(self.min_epoch, epoch // 5), self.max_epoch_no_progress):
@@ -79,7 +78,7 @@ class Predictor:
         train_loss = 0.0
         for minibatch in training_loader:
             inputs, labels = minibatch['x'], minibatch['y']
-            optimizer.zero_grad()
+            self.model.zero_grad()
             outputs = self.model(inputs, apply_softmax=False)
             loss = self.loss_function(outputs, labels)
             loss.backward()
