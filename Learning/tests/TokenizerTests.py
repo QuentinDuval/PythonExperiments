@@ -19,6 +19,10 @@ class TokenizerTests(unittest.TestCase):
         result = self.tokenizer("move ClassName to lib/hello/world")
         self.assertEqual(['move', '<class>', 'to', '<path>'], result)
 
+    def test_capital_name_tokenization(self):
+        result = self.tokenizer("move Collateral code to lib/hello/world")
+        self.assertEqual(['move', 'collateral', 'code', 'to', '<path>'], result)
+
     def test_qualified_class_tokenization(self):
         result = self.tokenizer("move pack.sub-pack.ClassName to lib/hello/world")
         self.assertEqual(['move', '<class>', 'to', '<path>'], result)

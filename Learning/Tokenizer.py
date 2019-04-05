@@ -21,7 +21,7 @@ class SplitTokenizer(Tokenizer):
 
 
 class NltkTokenizer(Tokenizer):
-    def __init__(self, token_parser=SimpleTokenParser()):
+    def __init__(self, token_parser=TokenParser()):
         self.token_parser = token_parser
 
     def tokenize(self, sentence: str) -> List[str]:
