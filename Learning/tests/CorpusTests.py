@@ -3,7 +3,7 @@ from Learning.Corpus import *
 import unittest
 
 
-class CommmitMessageCorpusTest(unittest.TestCase):
+class CorpusTests(unittest.TestCase):
 
     def test_target_class_refactor(self):
         res, fix = CommitMessageCorpus.match_fix("{PROJECT}[REFAC]: Use a proxy to sync all the views")
