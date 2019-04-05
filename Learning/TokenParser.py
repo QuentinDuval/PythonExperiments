@@ -21,9 +21,11 @@ class TokenParser:
         if token.lower() in self.languages:
             return self.LANGUAGE_TAG
 
+        # TODO - improve this
         if self.issue.match(token):
             return self.ISSUE_TAG
 
+        # TODO - just check if all numbers
         try:
             int(token)
             return self.NUMBER_TAG
@@ -33,9 +35,11 @@ class TokenParser:
         if token.isupper():
             return self.ENTITY_NAME
 
+        # TODO - improve
         if "_" in token:
             return self.ENTITY_NAME if token.isupper() else self.FUNCTION_TAG
 
+        # TODO - improve (typically if start with / it is obvious)
         if self.count(token, lambda c: c == "/") >= 2:
             return self.PATH_TAG
 
