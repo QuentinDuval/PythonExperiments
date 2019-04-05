@@ -12,7 +12,8 @@ from Learning.Ratio import *
 
 
 class Predictor:
-    def __init__(self, model: nn.Module, vectorizer: Vectorizer, with_gradient_clipping=False, split_seed=None):
+    def __init__(self, model: nn.Module, vectorizer: Vectorizer,
+                 with_gradient_clipping=False, split_seed=None):
         self.model = model
         self.vectorizer = vectorizer
         self.with_gradient_clipping = with_gradient_clipping
@@ -34,6 +35,10 @@ class Predictor:
         self.data_augmentation(training_set)
 
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate, weight_decay=weight_decay)
+
+        # TODO - try an optimizer with learning rate decay
+        # optimizer = optim.Adagrad(self.model.parameters(), lr=5e-3, weight_decay=2e-3, lr_decay=1e-3)
+
         training_loader = torch.utils.data.DataLoader(training_set, batch_size=self.batch_size, shuffle=True)
         validation_loader = torch.utils.data.DataLoader(validation_set, batch_size=self.batch_size, shuffle=True)
 
