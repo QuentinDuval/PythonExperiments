@@ -62,7 +62,7 @@ class TokenParser:
 
     def __init__(self):
         self.issue = re.compile("^[a-zA-Z]+[\-]?[0-9]+$")
-        self.abbreviations = {"url", "ci", "raii", "bau", "slo", "api", "stl"}
+        self.abbreviations = {"url", "ci", "raii", "bau", "slo", "api", "stl", "owners"}
         self.languages = {"c++", "mef", "java", "c", "cpp", "ant", "groovy", "js", "scala"}
         self.valid_function_start = set("abcdefghijklmnopqrstuvwxyz_")
         self.valid_package_characters = set("abcdefghijklmnopqrstuvwxyz_-.")
