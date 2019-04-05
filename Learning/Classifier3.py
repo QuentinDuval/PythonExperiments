@@ -127,5 +127,5 @@ def display_best_model_errors():
     show_errors(predictor=predictor, test_corpus=CommitMessageCorpus.from_split('train'))
 
 
-test_model_3(split_seed=0, n_grams=3)
-display_best_model_errors()
+# test_model_3(split_seed=0, n_grams=3)
+# display_best_model_errors()

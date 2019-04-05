@@ -4,7 +4,7 @@ from typing import List
 
 import nltk
 
-from Learning.TokenParser import TokenParser
+from Learning.TokenParser import *
 
 
 class Tokenizer:
@@ -21,8 +21,8 @@ class SplitTokenizer(Tokenizer):
 
 
 class NltkTokenizer(Tokenizer):
-    def __init__(self):
-        self.token_parser = TokenParser()
+    def __init__(self, token_parser=SimpleTokenParser()):
+        self.token_parser = token_parser
 
     def tokenize(self, sentence: str) -> List[str]:
         tokens = []

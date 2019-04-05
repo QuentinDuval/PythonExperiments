@@ -46,6 +46,5 @@ class TokenParserTests(unittest.TestCase):
         self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("ClassName"))
 
     def test_qualified_class_recognition(self):
-        pass
-        # self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.package.ClassName"))
-        # self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.sub-pack.ClassName"))
+        self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.package.ClassName"))
+        self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.sub-pack.ClassName"))
