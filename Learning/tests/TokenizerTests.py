@@ -10,6 +10,13 @@ class TokenizerTests(unittest.TestCase):
         result = tokenizer("move ns::sub_ns::hello_world to lib/hello/world")
         self.assertEqual(['move', 'ns', '<function>', '<function>', 'to', '<path>'], result)
 
+    def test_package_tokenization(self):
+        tokenizer = NltkTokenizer()
+        result = tokenizer("move pack.package.ClassName to lib/hello/world")
+        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
+        result = tokenizer("move pack.sub-pack.ClassName to lib/hello/world")
+        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
+
     def test_n_grams(self):
         tokenizer = NGramTokenizer(tokenizer=NltkTokenizer(), count=3, with_stop_words=True)
         res = set(tokenizer("this is a simple sentence"))

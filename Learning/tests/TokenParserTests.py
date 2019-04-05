@@ -38,3 +38,5 @@ class TokenParserTests(unittest.TestCase):
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::helloWorld"))
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::hello_world"))
         # self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("std::transform"))
+        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("pack.package.ClassName"))
+        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("pack.sub-pack.ClassName"))
