@@ -27,6 +27,7 @@ class TokenParserTests(unittest.TestCase):
         self.assertEqual(self.tokenizer.ENTITY_NAME, self.parse("ENT"))
         self.assertEqual(self.tokenizer.ENTITY_NAME, self.parse("SUB_ENT"))
         self.assertEqual(self.tokenizer.ENTITY_NAME, self.parse("SUB_ENT_ID"))
+        self.assertEqual(self.tokenizer.ENTITY_NAME, self.parse("SUB-ENT"))
 
     def test_path_recognition(self):
         self.assertEqual(self.tokenizer.PATH_TAG, self.parse("include/hello/world"))

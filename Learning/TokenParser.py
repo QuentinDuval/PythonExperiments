@@ -21,6 +21,8 @@ class TokenParser:
         if token.lower() in self.languages:
             return self.LANGUAGE_TAG
 
+        # TODO - try to recognize class names (especially in Java, this is easy)
+
         # TODO - improve this
         if self.issue.match(token):
             return self.ISSUE_TAG
