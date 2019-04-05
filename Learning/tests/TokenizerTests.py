@@ -9,16 +9,19 @@ class TokenizerTests(unittest.TestCase):
 
     def test_namespace_tokenization(self):
         result = self.tokenizer("move ns::sub_ns::hello_world to lib/hello/world")
-        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
+        self.assertEqual(['move', '<function>', 'to', '<path>'], result) # TODO - constants
 
     def test_package_tokenization(self):
         result = self.tokenizer("move pack.package.ClassName to lib/hello/world")
-        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
+        self.assertEqual(['move', '<function>', 'to', '<path>'], result) # TODO - constants
 
     def test_class_tokenization(self):
-        # TODO - identify class names
+        result = self.tokenizer("move ClassName to lib/hello/world")
+        self.assertEqual(['move', '<class>', 'to', '<path>'], result)  # TODO - constants
+
+    def test_qualified_class_tokenization(self):
         result = self.tokenizer("move pack.sub-pack.ClassName to lib/hello/world")
-        self.assertEqual(['move', '<function>', 'to', '<path>'], result)
+        # self.assertEqual(['move', '<class>', 'to', '<path>'], result) # TODO - constants
 
     def test_n_grams(self):
         tokenizer = NGramTokenizer(tokenizer=NltkTokenizer(), count=3, with_stop_words=True)

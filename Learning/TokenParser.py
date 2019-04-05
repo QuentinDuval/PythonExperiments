@@ -6,6 +6,7 @@ class TokenParser:
     PATH_TAG = "<path>"
     ENTITY_NAME = "<entity>"
     FUNCTION_TAG = "<function>"
+    CLASS_TAG = "<class>"
     NUMBER_TAG = "<number>"
     LANGUAGE_TAG = "<language>"
 
@@ -20,8 +21,6 @@ class TokenParser:
 
         if token.lower() in self.languages:
             return self.LANGUAGE_TAG
-
-        # TODO - try to recognize class names (especially in Java, this is easy)
 
         # TODO - improve this
         if self.issue.match(token):
@@ -44,7 +43,7 @@ class TokenParser:
 
         # TODO - make function name more... exact
         if self.count(token[1:], lambda c: c.isupper()) >= 1:
-            return self.FUNCTION_TAG
+            return self.FUNCTION_TAG if token[0].islower() else self.CLASS_TAG
 
         return token.lower()
 

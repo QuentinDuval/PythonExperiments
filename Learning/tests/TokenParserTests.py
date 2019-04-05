@@ -36,8 +36,16 @@ class TokenParserTests(unittest.TestCase):
     def test_function_recognition(self):
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("helloWorld"))
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("hello_world"))
+
+    def test_qualified_function_recognition(self):
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::helloWorld"))
         self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("ns::sub_ns::hello_world"))
         # self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("std::transform"))
-        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("pack.package.ClassName"))
-        self.assertEqual(self.tokenizer.FUNCTION_TAG, self.parse("pack.sub-pack.ClassName"))
+
+    def test_class_recognition(self):
+        self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("ClassName"))
+
+    def test_qualified_class_recognition(self):
+        pass
+        # self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.package.ClassName"))
+        # self.assertEqual(self.tokenizer.CLASS_TAG, self.parse("pack.sub-pack.ClassName"))
