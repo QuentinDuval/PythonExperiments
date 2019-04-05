@@ -25,13 +25,10 @@ class TokenParser:
         if self.issue.match(token):
             return self.ISSUE_TAG
 
-        # TODO - just check if all numbers
-        try:
-            int(token)
+        if all(c.isdigit() for c in token):
             return self.NUMBER_TAG
-        except ValueError:
-            pass
 
+        # TODO - collide with next if?
         if token.isupper():
             return self.ENTITY_NAME
 
