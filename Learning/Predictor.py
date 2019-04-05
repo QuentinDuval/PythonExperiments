@@ -95,7 +95,7 @@ class Predictor:
         return valid_accuracy
 
     def _compute_accuracy(self, outputs, labels):
-        _, predicted = torch.max(outputs.data, dim=-1)
+        predicted = torch.argmax(outputs.data, dim=-1)
         predicted = predicted.view(-1)  # Useful in case there are more than 1 dimension left (ex: sequence prediction)
         labels = labels.view(-1)        # Useful in case there are more than 1 dimension left (ex: sequence prediction)
         return Ratio((predicted == labels).sum().item(), len(labels))
