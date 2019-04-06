@@ -118,6 +118,8 @@ def test_model_3(n_grams=1, split_seed=None):
 
 
 def load_best_model():
+    # TODO - load the right vocabulary !!!
+
     model = DoublePerceptronModel.load('models/double_preceptron.model')
     training_corpus = CommitMessageCorpus.from_split('train')
     bi_gram_tokenizer = NGramTokenizer(NltkTokenizer(), count=3)

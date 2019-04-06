@@ -66,6 +66,24 @@ class TokenParser:
         self.valid_function_start = set("abcdefghijklmnopqrstuvwxyz_")
         self.valid_package_characters = set("abcdefghijklmnopqrstuvwxyz_-.")
 
+    def generate(self, parsed: str) -> str:
+        # TODO - do better
+        if parsed == self.ISSUE_TAG:
+            return "FIX-ME-12"
+        if parsed == self.PATH_TAG:
+            return "lib/folder1/folder2"
+        if parsed == self.ENTITY_NAME:
+            return "PROJECT_TOTO"
+        if parsed == self.FUNCTION_TAG:
+            return "getImpactedYield"
+        if parsed == self.CLASS_TAG:
+            return "CollateralAgreement"
+        if parsed == self.NUMBER_TAG:
+            return "123"
+        if parsed == self.LANGUAGE_TAG:
+            return "C++"
+        return parsed
+
     def parse(self, token: str) -> str:
         if all(c.isdigit() for c in token):
             return self.NUMBER_TAG

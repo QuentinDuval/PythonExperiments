@@ -152,7 +152,8 @@ class WordGuesser:
         return torch.multinomial(probs, num_samples=1).item()
 
     def _to_text(self, tokens):
-        return " ".join(self.vocabulary.index_lookup(token) for token in tokens[self.context_size:])
+        parser = TokenParser()
+        return " ".join(parser.generate(self.vocabulary.index_lookup(token)) for token in tokens[self.context_size:])
 
 
 """
