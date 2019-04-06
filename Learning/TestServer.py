@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 from functools import lru_cache
 from Learning.Classifier3 import *
 from Learning.WordEmbeddings import *
+from Learning.WordGuess import *
 
 
 app = Flask(__name__)
@@ -19,6 +20,11 @@ def get_classification_model():
 def get_embedding_search_index():
     embeddings = WordEmbeddings.load_from(model_path='resources/unsupervised_model.bin')
     return WordIndex(embeddings)
+
+
+@lru_cache(maxsize=None)
+def get_commit_generator():
+    return load_commit_generation()
 
 
 @app.route("/devoxx")
@@ -52,7 +58,7 @@ def get_word_neighbors():
 
 @app.route("/devoxx/generate", methods=['GET'])
 def generate_commit():
-    return "empty commit message to test" # TODO
+    return get_commit_generator().generate_sentence(max_words=50)
 
 
 if __name__ == '__main__':

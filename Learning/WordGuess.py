@@ -30,6 +30,8 @@ class WordPrediction(nn.Module):
     def __init__(self, vocab_size, embedding_dim, context_size, hidden_dim=128):
         super().__init__()
         self.context_size = context_size
+        self.embedding_dim = embedding_dim
+        self.hidden_dim = hidden_dim
         self.embeddings = nn.Embedding(vocab_size, embedding_dim)
         self.fc = nn.Sequential(
             nn.Linear(context_size * embedding_dim, hidden_dim),
@@ -109,6 +111,27 @@ class WordGuesser:
         self.vocabulary = vocabulary
         self.context_size = self.model.context_size
 
+    def save(self, file_name):
+        dump = {
+            'vocabulary': self.vocabulary,
+            'embedding_dim': self.model.embedding_dim,
+            'context_size': self.model.context_size,
+            'hidden_dim': self.model.hidden_dim,
+            'state_dict': self.model.state_dict()
+        }
+        torch.save(dump, file_name)
+
+    @classmethod
+    def load(cls, file_name):
+        dump = torch.load(file_name)
+        vocabulary = dump['vocabulary']
+        model = WordPrediction(vocab_size=len(vocabulary),
+                               embedding_dim=dump['embedding_dim'],
+                               context_size=dump['context_size'],
+                               hidden_dim=dump['hidden_dim'])
+        model.load_state_dict(dump['state_dict'])
+        return cls(model=model, vocabulary=vocabulary)
+
     def generate_sentence(self, max_words):
         padding_idx = self.vocabulary.word_lookup(self.vocabulary.PADDING)
         end_idx = self.vocabulary.word_lookup(self.vocabulary.END)
@@ -184,13 +207,19 @@ def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb
     return WordGuesser(model, vocabulary)
 
 
-def test_commit_generation():
+def train_commit_generation():
     guesser = train_word_predictor(window_size=4, data_set_factory=LanguageModelingDataSet(), epoch_nb=5)
     for _ in range(20):
         print(guesser.generate_sentence(max_words=50))
+    guesser.save('models/generation.model')
 
 
-# test_commit_generation()
+def load_commit_generation():
+    return WordGuesser.load('models/generation.model')
+
+
+# train_commit_generation()
+# guesser = load_commit_generation()
 
 # Works incredibly well (more than 47% at 20 iterations) => TODO - show what it guesses (show examples each iterations)
 # train_word_predictor(window_size=5, data_set_factory=CBOWModelingDataSet())
