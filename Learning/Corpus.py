@@ -4,6 +4,13 @@ import re
 from Learning.Utils import *
 
 
+class CommitMessage:
+    def __init__(self, raw_message: str, message: str, classification=None):
+        self.raw_message = raw_message
+        self.message = message
+        self.classification = classification
+
+
 class CommitMessageCorpus:
     REFACTOR = "refactor"
     FEAT = "feat"
@@ -51,8 +58,8 @@ class CommitMessageCorpus:
                 return target_class, match
         return None, fix_description
 
-    @staticmethod
-    def read_manual_exceptions():
+    @classmethod
+    def read_manual_exceptions(cls):
         with open('resources/manual_exceptions.txt', 'r') as f:
             exceptions = {}
             commit_description = None
@@ -60,8 +67,12 @@ class CommitMessageCorpus:
                 if commit_description is None:
                     commit_description = line.strip()
                 else:
-                    exceptions[commit_description] = line.strip().lower()
+                    classification = line.strip().lower()
+                    _, cleaned_commit = cls.match_fix(commit_description)
                     commit_description = None
+                    exceptions[commit_description] = CommitMessage(raw_message=commit_description,
+                                                                   message=cleaned_commit,
+                                                                   classification=classification)
             return exceptions
 
     @classmethod
@@ -71,18 +82,18 @@ class CommitMessageCorpus:
         unclassified = []
         manual_exceptions = cls.read_manual_exceptions()
         with open(file_name, 'r') as inputs:
-            for fix_description in inputs:
-                fix_description = fix_description.strip()
-                if fix_description in manual_exceptions:
-                    xs.append(fix_description)
-                    ys.append(manual_exceptions[fix_description])
+            for commit_message in inputs:
+                commit_message = commit_message.strip()
+                if commit_message in manual_exceptions:
+                    xs.append(manual_exceptions[commit_message].message)
+                    ys.append(manual_exceptions[commit_message])
                 else:
-                    target_class, fix_description = cls.match_fix(fix_description)
+                    target_class, commit_message = cls.match_fix(commit_message)
                     if target_class:
-                        xs.append(fix_description)
+                        xs.append(commit_message)
                         ys.append(target_class)
                     elif keep_unclassified:
-                        unclassified.append(fix_description)
+                        unclassified.append(commit_message)
         return cls(xs, ys, unclassified)
 
     @classmethod
