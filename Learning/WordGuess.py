@@ -12,6 +12,11 @@ from Learning.Tokenizer import *
 from Learning.Vocabulary import *
 
 
+"""
+Deep learning model
+"""
+
+
 class WordPrediction(nn.Module):
     """
     Model that can be used both for:
@@ -24,6 +29,7 @@ class WordPrediction(nn.Module):
 
     def __init__(self, vocab_size, embedding_dim, context_size, hidden_dim=128):
         super().__init__()
+        self.context_size = context_size
         self.embeddings = nn.Embedding(vocab_size, embedding_dim)
         self.fc = nn.Sequential(
             nn.Linear(context_size * embedding_dim, hidden_dim),
@@ -40,6 +46,11 @@ class WordPrediction(nn.Module):
         return x
 
 
+"""
+Different ways to model the language mostly come from the way we build the data sets
+"""
+
+
 class DataSetFactory:
     def get_data_set(self, commits, tokenizer, vocabulary, window_size):
         pass
@@ -49,11 +60,14 @@ class LanguageModelingDataSet(DataSetFactory):
     def get_data_set(self, commits, tokenizer, vocabulary, window_size):
         xs = []
         ys = []
+        context_size = window_size - 1
+        padding = [vocabulary.PADDING] * context_size
         for commit in commits:
             tokens = tokenizer.tokenize(commit)
-            for i in range(len(tokens) - window_size):
-                context = tokens[i:i+window_size-1]
-                next_word = tokens[i+window_size-1]
+            tokens = padding + tokens + [vocabulary.END]
+            for i in range(len(tokens) - context_size):
+                context = tokens[i:i+context_size]
+                next_word = tokens[i+context_size]
                 context = np.array([vocabulary.word_lookup(w) for w in context], dtype=np.int64)
                 next_word = vocabulary.word_lookup(next_word)
                 xs.append(context)
@@ -85,6 +99,40 @@ class CBOWModelingDataSet(DataSetFactory):
 
 
 """
+Using the model to guess the next words from the context
+"""
+
+
+class WordGuesser:
+    def __init__(self, model: WordPrediction, vocabulary: Vocabulary):
+        self.model = model
+        self.vocabulary = vocabulary
+        self.context_size = self.model.context_size
+
+    def generate_sentence(self, max_words):
+        padding_idx = self.vocabulary.word_lookup(self.vocabulary.PADDING)
+        end_idx = self.vocabulary.word_lookup(self.vocabulary.END)
+        tokens = [padding_idx] * self.context_size
+        while True:
+            if len(tokens) >= max_words:
+                break
+            context = torch.LongTensor([tokens[-self.context_size:]])
+            token = self.generate_next(context)
+            if token == end_idx:
+                return self._to_text(tokens) + "."
+            else:
+                tokens.append(token)
+        return self._to_text(tokens)
+
+    def generate_next(self, context):
+        probs = self.model(context)
+        return torch.multinomial(probs, num_samples=1).item()
+
+    def _to_text(self, tokens):
+        return " ".join(self.vocabulary.index_lookup(token) for token in tokens[self.context_size:])
+
+
+"""
 Testing...
 """
 
@@ -94,7 +142,7 @@ def get_accuracy(outputs, targets):
     return Ratio((predicted == targets).sum().item(), len(targets))
 
 
-def test_language_modeler(window_size, data_set_factory: DataSetFactory):
+def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb=20):
     corpus = CommitMessageCorpus.from_file('resources/perforce_cl_unsupervised.txt', keep_unclassified=True)
     tokenizer = NltkTokenizer()
     vocabulary = Vocabulary.from_corpus(corpus=corpus, tokenizer=tokenizer, min_freq=5, add_unknowns=True)
@@ -112,8 +160,9 @@ def test_language_modeler(window_size, data_set_factory: DataSetFactory):
     model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
     objective = nn.CrossEntropyLoss()   # TODO - Probably more the distance between target vector and output vector ?
     optimizer = optim.Adam(params=model.parameters(), lr=1e-3)
+    scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e: 0.98 ** e)
 
-    for epoch in range(20):
+    for epoch in range(epoch_nb):
         total_loss = 0.0
         total_accuracy = Ratio(0, 0)
         for context, target in torch.utils.data.DataLoader(data_set, shuffle=True, batch_size=100): # If you augment the batch size, performance degrades...
@@ -125,15 +174,23 @@ def test_language_modeler(window_size, data_set_factory: DataSetFactory):
             optimizer.step()
             total_loss += loss.item()
             total_accuracy += get_accuracy(output, target)
-            
+        scheduler.step()
+
         print("-" * 20)
         print("Epoch:", epoch)
         print("Loss:", total_loss)
         print("Accuracy:", total_accuracy)
 
+    return WordGuesser(model, vocabulary)
 
-# Works correctly apparently => TODO - could be used to generate commits
-# test_language_modeler(window_size=3, data_set_factory=LanguageModelingDataSet())
+
+def test_commit_generation():
+    guesser = train_word_predictor(window_size=4, data_set_factory=LanguageModelingDataSet(), epoch_nb=5)
+    for _ in range(20):
+        print(guesser.generate_sentence(max_words=50))
+
+
+# test_commit_generation()
 
 # Works incredibly well (more than 47% at 20 iterations) => TODO - show what it guesses (show examples each iterations)
-# test_language_modeler(window_size=5, data_set_factory=CBOWModelingDataSet())
+# train_word_predictor(window_size=5, data_set_factory=CBOWModelingDataSet())
