@@ -34,13 +34,16 @@
       <li class="nav-item active" id="similarities_link">
         <a class="nav-link" href="#/similarities">Similarities</a>
       </li>
+      <li class="nav-item active" id="generator_link">
+        <a class="nav-link" href="#/generator">Generator</a>
+      </li>
     </ul>
   </div>
 </nav>
 
 <div class="container-fluid">
 
-  <!-- Guess panel (ask anything to the AI)  -->
+  <!-- Classification panel (ask anything to the AI)  -->
 
   <div id="classification_guess_panel">
     <div class="row" style="margin-top: 25px;">
@@ -83,6 +86,23 @@
       <svg id="word_cloud_chart">
         <g/>
       </svg>
+    </div>
+  </div>
+
+  <!-- Generator panel (ask anything to the AI)  -->
+
+  <div id="generator_panel">
+    <div class="row" style="margin-top: 25px;">
+      <div class="col-sm-12">
+        <button id="generate_commit_button" type="button" class="btn btn-info">Generate</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 25px;">
+      <div class="col-sm-12">
+        <div class="border"
+             style="padding: 25px; height:500px; overflow: auto"
+             id="generate_panel_result"></div>
+      </div>
     </div>
   </div>
 
@@ -212,6 +232,28 @@
       });
     }
 
+    // Generate commit logic
+
+    function scrollToLastCommit() {
+      let line_count = $("#generate_panel_result p");
+      $("#generate_panel_result").animate({scrollTop: line_count.length * 50}, 50);
+    }
+
+    function addGenerateLine(line) {
+      $("#generate_panel_result").append('<p>' + line + '</p>');
+      scrollToLastCommit();
+    }
+
+    function onGenerateCommit() {
+      $.ajax({
+        url: 'http://{{host}}:{{port}}/devoxx/generate',
+        type: 'GET',
+        success: function(data) {
+           addGenerateLine(data);
+        }
+      });
+    }
+
     // Main logic
 
     let guess = false;
@@ -223,16 +265,25 @@
     function reroute() {
       let route = getRoute();
       guess = (route === "/guess");
+      similar = (route == "/similarities")
+      generator = (route === "/generator")
 
       setVisible("#classification_guess_panel", guess);
-      setVisible("#explore_panel", !guess);
+      setVisible("#explore_panel", similar);
+      setVisible("#generator_panel", generator);
 
       if (guess) {
         $("#classification_guess_link").addClass("active");
         $("#similarities_link").removeClass("active");
-      } else {
+        $("#generator_link").removeClass("active");
+      } else if (similar) {
         $("#classification_guess_link").removeClass("active");
         $("#similarities_link").addClass("active");
+        $("#generator_link").removeClass("active");
+      } else if (generator) {
+        $("#classification_guess_link").removeClass("active");
+        $("#similarities_link").removeClass("active");
+        $("#generator_link").addClass("active");
       }
     }
 
@@ -251,6 +302,7 @@
 
       $("#commit-description-input").change(onNewGuess);
       $("#word-input").change(onWordQuery);
+      $("#generate_commit_button").click(onGenerateCommit);
 
       reroute();
       refreshWordCloud();

@@ -50,6 +50,11 @@ def get_word_neighbors():
         return jsonify({"neighbors": neighbors})
 
 
+@app.route("/devoxx/generate", methods=['GET'])
+def generate_commit():
+    return "empty commit message to test" # TODO
+
+
 if __name__ == '__main__':
     # get_classification_model()
     # get_embedding_search_index()
