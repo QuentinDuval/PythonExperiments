@@ -69,10 +69,10 @@ class CommitMessageCorpus:
                 else:
                     classification = line.strip().lower()
                     _, cleaned_commit = cls.match_fix(commit_description)
-                    commit_description = None
                     exceptions[commit_description] = CommitMessage(raw_message=commit_description,
                                                                    message=cleaned_commit,
                                                                    classification=classification)
+                    commit_description = None
             return exceptions
 
     @classmethod
@@ -80,6 +80,7 @@ class CommitMessageCorpus:
         classified = []
         unclassified = []
         manual_exceptions = cls.read_manual_exceptions()
+
         with open(file_name, 'r') as inputs:
             for commit_message in inputs:
                 commit_message = commit_message.strip()

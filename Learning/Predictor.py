@@ -121,10 +121,10 @@ class Predictor:
         test_set = CommitMessageDataSet.from_corpus(corpus=test_corpus, vectorizer=self.vectorizer)
 
         self.model.eval()
-        for minibatch in torch.utils.data.DataLoader(test_set, batch_size=self.batch_size, shuffle=False):
-            inputs, labels = minibatch['x'], minibatch['y']
+        for batch in torch.utils.data.DataLoader(test_set, batch_size=self.batch_size, shuffle=False):
+            inputs, labels = batch['x'], batch['y']
             outputs = self.model(inputs)
-            _, predicted = torch.max(outputs.data, 1)
+            predicted = torch.argmax(outputs.data, dim=-1)
             all_expected.extend(labels)
             all_predicted.extend(predicted)
 
