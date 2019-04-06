@@ -1,5 +1,6 @@
 import functools
 import re
+from typing import *
 
 from Learning.Utils import *
 
@@ -17,22 +18,21 @@ class CommitMessageCorpus:
     FIX = "fix"
     TARGET_CLASSES = [REFACTOR, FEAT, FIX]
 
-    def __init__(self, xs, ys, unclassified=None):
-        self.xs = xs
-        self.ys = ys
+    def __init__(self, classified: List[CommitMessage], unclassified=None):
+        self.classified = classified
         self.unclassified = unclassified or []
 
     def __len__(self):
-        return len(self.xs)
+        return len(self.classified)
 
     def __getitem__(self, index):
-        return self.xs[index], self.ys[index]
+        return self.classified[index].message, self.classified[index].classification
 
     def get_inputs(self):
-        return self.xs
+        return (x.message for x in self.classified)
 
     def get_targets(self):
-        return self.ys
+        return (x.classification for x in self.classified)
 
     def get_unclassified(self):
         return self.unclassified
@@ -77,24 +77,22 @@ class CommitMessageCorpus:
 
     @classmethod
     def from_file(cls, file_name, keep_unclassified=False):
-        xs = []
-        ys = []
+        classified = []
         unclassified = []
         manual_exceptions = cls.read_manual_exceptions()
         with open(file_name, 'r') as inputs:
             for commit_message in inputs:
                 commit_message = commit_message.strip()
                 if commit_message in manual_exceptions:
-                    xs.append(manual_exceptions[commit_message].message)
-                    ys.append(manual_exceptions[commit_message])
+                    classified.append(manual_exceptions[commit_message])
                 else:
-                    target_class, commit_message = cls.match_fix(commit_message)
-                    if target_class:
-                        xs.append(commit_message)
-                        ys.append(target_class)
+                    target, cleaned = cls.match_fix(commit_message)
+                    if target:
+                        commit = CommitMessage(raw_message=commit_message, message=cleaned, classification=target)
+                        classified.append(commit)
                     elif keep_unclassified:
                         unclassified.append(commit_message)
-        return cls(xs, ys, unclassified)
+        return cls(classified, unclassified)
 
     @classmethod
     def from_split(cls, split_name):

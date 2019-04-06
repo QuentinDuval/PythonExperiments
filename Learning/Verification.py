@@ -35,53 +35,10 @@ def verify_predictor(predictor: Predictor):
 
 
 def show_errors(predictor: Predictor, test_corpus: CommitMessageCorpus):
-    for commit_description, target in test_corpus:
-        predicted = predictor.predict(commit_description)
-        if predicted != target:
-            print(commit_description)
+    for commit in test_corpus.classified:
+        predicted = predictor.predict(commit.message)
+        if predicted != commit.classification:
+            print(commit.raw_message)
             print("> Predicted", predicted)
-            print("> Actual", target)
+            print("> Actual", commit.classification)
             print()
-
-
-    """
-    Example of miss classifications:
-
-    {COLLAT}(Openness): Fix few sonar issues
-    > Predicted fix
-    > Actual refactor
-
-    {COL_BAU}(Collateral): Replace Calendar by LocalDateTime for start date and end date
-    > Predicted fix
-    > Actual refactor
-
-    {COLLAT_BAU}(SnapshotGeneration): enhance error message
-    > Predicted feat
-    > Actual fix
-
-    {COL_BAU}(AgreementInfo): integrate agreementInfo into the static data cache
-    > Predicted feat
-    > Actual refactor
-
-    {COLLAT}(Agreement config): manage errors in the agreement cache
-    > Predicted fix
-    > Actual feat
-
-    {COL_BAU}(collat_algo_service target refactoring) Refactor to be able to have a mock dll to be used for other target unit tests.
-    > Predicted refactor
-    > Actual feat
-
-    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove all backward compatibility code (except migration code).
-    > Predicted refactor
-    > Actual fix
-
-    {COL_BAU}(Openness cleaning): Clean deprecated code after openess development. Remove valuationContext classes.
-    > Predicted refactor
-    > Actual fix
-    """
-
-    # What the fuck fixes
-
-    """
-    [COLLATERAL](Fix): reference returned instead of copy
-    """
