@@ -158,7 +158,7 @@ def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb
     print("Data set size:", len(data_set))
 
     model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
-    objective = nn.CrossEntropyLoss()   # TODO - Probably more the distance between target vector and output vector ?
+    objective = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=model.parameters(), lr=1e-3)
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e: 0.98 ** e)
 
