@@ -41,7 +41,10 @@ class CommitClassifier3:
         self.model = model
         self.vocabulary = vocabulary
         self.n_grams = n_grams
-        self.tokenizer = NGramTokenizer(NltkTokenizer(), count=n_grams)
+        if n_grams > 1:
+            self.tokenizer = NGramTokenizer(NltkTokenizer(), count=n_grams)
+        else:
+            self.tokenizer = NltkTokenizer()
         self.vectorizer = CollapsedOneHotVectorizer(vocabulary=vocabulary, tokenizer=self.tokenizer)
         self.predictor = Predictor(model=model, vectorizer=self.vectorizer)
 
@@ -76,56 +79,54 @@ class Classifier3Test:
         self.split_seed = split_seed
         self.training_corpus = CommitMessageCorpus.from_split('train')
         self.test_corpus = CommitMessageCorpus.from_split('test')
-
-        self.vectorizer = CollapsedOneHotVectorizer.from_corpus(self.training_corpus, NltkTokenizer(), min_freq=2)
-        self.vocab_len = self.vectorizer.get_vocabulary_len()
-
         if n_grams > 1:
-            self.vectorizer = CollapsedOneHotVectorizer.from_corpus(
-                self.training_corpus, tokenizer=NGramTokenizer(NltkTokenizer(), count=n_grams), min_freq=2)
-            self.vocab_len = self.vectorizer.get_vocabulary_len()
-
-    def predictor_for(self, model: nn.Module) -> Predictor:
-        return Predictor(model, vectorizer=self.vectorizer, with_gradient_clipping=True, split_seed=self.split_seed)
+            self.tokenizer = NGramTokenizer(NltkTokenizer(), count=n_grams)
+        else:
+            self.tokenizer = NltkTokenizer()
+        self.vectorizer = CollapsedOneHotVectorizer.from_corpus(self.training_corpus, tokenizer=self.tokenizer, min_freq=2)
+        self.vocabulary = self.vectorizer.vocabulary
+        self.vocab_len = len(self.vocabulary)
 
     def train(self, predictor: Predictor, **kwargs):
+        predictor.with_gradient_clipping = True
+        # predictor.split_seed = self.split_seed
         max_accuracy = predictor.fit(training_corpus=self.training_corpus, **kwargs)
         predictor.evaluate(test_corpus=self.test_corpus)
         return max_accuracy
 
+    def test_save(self, classifier: CommitClassifier3, file_name):
+        for commit in ['quantity was wrong',
+                       'move CollateralAgreement to lib/folder1/folder2',
+                       'add tab in collateral screen to show statistics',
+                       'use smart pointers to simplify memory management of ClassName']:
+            print(commit)
+            print(classifier.predict(commit))
+        answer = input('save model (Y/N)? >')
+        if answer.lower() == "y":
+            classifier.save(file_name)
+            return True
+        return False
+
     def test_single_layer(self):
         model = PerceptronModel(vocabulary_len=self.vocab_len, nb_classes=3)
-        self.train(self.predictor_for(model))
-        # model.save('models/preceptron.model')
+        classifier = CommitClassifier3(model=model, vocabulary=self.vocabulary, n_grams=self.n_grams)
+        self.train(classifier.predictor)
+        self.test_save(classifier, 'models/single_preceptron.model')
 
     def test_double_layers(self, rounds=1):
         best_accuracy = 0.0
         for _ in range(rounds):
             model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
-            classifier = CommitClassifier3(model=model, vocabulary=self.vectorizer.vocabulary, n_grams=self.n_grams)
-            accuracy = self.train(classifier.predictor,
-                                  learning_rate=1e-4,
-                                  weight_decay=3e-4,
-                                  learning_rate_decay=0.98)
-
-            if accuracy >= best_accuracy:
-                for commit in ['quantity was wrong',
-                               'move CollateralAgreement to lib/folder1/folder2',
-                               'add tab in collateral screen to show statistics',
-                               'use smart pointers to simplify memory management of ClassName']:
-                    print(commit)
-                    print(classifier.predict(commit))
-                answer = input('save model (Y/N)? >')
-                if answer.lower() == "y":
-                    best_accuracy = accuracy
-                    classifier.save('models/double_preceptron.model')
+            classifier = CommitClassifier3(model=model, vocabulary=self.vocabulary, n_grams=self.n_grams)
+            accuracy = self.train(classifier.predictor, learning_rate=1e-4, weight_decay=3e-4, learning_rate_decay=0.98)
+            if accuracy >= best_accuracy and self.test_save(classifier, 'models/double_preceptron.model'):
+                best_accuracy = accuracy
 
     def test_triple_layers(self):
-        model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
-        self.train(self.predictor_for(model))
-
         model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=20, nb_classes=3, drop_out=0.5)
-        self.train(self.predictor_for(model), learning_rate=1e-4, weight_decay=3e-4)
+        classifier = CommitClassifier3(model=model, vocabulary=self.vocabulary, n_grams=self.n_grams)
+        self.train(classifier.predictor, learning_rate=1e-4, weight_decay=3e-4)
+        self.test_save(classifier, 'models/triple_preceptron.model')
 
 
 def test_model_3(n_grams=1, split_seed=None):
@@ -135,14 +136,15 @@ def test_model_3(n_grams=1, split_seed=None):
     # tester.test_single_layer()
 
     print("double layer")
-    tester.test_double_layers(rounds=10)
+    # tester.test_double_layers(rounds=10)
 
     print("triple layer")
-    # tester.test_triple_layers()
+    tester.test_triple_layers()
 
 
 def load_best_model():
-    classifier = CommitClassifier3.load('models/double_preceptron.model')
+    # classifier = CommitClassifier3.load('models/double_preceptron.model')
+    classifier = CommitClassifier3.load('models/triple_preceptron.model')
     return classifier.predictor
 
 
