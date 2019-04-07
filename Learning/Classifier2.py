@@ -39,21 +39,6 @@ class PerceptronModel(nn.Module):
             x = fn.softmax(x, dim=-1)
         return x
 
-    def save(self, file_name):
-        dump = {
-            'vocabulary_len': self.vocabulary_len,
-            'nb_classes': self.nb_classes,
-            'state_dict': self.state_dict()
-        }
-        torch.save(dump, file_name)
-
-    @classmethod
-    def load(cls, file_name):
-        dump = torch.load(file_name)
-        model = cls(vocabulary_len=dump['vocabulary_len'], nb_classes=dump['nb_classes'])
-        model.load_state_dict(dump['state_dict'])
-        return model
-
 
 class DoublePerceptronModel(nn.Module):
     def __init__(self, vocabulary_len, hidden_dimension, nb_classes, drop_out=0.0):
@@ -79,26 +64,6 @@ class DoublePerceptronModel(nn.Module):
         if self.drop_out_p > 0:
             return fn.dropout(x, p=self.drop_out_p, training=self.training)
         return x
-
-    def save(self, file_name):
-        dump = {
-            'vocabulary_len': self.vocabulary_len,
-            'hidden_dimension': self.hidden_dimension,
-            'nb_classes': self.nb_classes,
-            'drop_out': self.drop_out_p,
-            'state_dict': self.state_dict()
-        }
-        torch.save(dump, file_name)
-
-    @classmethod
-    def load(cls, file_name):
-        dump = torch.load(file_name)
-        model = cls(vocabulary_len=dump['vocabulary_len'],
-                    hidden_dimension=dump['hidden_dimension'],
-                    nb_classes=dump['nb_classes'],
-                    drop_out=dump['drop_out'])
-        model.load_state_dict(dump['state_dict'])
-        return model
 
 
 class TriplePerceptronModel(nn.Module):

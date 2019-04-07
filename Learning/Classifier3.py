@@ -31,30 +31,48 @@ class CollapsedOneHotVectorizer(Vectorizer):
         return cls(vocabulary=vocabulary, tokenizer=tokenizer)
 
 
-class OneHotAugmentation:
-    """
-    Attempt at augmenting the data set by combining 2 fixes / 2 refactors / 2 features
-    Beware of not doing this before splitting the data set to avoid snooping
-    """
+"""
+Packaging the model
+"""
 
-    def __init__(self, ratio: float):
-        self.ratio = ratio
 
-    def __call__(self, data_set: CommitMessageDataSet):
-        by_target = {}
-        for x, y in zip(data_set.xs, data_set.ys):
-            by_target.setdefault(y, []).append(x)
-        for i in range(int(len(data_set) * self.ratio)):
-            target_index = i % len(CommitMessageCorpus.TARGET_CLASSES)
-            commits = by_target[target_index]
-            a = random.choice(commits)
-            b = random.choice(commits)
-            data_set.xs.append(np.maximum(a, b))
-            data_set.ys.append(target_index)
+class CommitClassifier3:
+    def __init__(self, model, vocabulary: Vocabulary, n_grams=1):
+        self.model = model
+        self.vocabulary = vocabulary
+        self.n_grams = n_grams
+        self.tokenizer = NGramTokenizer(NltkTokenizer(), count=n_grams)
+        self.vectorizer = CollapsedOneHotVectorizer(vocabulary=vocabulary, tokenizer=self.tokenizer)
+        self.predictor = Predictor(model=model, vectorizer=self.vectorizer)
+
+    def predict(self, sentence: str):
+        return self.predictor.predict(sentence)
+
+    def save(self, file_name):
+        dump = {
+            'model': self.model,
+            'vocabulary': self.vocabulary,
+            'n_grams': self.n_grams
+        }
+        torch.save(dump, file_name)
+
+    @classmethod
+    def load(cls, file_name):
+        dump = torch.load(file_name)
+        classifier = cls(model=dump['model'],
+                         vocabulary=dump['vocabulary'],
+                         n_grams=dump['n_grams'])
+        return classifier
+
+
+"""
+Tests...
+"""
 
 
 class Classifier3Test:
     def __init__(self, n_grams=1, split_seed=None):
+        self.n_grams = n_grams
         self.split_seed = split_seed
         self.training_corpus = CommitMessageCorpus.from_split('train')
         self.test_corpus = CommitMessageCorpus.from_split('test')
@@ -81,20 +99,26 @@ class Classifier3Test:
         # model.save('models/preceptron.model')
 
     def test_double_layers(self, rounds=1):
-        # model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
-        # self.train(self.predictor_for(model))
-
-        best_accuracy = 0.82   # Best record so far: 85.9%
+        best_accuracy = 0.0
         for _ in range(rounds):
             model = DoublePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=40, nb_classes=3, drop_out=0.5)
-            accuracy = self.train(self.predictor_for(model),
+            classifier = CommitClassifier3(model=model, vocabulary=self.vectorizer.vocabulary, n_grams=self.n_grams)
+            accuracy = self.train(classifier.predictor,
                                   learning_rate=1e-4,
                                   weight_decay=3e-4,
                                   learning_rate_decay=0.98)
+
             if accuracy >= best_accuracy:
-                best_accuracy = accuracy
-                print("SAVING MODEL WITH ACCURACY", best_accuracy)
-                model.save('models/double_preceptron.model')
+                for commit in ['quantity was wrong',
+                               'move CollateralAgreement to lib/folder1/folder2',
+                               'add tab in collateral screen to show statistics',
+                               'use smart pointers to simplify memory management of ClassName']:
+                    print(commit)
+                    print(classifier.predict(commit))
+                answer = input('save model (Y/N)? >')
+                if answer.lower() == "y":
+                    best_accuracy = accuracy
+                    classifier.save('models/double_preceptron.model')
 
     def test_triple_layers(self):
         model = TriplePerceptronModel(vocabulary_len=self.vocab_len, hidden_dimension=100, nb_classes=3)
@@ -118,13 +142,8 @@ def test_model_3(n_grams=1, split_seed=None):
 
 
 def load_best_model():
-    # TODO - load the right vocabulary !!!
-
-    model = DoublePerceptronModel.load('models/double_preceptron.model')
-    training_corpus = CommitMessageCorpus.from_split('train')
-    bi_gram_tokenizer = NGramTokenizer(NltkTokenizer(), count=3)
-    vectorizer = CollapsedOneHotVectorizer.from_corpus(training_corpus, bi_gram_tokenizer, min_freq=2)
-    return Predictor(model=model, vectorizer=vectorizer)
+    classifier = CommitClassifier3.load('models/double_preceptron.model')
+    return classifier.predictor
 
 
 def display_best_model_errors():
