@@ -54,6 +54,7 @@ class RNNLanguageModeling(nn.Module):
     """
 
     # TODO - produces tokens <unknown> which is a bug
+    # TODO - OPTIMIZE - could learn a lot more at the same time (sequence to sequence mapping with shift 1)
 
     def __init__(self, vocab_size, embedding_dim, context_size, hidden_dim=128):
         super().__init__()
