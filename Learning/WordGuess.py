@@ -48,6 +48,34 @@ class WordPrediction(nn.Module):
         return x
 
 
+class RNNLanguageModeling(nn.Module):
+    """
+    Model that can be used for sequence modelling only
+    """
+
+    # TODO - produces tokens <unknown> which is a bug
+
+    def __init__(self, vocab_size, embedding_dim, context_size, hidden_dim=128):
+        super().__init__()
+        self.context_size = context_size
+        self.embedding_dim = embedding_dim
+        self.hidden_dim = hidden_dim
+        self.embeddings = nn.Embedding(vocab_size, embedding_dim)
+        self.rnn = nn.GRU(input_size=embedding_dim, hidden_size=hidden_dim, batch_first=False)
+        self.fc = nn.Linear(hidden_dim, vocab_size)
+
+    def forward(self, x, apply_softmax=True):
+        x = x.long()
+        x = self.embeddings(x)          # Shape is batch_size, sequence_len, embedding_size
+        x = x.permute(1, 0, 2)          # Shape is sequence_len, batch_size, embedding_size
+        _, state = self.rnn(x)
+        state = state.squeeze(dim=0)    # Squeeze the dimension for number of RNN layers
+        x = self.fc(state)
+        if apply_softmax:
+            x = fn.softmax(x, dim=-1)
+        return x
+
+
 """
 Different ways to model the language mostly come from the way we build the data sets
 """
@@ -106,7 +134,7 @@ Using the model to guess the next words from the context
 
 
 class WordGuesser:
-    def __init__(self, model: WordPrediction, vocabulary: Vocabulary):
+    def __init__(self, model: nn.Module, vocabulary: Vocabulary):
         self.model = model
         self.vocabulary = vocabulary
         self.context_size = self.model.context_size
@@ -114,23 +142,14 @@ class WordGuesser:
     def save(self, file_name):
         dump = {
             'vocabulary': self.vocabulary,
-            'embedding_dim': self.model.embedding_dim,
-            'context_size': self.model.context_size,
-            'hidden_dim': self.model.hidden_dim,
-            'state_dict': self.model.state_dict()
+            'model': self.model
         }
         torch.save(dump, file_name)
 
     @classmethod
     def load(cls, file_name):
         dump = torch.load(file_name)
-        vocabulary = dump['vocabulary']
-        model = WordPrediction(vocab_size=len(vocabulary),
-                               embedding_dim=dump['embedding_dim'],
-                               context_size=dump['context_size'],
-                               hidden_dim=dump['hidden_dim'])
-        model.load_state_dict(dump['state_dict'])
-        return cls(model=model, vocabulary=vocabulary)
+        return cls(model=dump['model'], vocabulary=dump['vocabulary'])
 
     def generate_sentence(self, max_words):
         padding_idx = self.vocabulary.word_lookup(self.vocabulary.PADDING)
@@ -181,7 +200,8 @@ def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb
                                              window_size=window_size)
     print("Data set size:", len(data_set))
 
-    model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
+    # model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
+    model = RNNLanguageModeling(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
     objective = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=model.parameters(), lr=1e-3)
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e: 0.98 ** e)
@@ -220,7 +240,7 @@ def load_commit_generation():
 
 
 # train_commit_generation()
-# guesser = load_commit_generation()
+# generator = load_commit_generation()
 
 # Works incredibly well (more than 47% at 20 iterations) => TODO - show what it guesses (show examples each iterations)
 # train_word_predictor(window_size=5, data_set_factory=CBOWModelingDataSet())
