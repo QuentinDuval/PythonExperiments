@@ -148,6 +148,17 @@ class QAgent:
         return str({'q_values': self.q_values, 'temperature': self.temperature})
 
 
+# TODO - implement double update (to speed training)
+
+
+"""
+An agent that uses Deep Q-learning
+"""
+
+
+# TODO - implement it using pytorch
+
+
 """
 Testing the different models
 """
