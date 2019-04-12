@@ -18,9 +18,11 @@ class ConvolutionalModel(nn.Module):
 
         self.embed = nn.Embedding(vocabulary_len, self.embedding_size)
         self.convnet = nn.Sequential(
-            nn.Conv1d(in_channels=self.embedding_size, out_channels=self.conv_channels, kernel_size=5, padding=2),
+            nn.Conv1d(in_channels=self.embedding_size, out_channels=self.conv_channels * 2, kernel_size=5, padding=2),
             nn.ELU(),
-            nn.MaxPool1d(kernel_size=2)
+            nn.MaxPool1d(kernel_size=2),
+            nn.Conv1d(in_channels=self.conv_channels * 2, out_channels=self.conv_channels, kernel_size=1, padding=0),
+            nn.ELU()
         )
         self.output_layer = nn.Linear(self.embedding_size * self.sentence_size + self._conv_out(), self.nb_classes)
 
@@ -140,19 +142,19 @@ def test_model_5(split_seed=None):
 
 
 """
-Training (max): 3926/4222 (92.98910468972052%)
-Validation (max): 377/470 (80.2127659574468%)
+Training (max): 3898/4222 (92.32591189009948%)
+Validation (max): 382/470 (81.27659574468085%)
 --------------------------------------------------
-Accuracy: 77.26597325408619 %
+Accuracy: 78.6032689450223 %
 
 quantity was wrong
-fix (90.91%)
+fix (92.75%)
 move CollateralAgreement to lib/folder1/folder2
-refactor (95.96%)
+refactor (95.7%)
 add tab in collateral screen to show statistics
-feat (90.87%)
+feat (91.81%)
 use smart pointers to simplify memory management of ClassName
-refactor (90.46%)
+refactor (98.43%)
 """
 
 # test_model_5(split_seed=0)
