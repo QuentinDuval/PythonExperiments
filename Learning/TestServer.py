@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from functools import lru_cache
-from Learning.Classifier3 import *
+import Learning.Classifier3 as mlp
+import Learning.Classifier5 as conv
 from Learning.WordEmbeddings import *
 from Learning.WordGuess import *
 
@@ -12,9 +13,13 @@ app = Flask(__name__)
 
 
 @lru_cache(maxsize=None)
-def get_classification_model():
-    return load_best_model()
-
+def get_classification_model(model):
+    if model == 'mlp':
+        return mlp.load_best_model()
+    elif model == 'conv':
+        return conv.load_best_model()
+    else:
+        return None
 
 @lru_cache(maxsize=None)
 def get_embedding_search_index():
@@ -41,7 +46,7 @@ def guess_changelist_type():
         return "Empty fix description!"
     else:
         content = request.data.decode("utf-8")
-        return str(get_classification_model().predict(content))
+        return str(get_classification_model('conv').predict(content))
 
 
 @app.route("/devoxx/neighbors", methods=['GET', 'POST'])
