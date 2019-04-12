@@ -14,12 +14,19 @@ class ConvolutionalModel(nn.Module):
         self.embed = nn.Embedding(vocabulary_len, self.embedding_size)
         self.convnet = nn.Sequential(
             nn.Conv1d(in_channels=self.embedding_size, out_channels=self.conv_channels, kernel_size=5, padding=2),
-            nn.ELU()
+            nn.ELU(),
+            nn.MaxPool1d(kernel_size=2)
         )
-        self.output_layer = nn.Linear((self.embedding_size + self.conv_channels) * self.sentence_size, self.nb_classes)
+        self.output_layer = nn.Linear(self.embedding_size * self.sentence_size + self._conv_out(), self.nb_classes)
 
         nn.init.xavier_normal_(self.embed.weight)
         nn.init.xavier_normal_(self.output_layer.weight)
+
+    def _conv_out(self):
+        x = torch.zeros((1, self.embedding_size, self.sentence_size))
+        y = self.convnet(x)
+        _, feature_size, sequence_size = y.shape
+        return feature_size * sequence_size
 
     def forward(self, x, apply_softmax=True):
         batch_size, sequence_len = x.shape
@@ -60,10 +67,10 @@ def test_model_5(split_seed=None):
 
 
 """
-Training (max): 3926/4221 (93.01113480217957%)
-Validation (max): 375/470 (79.7872340425532%)
+Training (max): 3753/4222 (88.89152060634771%)
+Validation (max): 363/470 (77.23404255319149%)
 --------------------------------------------------
-Accuracy: 75.037147102526 %
+Accuracy: 78.00891530460625 %
 """
 
 # test_model_5(split_seed=0)
