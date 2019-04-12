@@ -131,7 +131,7 @@ def train_q_agent():
         while not env.is_done():
             total_reward += agent.step(env)
         rewards.append(total_reward)
-        if epoch % 100 == 0:
+        if (1 + epoch) % 100 == 0:
             print(np.mean(rewards))
             agent.temperature_decrease()
             rewards.clear()
