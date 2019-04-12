@@ -10,18 +10,18 @@ A rather stupid game just to test the concept of RL:
 """
 
 
-class Environment:
+class LinearEnvironment:
     def __init__(self):
         self.reset()
+
+    def reset(self):
+        self.steps_left = 10
 
     def get_state(self):
         return (self.steps_left,)
 
     def get_actions(self):
         return [1, 2]
-
-    def reset(self):
-        self.steps_left = 10
 
     def is_done(self):
         return self.steps_left == 0
@@ -43,12 +43,60 @@ class Environment:
 
 
 """
+A game in which you are supposed to find the top corner of the map
+- There are positions in which you gain some power pills
+- There are positions in which you just loose
+"""
+
+
+class FindYourWayEnv:
+    def __init__(self):
+        self.map = [
+            [0, 0, 0, 0],
+            [-50, 1, 1, 0],
+            [0, -50, 1, 0],
+            [0, 0, 1, 100]
+        ]
+        self.h = len(self.map)
+        self.w = len(self.map[0])
+        self.reset()
+
+    def reset(self):
+        self.i = 0
+        self.j = 0
+
+    def get_state(self):
+        return (self.i, self.j)
+
+    def get_actions(self):
+        actions = []
+        if self.i < self.h - 1:
+            actions.append(0)
+        if self.j < self.w - 1:
+            actions.append(1)
+        return actions
+
+    def is_done(self):
+        return self.i == self.h - 1 and self.j == self.w - 1
+
+    def step(self, action):
+        if self.is_done():
+            raise Exception("Game is over")
+        if action == 0:
+            self.i += 1
+        elif action == 1:
+            self.j += 1
+        reward = self.map[self.i][self.j]
+        return reward
+
+
+"""
 An agent that acts randomly
 """
 
 
 class RandomAgent:
-    def step(self, env: Environment) -> float:
+    def step(self, env) -> float:
         state = env.get_state()
         actions = env.get_actions()
         reward = env.step(random.choice(actions))
@@ -66,7 +114,7 @@ class QAgent:
         self.temperature = 1.               # controls the number of random actions attempted
         self.discount = 0.9                 # discount factor used in Q-learning bellman update
 
-    def step(self, env: Environment) -> float:
+    def step(self, env) -> float:
         state = env.get_state()
         actions = env.get_actions()
         action = self.select_best(state, actions)
@@ -89,7 +137,7 @@ class QAgent:
 
     def value_iteration(self, state, action, reward, env):
         new_state = env.get_state()
-        max_next_state = max(self.q_values[(new_state, action)] for action in env.get_actions())
+        max_next_state = max((self.q_values[(new_state, action)] for action in env.get_actions()), default=0)
         self.q_values[(state, action)] = reward + self.discount * max_next_state
 
     def temperature_decrease(self):
@@ -105,8 +153,7 @@ Testing the different models
 """
 
 
-def test_random_agent():
-    env = Environment()
+def test_random_agent(env):
     agent = RandomAgent()
 
     rewards = []
@@ -119,8 +166,7 @@ def test_random_agent():
     print(np.mean(rewards))
 
 
-def train_q_agent():
-    env = Environment()
+def train_q_agent(env):
     agent = QAgent()
 
     rewards = []
@@ -136,6 +182,10 @@ def train_q_agent():
             rewards.clear()
 
 
-test_random_agent()
+test_random_agent(env=LinearEnvironment())
 print("-" * 20)
-train_q_agent()
+train_q_agent(env=LinearEnvironment())
+print("-" * 20)
+test_random_agent(env=FindYourWayEnv())
+print("-" * 20)
+train_q_agent(env=FindYourWayEnv())
