@@ -62,21 +62,23 @@ Packaging the model
 """
 
 
-"""
-Packaging the model
-"""
-
-
 class CommitClassifier5:
-    def __init__(self, model, vocabulary: Vocabulary, max_sentence_length):
-        self.model = model
+    def __init__(self, vocabulary: Vocabulary, max_sentence_length: int, embedding_size: int, drop_out=0.0):
         self.vocabulary = vocabulary
         self.max_sentence_length = max_sentence_length
+        self.embedding_size = embedding_size
+        self.drop_out = drop_out
         self.tokenizer = NltkTokenizer()
         self.vectorizer = EmbeddingVectorizer(vocabulary=vocabulary,
                                               tokenizer=self.tokenizer,
                                               max_length=self.max_sentence_length)
-        self.predictor = Predictor(model=model, vectorizer=self.vectorizer)
+        self.model = ConvolutionalModel(
+            vocabulary_len=len(self.vocabulary),
+            sentence_size=self.max_sentence_length,
+            embedding_size=self.embedding_size,
+            nb_classes=3,
+            drop_out=self.drop_out)
+        self.predictor = Predictor(model=self.model, vectorizer=self.vectorizer)
         self.predictor.with_gradient_clipping = True
 
     def predict(self, sentence: str):
@@ -84,18 +86,23 @@ class CommitClassifier5:
 
     def save(self, file_name):
         dump = {
-            'model': self.model,
+            'model': self.model.state_dict(),
             'vocabulary': self.vocabulary,
-            'max_sentence_length': self.max_sentence_length
+            'max_sentence_length': self.max_sentence_length,
+            'embedding_size': self.embedding_size,
+            'drop_out': self.drop_out
         }
         torch.save(dump, file_name)
 
     @classmethod
     def load(cls, file_name):
         dump = torch.load(file_name)
-        classifier = cls(model=dump['model'],
-                         vocabulary=dump['vocabulary'],
-                         max_sentence_length=dump['max_sentence_length'])
+        classifier = cls(vocabulary=dump['vocabulary'],
+                         max_sentence_length=dump['max_sentence_length'],
+                         embedding_size=dump['embedding_size'],
+                         drop_out=dump['drop_out'])
+
+        classifier.model.load_state_dict(dump['model'])
         return classifier
 
 
@@ -115,11 +122,7 @@ def test_model_5(split_seed=None):
     sentence_len = 30
 
     vocabulary = Vocabulary.from_corpus(training_corpus, tokenizer=NltkTokenizer(), min_freq=2, add_unknowns=True)
-    model = ConvolutionalModel(vocabulary_len=len(vocabulary),
-                               sentence_size=sentence_len,
-                               embedding_size=15, nb_classes=3, drop_out=0.5)
-
-    classifier = CommitClassifier5(model=model, vocabulary=vocabulary, max_sentence_length=sentence_len)
+    classifier = CommitClassifier5(vocabulary=vocabulary, max_sentence_length=sentence_len, embedding_size=15, drop_out=0.5)
     classifier.predictor.split_seed = split_seed
     classifier.predictor.fit(training_corpus=training_corpus, learning_rate=1e-3, weight_decay=3e-4, learning_rate_decay=0.98)
     classifier.predictor.evaluate(test_corpus=test_corpus)
