@@ -74,15 +74,19 @@ class TriplePerceptronModel(nn.Module):
         self.nb_classes = nb_classes
         self.drop_out_p = drop_out
         self.input_layer = nn.Linear(self.vocabulary_len, self.hidden_dimension)
+        # self.input_layer_bn = nn.BatchNorm1d(self.hidden_dimension)
         self.middle_layer = nn.Linear(self.hidden_dimension, self.hidden_dimension)
+        # self.middle_layer_bn = nn.BatchNorm1d(self.hidden_dimension)
         self.output_layer = nn.Linear(self.hidden_dimension, self.nb_classes)
-        torch.nn.init.xavier_normal_(self.input_layer.weight)
-        torch.nn.init.xavier_normal_(self.output_layer.weight)
+        # torch.nn.init.xavier_normal_(self.input_layer.weight)
+        # torch.nn.init.xavier_normal_(self.output_layer.weight)
 
     def forward(self, x, apply_softmax=True):
         x = self.input_layer(x)
+        # x = self.input_layer_bn(x)
         x = self.drop_out(x)
         x = self.middle_layer(fn.relu(x))
+        # x = self.middle_layer_bn(x)
         x = self.drop_out(x)
         x = self.output_layer(fn.relu(x))
         if apply_softmax:

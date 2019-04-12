@@ -103,6 +103,7 @@ class Classifier3Test:
             print(classifier.predict(commit))
         answer = input('save model (Y/N)? >')
         if answer.lower() == "y":
+            print("saving model...")
             classifier.save(file_name)
             return True
         return False
