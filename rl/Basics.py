@@ -14,7 +14,7 @@ class Environment:
     def __init__(self):
         self.reset()
 
-    def get_observation(self):
+    def get_state(self):
         return (self.steps_left,)
 
     def get_actions(self):
@@ -49,7 +49,7 @@ An agent that acts randomly
 
 class RandomAgent:
     def step(self, env: Environment) -> float:
-        obs = env.get_observation()
+        state = env.get_state()
         actions = env.get_actions()
         reward = env.step(random.choice(actions))
         return reward
@@ -62,13 +62,12 @@ An agent that uses Q-learning
 
 class QAgent:
     def __init__(self):
-        # q_values maps tuple (state, action) to expected value
-        self.q_values = defaultdict(float)
-        self.temperature = 1.
-        self.discount = 0.9
+        self.q_values = defaultdict(float)  # q_values maps tuple (state, action) to expected value
+        self.temperature = 1.               # controls the number of random actions attempted
+        self.discount = 0.9                 # discount factor used in Q-learning bellman update
 
     def step(self, env: Environment) -> float:
-        state = env.get_observation()
+        state = env.get_state()
         actions = env.get_actions()
         action = self.select_best(state, actions)
         reward = env.step(action)
@@ -89,7 +88,7 @@ class QAgent:
         return best_action
 
     def value_iteration(self, state, action, reward, env):
-        new_state = env.get_observation()
+        new_state = env.get_state()
         max_next_state = max(self.q_values[(new_state, action)] for action in env.get_actions())
         self.q_values[(state, action)] = reward + self.discount * max_next_state
 
