@@ -88,6 +88,23 @@ class FindYourWayEnv:
 
 
 """
+Same game, but the agent can slip to the bottom
+"""
+
+
+class SlipperyFindYourWayEnv(FindYourWayEnv):
+    def __init__(self, slip_prob=0.2):
+        super().__init__()
+        self.slippy_prob = slip_prob
+
+    def step(self, action):
+        if action == 0 and 1 in self.get_actions():
+            if random.random() < self.slippy_prob:
+                action = 1
+        return super().step(action)
+
+
+"""
 An agent that acts randomly
 """
 
@@ -190,7 +207,7 @@ def test_random_agent(env):
         while not env.is_done():
             total_reward += agent.step(env)
         rewards.append(total_reward)
-    print(np.mean(rewards))
+    print("Random agent:", np.mean(rewards))
 
 
 def train_q_agent(env):
@@ -204,7 +221,7 @@ def train_q_agent(env):
             total_reward += agent.step(env)
         rewards.append(total_reward)
         if (1 + epoch) % 100 == 0:
-            print(np.mean(rewards))
+            print("Epoch", epoch + 1, ":", np.mean(rewards))
             agent.temperature_decrease()
             rewards.clear()
 
@@ -216,3 +233,7 @@ print("-" * 20)
 test_random_agent(env=FindYourWayEnv())
 print("-" * 20)
 train_q_agent(env=FindYourWayEnv())
+print("-" * 20)
+test_random_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2))
+print("-" * 20)
+train_q_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2))
