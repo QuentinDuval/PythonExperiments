@@ -181,9 +181,6 @@ class QAgent:
         return str({'q_values': self.q_values, 'temperature': self.temperature})
 
 
-# TODO - implement double update (to speed training)
-
-
 """
 An agent that uses Deep Q-learning
 """
@@ -210,9 +207,7 @@ def test_random_agent(env):
     print("Random agent:", np.mean(rewards))
 
 
-def train_q_agent(env):
-    agent = QAgent()
-
+def train_q_agent(env, agent):
     rewards = []
     for epoch in range(2000):
         total_reward = 0.
@@ -228,12 +223,16 @@ def train_q_agent(env):
 
 test_random_agent(env=LinearEnvironment())
 print("-" * 20)
-train_q_agent(env=LinearEnvironment())
+train_q_agent(env=LinearEnvironment(), agent=QAgent())
+
 print("-" * 20)
+
 test_random_agent(env=FindYourWayEnv())
 print("-" * 20)
-train_q_agent(env=FindYourWayEnv())
+train_q_agent(env=FindYourWayEnv(), agent=QAgent())
+
 print("-" * 20)
+
 test_random_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2))
 print("-" * 20)
-train_q_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2))
+train_q_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2), agent=QAgent())
