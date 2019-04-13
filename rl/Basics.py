@@ -1,12 +1,15 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 import numpy as np
 import random
 
 
 """
 A rather stupid game just to test the concept of RL:
-- There are two actions, one strictly superior in any case, but with a random reward
-- The environment evolves always the same, not depending on the action
+- one action leads to moving forward and get a reward
+- one action leads to staying in place and get a penalty
+
+!!! Important note !!!
+It is not legal to have different rewards if the target state is the same (reward is attached to transition)
 """
 
 
@@ -24,22 +27,16 @@ class LinearEnvironment:
         return [1, 2]
 
     def is_done(self):
-        return self.steps_left == 0
+        return self.steps_left <= 0
 
     def step(self, action):
         if self.is_done():
             raise Exception("Game is over")
-        reward = self.reward(action)
-        self.steps_left -= 1
-        return reward
-
-    def reward(self, action):
-        if self.steps_left % 2 == 0:
-            # return random.randint(1, action)
-            return action
+        if self.steps_left % 2 == action % 2:
+            self.steps_left -= 1
+            return 1
         else:
-            # return random.randint(-action, -1)
-            return -action
+            return -1
 
 
 """
@@ -54,7 +51,7 @@ class FindYourWayEnv:
         self.map = [
             [0, 0, 0, 0],
             [-50, 1, 1, 0],
-            [0, -50, 1, 0],
+            [0, -50, 1, 0],     # If you put 100 in first column, it still works :)
             [0, 0, 1, 100]
         ]
         self.h = len(self.map)
@@ -110,19 +107,26 @@ An agent that uses Q-learning
 
 class QAgent:
     def __init__(self):
-        self.q_values = defaultdict(float)  # q_values maps tuple (state, action) to expected value
-        self.temperature = 1.               # controls the number of random actions attempted
-        self.discount = 0.9                 # discount factor used in Q-learning bellman update
+        self.actions = defaultdict(set)             # map state to possible actions at that state
+        self.transitions = defaultdict(Counter)     # map tuple (state, action) to expected target states (with prob)
+        self.rewards = defaultdict(float)           # map tuple (state, action, new_state) to reward
+        self.q_values = defaultdict(float)          # map tuple (state, action) to expected value
+        self.temperature = 1.                       # controls the number of random actions attempted
+        self.discount = 0.9                         # discount factor used in Q-learning bellman update
 
     def step(self, env) -> float:
         state = env.get_state()
         actions = env.get_actions()
-        action = self.select_best(state, actions)
+        self.actions[state] |= set(actions)         # TODO - remove the | => state is supposed to be fully determined
+        action = self._select_best(state, actions)
         reward = env.step(action)
-        self.value_iteration(state, action, reward, env)
+        self._value_iteration(state, action, env.get_state(), reward)
         return reward
 
-    def select_best(self, state, actions):
+    def _select_best(self, state, actions):
+        """
+        Selects the action with the best Q-value (expected long term reward)
+        """
         if random.random() < self.temperature:
             return random.choice(actions)
 
@@ -135,10 +139,22 @@ class QAgent:
                 best_action_reward = reward
         return best_action
 
-    def value_iteration(self, state, action, reward, env):
-        new_state = env.get_state()
-        max_next_state = max((self.q_values[(new_state, action)] for action in env.get_actions()), default=0)
-        self.q_values[(state, action)] = reward + self.discount * max_next_state
+    def _value_iteration(self, state, action, new_state, reward):
+        """
+        Update the Q-value table based on the transition and reward obtained by the action
+        !! It is not as simple as updating based on target state (the transitions are random) !!
+        """
+        self.rewards[(state, action, new_state)] = reward
+        self.transitions[(state, action)][new_state] += 1
+
+        expected_reward = 0.
+        expected_value = 0.
+        total_transitions = sum(self.transitions[(state, action)].values())
+        for new_state, count in self.transitions[(state, action)].items():
+            max_next_value = max((self.q_values[(new_state, action)] for action in self.actions[new_state]), default=0)
+            expected_reward += (count / total_transitions) * self.rewards[(state, action, new_state)]
+            expected_value += (count / total_transitions) * max_next_value
+        self.q_values[(state, action)] = expected_reward + self.discount * expected_value
 
     def temperature_decrease(self):
         self.temperature -= 0.1
