@@ -118,7 +118,7 @@ class RandomAgent:
 
 
 """
-An agent that uses Q-learning
+An agent that uses Q-learning (in fact, a variant called Tabular Q-learning)
 """
 
 
@@ -130,6 +130,7 @@ class QAgent:
         self.q_values = defaultdict(float)          # map tuple (state, action) to expected value
         self.temperature = 1.                       # controls the number of random actions attempted
         self.discount = 0.9                         # discount factor used in Q-learning bellman update
+        self.blending = 0.2
 
     def step(self, env) -> float:
         state = env.get_state()
@@ -171,7 +172,9 @@ class QAgent:
             max_next_value = max((self.q_values[(new_state, action)] for action in self.actions[new_state]), default=0)
             expected_reward += (count / total_transitions) * self.rewards[(state, action, new_state)]
             expected_value += (count / total_transitions) * max_next_value
-        self.q_values[(state, action)] = expected_reward + self.discount * expected_value
+        self.q_values[(state, action)] = \
+            (1 - self.blending) * self.q_values[(state, action)] + \
+            self.blending * (expected_reward + self.discount * expected_value)
 
     def temperature_decrease(self):
         self.temperature -= 0.1
