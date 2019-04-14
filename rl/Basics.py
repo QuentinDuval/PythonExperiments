@@ -95,11 +95,11 @@ Same game, but the agent can slip to the bottom
 class SlipperyFindYourWayEnv(FindYourWayEnv):
     def __init__(self, slip_prob=0.2):
         super().__init__()
-        self.slippy_prob = slip_prob
+        self.slip_prob = slip_prob
 
     def step(self, action):
         if action == 0 and 1 in self.get_actions():
-            if random.random() < self.slippy_prob:
+            if random.random() < self.slip_prob:
                 action = 1
         return super().step(action)
 
