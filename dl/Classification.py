@@ -110,10 +110,14 @@ def test_classif_product_positive(model):
     show_result(points, expected, predicted)
 
 
-def test_classif_two_x2(model):
+def test_classif_above_x2(model, noise=0.):
     classif = lambda x, y: 1 if y > x * x else 0
+    def with_noise(classif):
+        def wrapped(x, y):
+            return classif(x + np.random.normal(0, noise, size=1), y + np.random.normal(0, noise, size=1))
+        return wrapped
 
-    points, expected = sample_points(classif, x_bounds=(-2, 2), y_bounds=(-1, 3), count=2000)
+    points, expected = sample_points(with_noise(classif), x_bounds=(-2, 2), y_bounds=(-1, 3), count=2000)
     predictor = ClassificationPredictor(model=model)
     predictor.fit(data_set=SplitDataset(points, expected), epoch=100, learning_rate=0.1)
 
@@ -166,8 +170,9 @@ def test_classif_circle_border(model, nb_classes=2, polar=False):
 # test_classif_product_positive(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_product_positive(model=LinearClassifier(input_size=2, output_size=2))
 
-# test_classif_two_x2(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
-# test_classif_two_x2(model=LinearClassifier(input_size=2, output_size=2))
+# test_classif_above_x2(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
+# test_classif_above_x2(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2), noise=0.3)
+# test_classif_above_x2(model=LinearClassifier(input_size=2, output_size=2))
 
 # test_classif_circle(model=TwoLayerClassifier(input_size=2, hidden_size=10, output_size=2))
 # test_classif_circle(model=LinearClassifier(input_size=2, output_size=2))
