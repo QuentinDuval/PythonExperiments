@@ -147,6 +147,7 @@ class CollectCoins:
         self.j = random.randint(0, self.w - 1)
 
     def get_state(self):
+        # TODO - not good, the state should be updated with the map (which is modified)
         return (self.stamina, self.i, self.j)
 
     def get_actions(self):
