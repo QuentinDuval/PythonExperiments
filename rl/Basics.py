@@ -20,6 +20,9 @@ class LinearEnvironment:
     def reset(self):
         self.steps_left = 10
 
+    def sample(self):
+        self.steps_left = random.randint(1, 10)
+
     def get_state(self):
         return (self.steps_left,)
 
@@ -61,6 +64,10 @@ class FindYourWayEnv:
     def reset(self):
         self.i = 0
         self.j = 0
+
+    def sample(self):
+        self.i = random.randint(0, self.h - 1)
+        self.j = random.randint(0, self.w - 1)
 
     def get_state(self):
         return (self.i, self.j)
@@ -135,7 +142,7 @@ class QAgent:
     def step(self, env) -> float:
         state = env.get_state()
         actions = env.get_actions()
-        self.actions[state] |= set(actions)         # TODO - remove the | => state is supposed to be fully determined
+        self.actions[state] = set(actions)          # TODO - useless to recompute every time!
         action = self._select_best(state, actions)
         reward = env.step(action)
         self._value_iteration(state, action, env.get_state(), reward)
