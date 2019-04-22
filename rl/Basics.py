@@ -118,37 +118,33 @@ A game in which you are supposed to collect as much coins as possible
 - There are positions in which you gain coins
 - There are positions in which you loose coins (robbery!)
 - But you can go in any direction but you have limited time (stamina)
+
+!!! Important note !!!
+Since the map is changing (we collect the coins), it must be part of the state => immutability is needed
 """
 
 
-class CollectCoins:
-    def __init__(self):
-        self.init_map = [
-            [0, 0, 0, 0],
-            [-50, 1, 1, 0],
-            [0, -50, 1, 5],
-            [0, 0, 1, 100]
-        ]
-        self.max_stamina = 10
-        self.h = len(self.init_map)
-        self.w = len(self.init_map[0])
-        self.reset()
+class CollectCoinsState:
+    def __init__(self, map, i, j, stamina):
+        self.map = map
+        self.i = i
+        self.j = j
+        self.h = len(self.map)
+        self.w = len(self.map[0])
+        self.stamina = stamina
 
-    def reset(self):
-        self.stamina = self.max_stamina
-        self.map = copy.deepcopy(self.init_map)
-        self.i = 0
-        self.j = 0
+    def __eq__(self, other):
+        return self.map == other.map and self.i == other.i and self.j == other.j and self.stamina == other.stamina
 
-    def sample(self):
-        self.stamina = random.randint(0, self.max_stamina)
-        self.map = copy.deepcopy(self.init_map)     # Not quite realistic, but okay for now
-        self.i = random.randint(0, self.h - 1)
-        self.j = random.randint(0, self.w - 1)
+    def __hash__(self):
+        map_hash = 0
+        for row in self.map:
+            for cell in row:
+                map_hash ^= hash(cell)
+        return map_hash ^ hash(self.i) ^ hash(self.j) ^ hash(self.stamina)
 
-    def get_state(self):
-        # TODO - not good, the state should be updated with the map (which is modified)
-        return (self.stamina, self.i, self.j)
+    def is_done(self):
+        return self.stamina == 0
 
     def get_actions(self):
         actions = []
@@ -162,16 +158,41 @@ class CollectCoins:
             actions.append((0, -1))
         return actions
 
+
+class CollectCoins:
+    def __init__(self):
+        self.init_state = CollectCoinsState(i=0, j=0, stamina=7, map=[
+            [0, 0, 0, 0],
+            [-50, 1, 1, 0],
+            [0, -50, 1, 5],
+            [0, 0, 1, 100]
+        ])
+        self.reset()
+
+    def reset(self):
+        self.state = copy.deepcopy(self.init_state)
+
+    def sample(self):
+        # TODO
+        pass
+
+    def get_state(self):
+        return self.state
+
+    def get_actions(self):
+        return self.state.get_actions()
+
     def is_done(self):
-        return self.stamina == 0
+        return self.state.is_done()
 
     def step(self, action):
         di, dj = action
-        self.i += di
-        self.j += dj
-        self.stamina -= 1
-        reward = self.map[self.i][self.j]
-        self.map[self.i][self.j] = 0
+        i = self.state.i + di
+        j = self.state.j + dj
+        reward = self.state.map[i][j]
+        new_map = copy.deepcopy(self.state.map)
+        new_map[i][j] = 0
+        self.state = CollectCoinsState(i=i, j=j, stamina=self.state.stamina-1, map=new_map)
         return reward
 
 
