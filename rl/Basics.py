@@ -183,8 +183,8 @@ class QAgent:
             (1 - self.blending) * self.q_values[(state, action)] + \
             self.blending * (expected_reward + self.discount * expected_value)
 
-    def temperature_decrease(self):
-        self.temperature -= 0.1
+    def temperature_decrease(self, decrease=0.1):
+        self.temperature -= decrease
         self.temperature = max(self.temperature, 0.)
 
     def __str__(self):
@@ -219,7 +219,16 @@ def test_random_agent(env):
 
 def train_q_agent(env, agent):
     rewards = []
-    for epoch in range(2000):
+    for epoch in range(1000):
+        # first collect some stats
+        '''
+        for _ in range(10):
+            env.sample()
+            if not env.is_done():
+                agent.step(env)
+        '''
+
+        # play a real game
         total_reward = 0.
         env.reset()
         while not env.is_done():
@@ -227,7 +236,7 @@ def train_q_agent(env, agent):
         rewards.append(total_reward)
         if (1 + epoch) % 100 == 0:
             print("Epoch", epoch + 1, ":", np.mean(rewards))
-            agent.temperature_decrease()
+            agent.temperature_decrease(0.25)
             rewards.clear()
 
 
