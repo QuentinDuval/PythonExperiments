@@ -10,7 +10,8 @@ A rather stupid game just to test the concept of RL:
 - one action leads to staying in place and get a penalty
 
 !!! Important note !!!
-It is not legal to have different rewards if the target state is the same (reward is attached to transition)
+- It's not legal to have different rewards if state, action, target state is the same (reward is attached to transition)
+- BUT, if the state contains something that allows the distinction (example: random seed), it is okay
 """
 
 
