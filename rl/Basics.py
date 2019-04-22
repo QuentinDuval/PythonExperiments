@@ -1,4 +1,5 @@
 from collections import defaultdict, Counter
+import copy
 import numpy as np
 import random
 
@@ -43,7 +44,7 @@ class LinearEnvironment:
 
 
 """
-A game in which you are supposed to find the top corner of the map
+A game in which you are supposed to find the bottom-right corner of the map
 - There are positions in which you gain some power pills
 - There are positions in which you just loose
 """
@@ -109,6 +110,67 @@ class SlipperyFindYourWayEnv(FindYourWayEnv):
             if random.random() < self.slip_prob:
                 action = 1
         return super().step(action)
+
+
+"""
+A game in which you are supposed to collect as much coins as possible
+- There are positions in which you gain coins
+- There are positions in which you loose coins (robbery!)
+- But you can go in any direction but you have limited time (stamina)
+"""
+
+
+class CollectCoins:
+    def __init__(self):
+        self.init_map = [
+            [0, 0, 0, 0],
+            [-50, 1, 1, 0],
+            [0, -50, 1, 5],
+            [0, 0, 1, 100]
+        ]
+        self.max_stamina = 10
+        self.h = len(self.init_map)
+        self.w = len(self.init_map[0])
+        self.reset()
+
+    def reset(self):
+        self.stamina = self.max_stamina
+        self.map = copy.deepcopy(self.init_map)
+        self.i = 0
+        self.j = 0
+
+    def sample(self):
+        self.stamina = random.randint(0, self.max_stamina)
+        self.map = copy.deepcopy(self.init_map)     # Not quite realistic, but okay for now
+        self.i = random.randint(0, self.h - 1)
+        self.j = random.randint(0, self.w - 1)
+
+    def get_state(self):
+        return (self.stamina, self.i, self.j)
+
+    def get_actions(self):
+        actions = []
+        if self.i < self.h - 1:
+            actions.append((1, 0))
+        if self.j < self.w - 1:
+            actions.append((0, 1))
+        if self.i > 0:
+            actions.append((-1, 0))
+        if self.j > 0:
+            actions.append((0, -1))
+        return actions
+
+    def is_done(self):
+        return self.stamina == 0
+
+    def step(self, action):
+        di, dj = action
+        self.i += di
+        self.j += dj
+        self.stamina -= 1
+        reward = self.map[self.i][self.j]
+        self.map[self.i][self.j] = 0
+        return reward
 
 
 """
@@ -255,3 +317,10 @@ print("-" * 20)
 test_random_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2))
 print("-" * 20)
 train_q_agent(env=SlipperyFindYourWayEnv(slip_prob=0.2), agent=QAgent())
+
+print("-" * 20)
+
+test_random_agent(env=CollectCoins())
+print("-" * 20)
+train_q_agent(env=CollectCoins(), agent=QAgent())
+
