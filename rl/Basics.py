@@ -2,6 +2,9 @@ from collections import defaultdict, Counter
 import copy
 import numpy as np
 import random
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
 
 """
@@ -26,7 +29,7 @@ class LinearEnvironment:
         self.steps_left = random.randint(1, 10)
 
     def get_state(self):
-        return (self.steps_left,)
+        return self.steps_left
 
     def get_actions(self):
         return [1, 2]
@@ -284,10 +287,113 @@ class QAgent:
 
 """
 An agent that uses Deep Q-learning
+
+!!! This is much more complex to do !!!
+- you need to vectorize the obsevations (adapters for each game)
+- you need to vectorize the actions (adapters for each game)
+- ideally, you need to collect all possible actions (the DQN takes as input the state and outputs the action to perform)
+- you need to collect a bunch of observation and sample a training minibatch from it
 """
 
 
-# TODO - implement it using pytorch
+class LinearEnvironmentVectorized(LinearEnvironment):
+    def __init__(self):
+        super().__init__()
+
+    def vectorize(self, state, action):
+        if action == 1:
+            return torch.Tensor([state, 0, 1])
+        elif action == 2:
+            return torch.Tensor([state, 1, 0])
+
+
+class DeepQAgent:
+    def __init__(self):
+        self.actions = defaultdict(set)                     # map state to possible actions at that state
+        self.model = self._init_model()                     # the model used to make prediction
+        self.learning_model = copy.deepcopy(self.model)     # the model to train
+        self.transitions = []                               # to sample mini-batch from
+        self.temperature = 1.                               # controls the number of random actions attempted
+        self.discount = 0.9                                 # discount factor used in Q-learning bellman update
+        self.blending = 0.2
+
+    def step(self, env) -> float:
+        state = env.get_state()
+        actions = env.get_actions()
+        self.actions[state] = actions
+        action = self._select_best(env, state, actions)
+        reward = env.step(action)
+        self._value_iteration(env, state, action, env.get_state(), reward)
+        return reward
+
+    def _select_best(self, env, state, actions):
+        """
+        Selects the action with the best Q-value (expected long term reward)
+        """
+        if random.random() < self.temperature:
+            return random.choice(actions)
+
+        '''
+        # Much slower than doing a bulk multiplication for all actions
+        best_action = actions[0]
+        best_action_reward = -1 * float('inf')
+        for action in actions:
+            reward = self.model(env.vectorize(state, action))
+            if reward > best_action_reward:
+                best_action = action
+                best_action_reward = reward
+        return best_action
+        '''
+
+        self.model.eval()
+        xs = torch.cat([env.vectorize(state, action).unsqueeze(dim=0) for action in actions], dim=0)
+        ys = self.model(xs)
+        best_action_i = torch.argmax(ys, dim=0) # TODO - check dim?
+        return actions[best_action_i]
+
+    def _init_model(self):
+        return nn.Sequential(
+            nn.Linear(in_features=3, out_features=10),
+            nn.ReLU(),
+            nn.Linear(in_features=10, out_features=1)
+        )
+
+    def _value_iteration(self, env, state, action, new_state, reward):
+        self.transitions.append((state, action, new_state, reward))
+        if len(self.transitions) >= 1000:
+            self._train_model(env, self.transitions[:100])
+            self.transitions.clear()
+
+    def _train_model(self, env, mini_batch):
+        ys = []
+        xs = torch.cat([env.vectorize(state, action).unsqueeze(dim=0) for (state, action, _, _) in mini_batch], dim=0)
+        for (_, _, new_state, reward) in mini_batch:
+            new_actions = self.actions[new_state]
+            if new_actions:
+                new_xs = torch.cat([env.vectorize(new_state, action).unsqueeze(dim=0) for action in new_actions], dim=0)
+                outputs = self.model(new_xs)
+                expected_value, _ = torch.max(outputs, dim=0) # TODO - check dim?
+                ys.append(reward + expected_value.item())
+            else:
+                ys.append(reward)
+        ys = torch.Tensor(ys)
+
+        loss_fct = nn.MSELoss()
+        optimizer = optim.Adam(params=self.learning_model.parameters(), lr=1e-2)
+        self.learning_model.train()
+        outputs = self.learning_model(xs)
+        loss = loss_fct(outputs, ys)
+        loss.backward()
+        optimizer.step()
+        optimizer.zero_grad()
+        self.model = copy.deepcopy(self.learning_model)
+
+    def temperature_decrease(self, decrease=0.1):
+        self.temperature -= decrease
+        self.temperature = max(self.temperature, 0.)
+
+    def __str__(self):
+        return str({'q_values': self.q_values, 'temperature': self.temperature})
 
 
 """
@@ -326,7 +432,7 @@ def train_q_agent(env, agent):
             total_reward += agent.step(env)
         rewards.append(total_reward)
         if (1 + epoch) % 100 == 0:
-            print("Epoch", epoch + 1, ":", np.mean(rewards))
+            print("Epoch", epoch + 1, ":", np.mean(rewards), " (temperature " + str(agent.temperature) + ")")
             agent.temperature_decrease(0.25)
             rewards.clear()
 
@@ -334,6 +440,8 @@ def train_q_agent(env, agent):
 test_random_agent(env=LinearEnvironment())
 print("-" * 20)
 train_q_agent(env=LinearEnvironment(), agent=QAgent())
+print("-" * 20)
+train_q_agent(env=LinearEnvironmentVectorized(), agent=DeepQAgent())
 
 print("-" * 20)
 
