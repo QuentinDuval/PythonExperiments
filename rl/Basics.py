@@ -158,23 +158,23 @@ class CollectCoinsState:
             actions.append((0, -1))
         return actions
 
+    def move(self, di, dj):
+        i = self.i + di
+        j = self.j + dj
+        new_map = copy.deepcopy(self.map)
+        new_map[i][j] = 0
+        return CollectCoinsState(i=i, j=j, stamina=self.stamina - 1, map=new_map)
+
 
 class CollectCoins:
     def __init__(self):
-        self.init_state = CollectCoinsState(i=0, j=0, stamina=7, map=[
-            [0, 0, 0, 0],
-            [-50, 1, 1, 0],
-            [0, -50, 1, 5],
-            [0, 0, 1, 100]
-        ])
-        self.reset()
+        self.state = self._init_state()
 
     def reset(self):
-        self.state = copy.deepcopy(self.init_state)
+        self.state = self._init_state()
 
     def sample(self):
-        # TODO
-        pass
+        pass    # TODO - not sure it is helpful if it just creates new states!
 
     def get_state(self):
         return self.state
@@ -187,13 +187,19 @@ class CollectCoins:
 
     def step(self, action):
         di, dj = action
-        i = self.state.i + di
-        j = self.state.j + dj
-        reward = self.state.map[i][j]
-        new_map = copy.deepcopy(self.state.map)
-        new_map[i][j] = 0
-        self.state = CollectCoinsState(i=i, j=j, stamina=self.state.stamina-1, map=new_map)
+        new_state = self.state.move(di, dj)
+        reward = self.state.map[new_state.i][new_state.j]
+        self.state = new_state
         return reward
+
+    @staticmethod
+    def _init_state():
+        return CollectCoinsState(i=0, j=0, stamina=7, map=[
+            [0, 0, 0, 0],
+            [-50, 1, 1, 0],
+            [0, -50, 1, 5],
+            [0, 0, 1, 100]
+        ])
 
 
 """
