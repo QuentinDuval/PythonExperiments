@@ -10,6 +10,11 @@ Your task is to help find the coordinates of trees which are exactly located on 
 from typing import List
 
 
+# TODO
+#  https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain
+#  it would be much simpler... and faster (no need for two turns)
+
+
 class Solution:
     def outerTrees(self, points: List[List[int]]) -> List[List[int]]:
         """
