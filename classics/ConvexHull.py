@@ -7,7 +7,6 @@ The garden is well fenced only if all the trees are enclosed.
 Your task is to help find the coordinates of trees which are exactly located on the fence perimeter.
 """
 
-
 from typing import List
 
 
@@ -42,17 +41,17 @@ class Solution:
         - We can use the cross product and check if it is positive or negative
           (Since it is equal to norm(x) * norm(y) * sin(angle between x and y) * z)
 
-        !! BUT since there might be colinar vectors !!!
-        - We order by angle then distance to reference, but that works only in one direction
-          (when we go away from the source, not parallel or toward the source)
-        - So we do the Graham scan in BOTH direction...
+        !!! There might be colinar vectors !!!
+        - we want the points the closest to the source when going away
+        - we want the points the furthest to the source when going back
+        => we order by slope then highest 'y' coordinate first
+        => but it does not work for equal 'y' so we do the Graham scan in BOTH direction...
         """
-        if len(points) <= 2:
+        if len(points) <= 3:
             return points
 
         points = [tuple(p) for p in points]
         ref = self.reference_point(points)
-        points = [p for p in points if p != ref]
         self.sort_by_slopes(ref, points, 1)
         frontier = set(self.graham_scan(ref, points, self.is_turn_right))
         self.sort_by_slopes(ref, points, -1)
@@ -68,34 +67,24 @@ class Solution:
         return stack
 
     def reference_point(self, points):
-        ref = points[0]
-        for p in points[1:]:
-            if p[0] < ref[0] or p[0] == ref[0] and p[1] > ref[1]:
-                ref = p
+        ref = min(points)
+        points.pop(points.index(ref))
         return ref
 
     def sort_by_slopes(self, ref, points, order):
-        points.sort(key=lambda p: (order * self.slope(ref, p), self.distance(ref, p)))
+        points.sort(key=lambda p: (order * self.slope(ref, p), -p[1]))
 
     def slope(self, ref, p):
         if ref[0] == p[0]:
-            return -1 * float('inf') if p[1] < ref[1] else float('inf')
+            return float('inf')
         else:
             return (p[1] - ref[1]) / (p[0] - ref[0])
 
-    def distance(self, x, y):
-        return self.norm(self.direction(x, y))
-
-    def norm(self, v):
-        return v[0] * v[0] + v[1] * v[1]
-
     def is_turn_right(self, p1, p2, p3):
-        product = self.cross_product(self.direction(p1, p2), self.direction(p1, p3))
-        return product < 0
+        return self.cross_product(self.direction(p1, p2), self.direction(p1, p3)) < 0
 
     def is_turn_left(self, p1, p2, p3):
-        product = self.cross_product(self.direction(p1, p2), self.direction(p1, p3))
-        return product > 0
+        return self.cross_product(self.direction(p1, p2), self.direction(p1, p3)) > 0
 
     def direction(self, x, y):
         return [y[0] - x[0], y[1] - x[1]]
@@ -109,6 +98,7 @@ TO DEBUG
 """
 
 
+'''
 import matplotlib.pyplot as plot
 
 
@@ -123,10 +113,7 @@ def show_diff(points, expected):
 
 
 show_diff(
-    points = [[0,3],[1,2],[2,1],[3,0],[4,0],[5,0],[6,1],[7,2],[7,3],[7,4],[6,5],[5,5],[4,5],[3,5],[2,5]],
-    expected = [[0,3],[6,1],[3,5],[7,2],[5,0],[1,4],[1,2],[7,3],[4,5],[5,5],[6,5],[4,0],[3,0],[2,1],[2,5],[7,4]])
-
-show_diff(
-    points = [[0,4],[3,0],[9,3],[8,9],[5,9]],
-    expected = [[3,0],[0,4],[4,8],[5,9],[8,9],[9,3]])
-
+    points=[[0,0],[8,0],[9,6],[7,9],[1,9]],
+    expected=[[9,6],[7,9],[1,0],[1,9],[2,0],[8,0],[0,0],[3,0]]
+)
+'''
