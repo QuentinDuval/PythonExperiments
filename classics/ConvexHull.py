@@ -10,11 +10,6 @@ Your task is to help find the coordinates of trees which are exactly located on 
 from typing import List
 
 
-# TODO
-#  https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain
-#  it would be much simpler... and faster (no need for two turns)
-
-
 class Solution:
     def outerTrees(self, points: List[List[int]]) -> List[List[int]]:
         """
@@ -52,9 +47,11 @@ class Solution:
         => we order by slope then highest 'y' coordinate first
         => but it does not work for equal 'y' so we do the Graham scan in BOTH direction...
         """
+
         if len(points) <= 3:
             return points
 
+        '''
         points = [tuple(p) for p in points]
         ref = self.reference_point(points)
         self.sort_by_slopes(ref, points, 1)
@@ -62,6 +59,28 @@ class Solution:
         self.sort_by_slopes(ref, points, -1)
         frontier |= set(self.graham_scan(ref, points, self.is_turn_left))
         return list(frontier)
+        '''
+
+        """
+        Technique 2: Monotone chain
+        https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain
+        """
+
+        points.sort()
+        stack = [points[0], points[1]]
+
+        for p in points[2:]:
+            while len(stack) >= 2 and self.is_turn_left(stack[-2], stack[-1], p):
+                stack.pop()
+            stack.append(p)
+
+        for p in reversed(points[:-1]):
+            while len(stack) >= 2 and self.is_turn_left(stack[-2], stack[-1], p):
+                stack.pop()
+            stack.append(p)
+
+        stack.pop()     # Starting element is added as well here (needs it before to detect bad turns)
+        return stack
 
     def graham_scan(self, ref, points, keep_turn):
         stack = [ref, points[0]]
@@ -118,7 +137,7 @@ def show_diff(points, expected):
 
 
 show_diff(
-    points=[[0,0],[8,0],[9,6],[7,9],[1,9]],
-    expected=[[9,6],[7,9],[1,0],[1,9],[2,0],[8,0],[0,0],[3,0]]
+expected=[[1,1],[2,2],[2,0],[2,4],[3,3],[4,2]],
+points=[[1, 1], [2, 4], [3, 3], [4, 2]]
 )
 '''
