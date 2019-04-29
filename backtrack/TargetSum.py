@@ -4,7 +4,7 @@ from typing import List
 class Solution:
     def findTargetSumWays(self, nums: List[int], S: int) -> int:
         """
-        For each number, you must either add it or substract it, and the goal is to find the target S.
+        For each number, you must either add it or subtract it, and the goal is to find the target S.
 
         Based on the length of the array (maximum 20) we can do:
         - Backtracking (exhaustive search)
