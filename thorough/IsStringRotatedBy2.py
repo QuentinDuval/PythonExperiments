@@ -20,3 +20,15 @@ def is_rotated(a, b):
     # The big mistake here is to try to deduce the shift by doing a[2] == b[0] or a[0] == b[2]
     # Indeed, both could be true... and testing one possibility would make you fail
     return is_rotated_by(a, b, 2) or is_rotated_by(a, b, -2)
+
+
+'''
+import math
+print(math.sqrt(801))
+
+
+for n in range(20):
+    if n * (n + 1) // 2 > 99:
+        print(n)
+        break
+'''
