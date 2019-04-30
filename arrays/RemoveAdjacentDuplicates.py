@@ -50,7 +50,6 @@ def remove_duplicates(s):
 def remove_adjacent_duplicates(s):
     result = remove_duplicates(s)
     while result != s:
-        print(s, result)
         s = result
         result = remove_duplicates(s)
     return result
