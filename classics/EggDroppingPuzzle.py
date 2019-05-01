@@ -63,5 +63,8 @@ def min_attempts_2(eggs, floors):
     return memo[-1]
 
 
+# TODO - save from where you came from...
+
+
 # print(min_attempts_2(2, 10))
 # print(min_attempts_2(2, 100))
