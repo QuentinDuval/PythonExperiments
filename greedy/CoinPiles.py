@@ -140,6 +140,7 @@ def min_removal(heights, k):
     for start in range(1, len(heights)):
         drop_cost += heights[start-1]
         right_removals = remove_top_cost(heights[start], heights[start:])
+        # TODO - try a break somewhere here... wrong greedy criteria?
         min_cost = min(min_cost, drop_cost + right_removals)
     return min_cost
 
