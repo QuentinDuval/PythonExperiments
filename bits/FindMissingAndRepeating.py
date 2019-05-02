@@ -44,9 +44,13 @@ def missing_and_repeating(nums):
     for a in range(1, n+1):
         b = diff_xor ^ a        # to get the other number
         if b - a == diff_sum:   # check if it matches the second equation
-            return a, b
+            if a not in nums:
+                return b, a
     return None
 
 
 print(missing_and_repeating([1, 3, 3]))
+
+# TODO - this is wrong: expected (27, 23)
+print(missing_and_repeating([1, 14, 31, 8, 18, 33, 28, 2, 6, 16, 20, 3, 34, 17, 19, 21, 24, 25, 32, 11, 30, 13, 27, 7, 26, 29, 27, 15, 4, 12, 22, 5, 9, 10]))
 
