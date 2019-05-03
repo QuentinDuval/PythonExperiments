@@ -71,7 +71,7 @@ FAST ENOUGH (smaller numbers)
 """
 
 
-def missing_and_repeating(nums):
+def missing_and_repeating_2(nums):
     n = len(nums)
 
     repeating = 0
@@ -86,6 +86,27 @@ def missing_and_repeating(nums):
     diff_sum = nums_sum - n * (n + 1) // 2
     missing = repeating - diff_sum
     return repeating, missing
+
+
+"""
+MARK NEGATIVE INDEX (use MUTABILITY) - variant
+Mark as negative the indexes of the elements you visit, and the collect the positive elements
+"""
+
+
+def missing_and_repeating(nums):
+    for val in nums:
+        nums[abs(val) - 1] *= -1
+
+    incorrects = []
+    for i in range(len(nums)):
+        if nums[i] > 0:
+            incorrects.append(i+1)
+
+    if incorrects[0] in nums:
+        return incorrects[0], incorrects[1]
+    else:
+        return incorrects[1], incorrects[0]
 
 
 print(missing_and_repeating([1, 3, 3]))
