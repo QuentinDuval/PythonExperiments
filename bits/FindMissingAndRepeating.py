@@ -53,5 +53,8 @@ def missing_and_repeating(nums):
 
 
 print(missing_and_repeating([1, 3, 3]))
+# (3, 2)
+
 print(missing_and_repeating([1, 14, 31, 8, 18, 33, 28, 2, 6, 16, 20, 3, 34, 17, 19, 21, 24, 25, 32, 11, 30, 13, 27, 7, 26, 29, 27, 15, 4, 12, 22, 5, 9, 10]))
+# (27, 23)
 
