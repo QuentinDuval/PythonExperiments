@@ -8,35 +8,47 @@ Given an unsorted array A of size N of non-negative integers, find a continuous 
 from typing import List
 
 
-def subarrayWithSum(n: int, target: int, nums: List[int]):
+def subarray_with_given_sum(nums: List[int], target: int):
     """
-    Brute force way:
-    - Try all i < j and compute the sum => see if it fits the target
-    => Complexity is O(n^3)
+    Brute force algorithm would consist in trying all i < j: O(N^2)
 
-    Dynamic programming:
-    - Try all i < j and compute the sum => see if it fits the target
-    - Precompute the partial sums so that the sum between i < j is O(1)
-    => Complexity is O(n^2)
+    But if i < j is lower than target:
+    - it is useless to try inside
+    - we should only try to extend the window
 
-    Binary searching:
-    - Precompute the partial sums
-    - For each i, binary search for the target + sum up to i-1
+    If we start the window i < j at index i = 0 and j = 0:
+    - Just extend the window to the right j => j + 1 if sum is lower than target
+    - Just restrict the window to the right i => i + 1 if sum is higher than target
+
+    We cannot miss a case:
+    - For a given 'i', no need to test more to the right if sum > target
+    - For a given 'j', no need to test more to the left if sum > target
+    """
+    start = 0
+    cum_sum = 0
+    for end in range(len(nums)):
+        cum_sum += nums[end]
+        while cum_sum > target and start < end:
+            cum_sum -= nums[start]
+            start += 1
+
+        # Must absolutely follow the 'while' in order not to miss a case
+        if cum_sum == target:
+            return start, end
+
+    return (-1,)
+
+
+def subarray_with_given_sum_2(n: int, target: int, nums: List[int]):
+    """
+    OTHER TECHNIQUE: binary searching
+    - Compute the partial cumulative sums
+    - For each i, binary search for the target + cum_sum[i-1]
     => Complexity is O(n log n)
-
-    One pass algorithm in O(n):
-    - Increase j if the sum between i < j is inferior to target
-    - Increase i if the sum between i < j is superior to target
-    Why does it work?
-    - For a fixed 'i', there is no point in going after 'j' if superior.
-    - So you just move to next 'i'... but can we might miss element?
-    - No! The sub-array was nessarily not big enough (we went for 'j')
     """
     if n <= 0:
         return 0, 0
 
-    '''
-    # Binary search based
     cum_sums = [nums[0]]
     for num in nums[1:]:
         cum_sums.append(cum_sums[-1] + num)
@@ -60,36 +72,4 @@ def subarrayWithSum(n: int, target: int, nums: List[int]):
         if j is not None:
             return i, j
     return None
-    '''
 
-    i = j = 0
-    partial_sum = nums[0]
-    while j < n:
-        if partial_sum == target:
-            return i, j
-
-        if partial_sum < target:
-            j += 1
-            if j < n:
-                partial_sum += nums[j]
-        else:
-            partial_sum -= nums[i]
-            i += 1
-    return None
-
-
-'''
-# Test client for Geeks for Geeks
-test_nb = int(input())
-for _ in range(test_nb):
-    line1 = input().strip()
-    line2 = input().strip()
-    n, target = [int(x) for x in line1.split(" ")]
-    nums = [int(x) for x in line2.split(" ")]
-    result = subarrayWithSum(n, target, nums)
-    if result is not None:
-        start, end = result
-        print(start + 1, end + 1)
-    else:
-        print(-1)
-'''
