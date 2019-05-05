@@ -103,3 +103,7 @@ s1 * s2 = h1 * h2 * X ^ 2 + [(h1 + l1) * (h2 + l2) - h1 * h2 - l1 * l2] * X + l1
 
 => Can be done in 3 multiplications (see the repeating terms?)
 """
+
+
+# TODO - interesting to do... will be faster
+
