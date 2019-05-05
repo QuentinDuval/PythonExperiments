@@ -44,10 +44,8 @@ def multiply_strings(s1: str, s2: str) -> str:
 
     s1 = [int(x) for x in reversed(s1)]
     s2 = [int(x) for x in reversed(s2)]
-
     while s1 and s1[-1] == 0:
         s1.pop()
-
     while s2 and s2[-1] == 0:
         s2.pop()
 
@@ -57,6 +55,7 @@ def multiply_strings(s1: str, s2: str) -> str:
     n1 = len(s1)
     n2 = len(s2)
 
+    '''
     carry = 0
     result = []
     for k in range(0, n1 + n2 - 1):
@@ -66,14 +65,24 @@ def multiply_strings(s1: str, s2: str) -> str:
         for i in range(lo, hi):
             total += s1[i] * s2[k-i]
         carry, total = divmod(total, 10)
-        result.append(total)
+        result.append(str(total))
+    '''
 
-    if carry > 0:
-        result.append(carry)
+    # A bit harder to understand, but does the same
+    result = [0] * (n1 + n2)
+    for i in range(n1):
+        carry = 0
+        for j in range(n2):
+            total = result[i + j] + s1[i] * s2[j] + carry
+            carry, result[i + j] = divmod(total, 10)
+        result[i+j+1] = carry
+    while result and result[-1] == 0:
+        result.pop()
+    result = [str(x) for x in result]
 
-    result = "".join(str(x) for x in reversed(result))
-    result = "-" + result if negative else result
-    return result
+    if negative:
+        result.append("-")
+    return "".join(str(x) for x in reversed(result))
 
 
 print(multiply_strings("123", "22"))
