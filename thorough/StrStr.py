@@ -16,3 +16,7 @@ def strstr(s, x):
         if match:
             return i
     return -1
+
+
+# TODO - implement the better string algorithms
+

@@ -106,4 +106,3 @@ s1 * s2 = h1 * h2 * X ^ 2 + [(h1 + l1) * (h2 + l2) - h1 * h2 - l1 * l2] * X + l1
 
 
 # TODO - interesting to do... will be faster
-
