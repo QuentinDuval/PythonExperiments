@@ -51,5 +51,26 @@ def is_k_palin(s: str, k: int) -> bool:
     return visit(0, len(s) - 1, k)
 
 
+def is_k_palin(s: str, k: int) -> bool:
+    """
+    Second approach, less brutal, based on search in a graph of possible (DFS)
+    """
+    visited = set()     # Crucial to avoid visiting the same state space
+    to_visit = [(0, len(s) - 1, k)]
+    while to_visit:
+        lo, hi, n = to_visit.pop()
+        if (lo, hi, n) not in visited:
+            visited.add((lo, hi, n))
+            while lo <= hi and s[lo] == s[hi]:
+                lo += 1
+                hi -= 1
+            if lo >= hi:
+                return True
+            if n > 0:
+                to_visit.append((lo, hi-1, n-1))
+                to_visit.append((lo+1, hi, n-1))
+    return False
+
+
 print(is_k_palin('abcdecba', 1))
 print(is_k_palin('acdcb', 1))
