@@ -9,6 +9,9 @@ from typing import List
 
 
 def find_pair_sum(nums: List[int], target: int) -> bool:
+    """
+    Solution based on sorting: O(N log N)
+    """
     nums.sort()
 
     lo = 0
@@ -22,4 +25,24 @@ def find_pair_sum(nums: List[int], target: int) -> bool:
         else:
             hi -= 1
 
+    return False
+
+
+def find_pair_sum(nums: List[int], target: int) -> bool:
+    """
+    Solution based on a hash set:
+    - Move an index 'i' from left to right
+    - Store all previously seen elements
+    - Search for target - nums[i]
+
+    Complexity is O(N) time and space
+    """
+    if len(nums) < 2:
+        return False
+
+    visited = set()
+    for val in nums:
+        if target - val in visited:
+            return True
+        visited.add(val)
     return False
