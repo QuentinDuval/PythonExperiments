@@ -4,7 +4,7 @@ Form with TREE NUMBERS:
 https://practice.geeksforgeeks.org/problems/find-triplets-with-zero-sum/1
 
 Given an array A of N elements.
-Complete the function which returns true if triplets exists in array A whose sum is zero else return false.
+Complete the function which returns true if triplets exists in array A whose sum is target else return false.
 """
 
 
@@ -39,6 +39,7 @@ def find_triple_sum(nums: List[int], target: int) -> bool:
         if sum(nums[lo:lo+3]) > target:
             break
 
+        # Could almost re-use the solution for 2, but for the sorting
         mid = lo + 1
         hi = len(nums) - 1
         while mid < hi:
