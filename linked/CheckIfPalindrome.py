@@ -66,6 +66,42 @@ def is_palindrome_2(head: Node):
     return True
 
 
+def is_palindrome_3(head: Node):
+    """
+    If we can destroy the list while moving through it, we can even change the pointers of the nodes to form a stack
+    in place. We could even reconstruct it afterwards.
+
+    Complexity: O(N) time and O(1) space
+    """
+
+    stack = Node
+    slow = head
+    fast = head
+    while fast is not None:
+        fast = fast.next
+        if fast:
+            curr = slow
+            slow = slow.next
+            curr.next = stack
+            stack = curr
+            fast = fast.next
+        else:
+            slow = slow.next
+
+    head = slow                         # To reconstruct the list as it was
+    while slow is not None:
+        if slow.val != stack.val:
+            return False
+        curr = stack                    # To reconstruct the list as it was
+        stack = stack.next
+        curr.next = head                # To reconstruct the list as it was
+        head = curr                     # To reconstruct the list as it was
+        slow = slow.next
+
+    return True
+
+
 for l in [[1, 2, 3, 2, 1], [1, 2, 2, 1], [1, 2, 3, 1, 2], [1, 2, 1, 2]]:
-    for f in [is_palindrome, is_palindrome_2]:
-        print(f(Node.from_list(l)))
+    for f in [is_palindrome, is_palindrome_2, is_palindrome_3]:
+        node = Node.from_list(l)
+        print(node.to_list(), "->", f(node))
