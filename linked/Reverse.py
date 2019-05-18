@@ -1,29 +1,5 @@
 
-class Node:
-    def __init__(self, val):
-        self.val = val
-        self.next = None
-
-    @classmethod
-    def from_list(cls, xs):
-        if not xs:
-            return None
-
-        h = Node(xs[0])
-        t = h
-        for x in xs[1:]:
-            curr = Node(x)
-            t.next = curr
-            t = curr
-        return h
-
-    def to_list(self):
-        xs = []
-        head = self
-        while head:
-            xs.append(head.val)
-            head = head.next
-        return xs
+from linked.Node import *
 
 
 def reverse(head: Node) -> Node:
