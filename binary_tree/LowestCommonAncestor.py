@@ -1,3 +1,10 @@
+"""
+https://practice.geeksforgeeks.org/problems/lowest-common-ancestor-in-a-bst/1
+
+Given a Binary Search Tree and 2 nodes value n1 and n2, your task is to find the lowest common ancestor(LCA) of the two nodes.
+"""
+
+
 from binary_tree.TreeNode import *
 
 
