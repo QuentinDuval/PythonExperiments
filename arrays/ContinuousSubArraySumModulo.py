@@ -38,7 +38,10 @@ class Solution:
         """
         Alternative way is to use the properties of the modulo:
         - Compute the prefix sums modulo 'k' for each position
-        - If we find any place i < j + 1 where the prefix sum is equal (same number) it means we cycled => we found the sub-arry
+        - If we find any place i < j + 1 where the prefix sum is equal (same number) it means we cycled => we found the sub-array
+        
+        Time complexity: O(N)
+        Space complexity: O(N)
         """
 
         n = len(nums)
