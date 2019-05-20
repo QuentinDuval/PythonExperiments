@@ -15,6 +15,8 @@ def longest_even_length(digits):
     - trying for each i < j the partial sums of [i, j) == [j, j+j-i)
     """
 
+    # TODO - We can avoid the O(N**2) storage by computing prefix sums (and substracting to get the sub-array range).
+
     partial_sums = {}
     for i in range(len(digits)):
         partial_sums[(i, i)] = digits[i]
