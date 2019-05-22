@@ -16,7 +16,7 @@ def reverse_words(sentence: List[str]):
         if sentence[hi] == " ":
             reverse(sentence, lo, hi - 1)
             lo = hi + 1
-    reverse(sentence, lo, len(sentence) - 1) # Do not forget the last word!
+    reverse(sentence, lo, len(sentence) - 1)    # Do not forget the last word!
 
 
 def test_reverse_words(sentence: str) -> str:
