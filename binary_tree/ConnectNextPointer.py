@@ -76,3 +76,28 @@ def connect_better(root: TreeLinkNode):
             to_visit.append((node.left, depth + 1))
         if node.right:
             to_visit.append((node.right, depth + 1))
+
+
+def connect_bfs(root: TreeLinkNode):
+    """
+    Another solution is to: do a DBF, stage by stage.
+    Simplest and fastest solution in practice, but might use more memory: O(width) vs O(height).
+    """
+    to_visit = []
+    if root:
+        to_visit.append(root)
+
+    while to_visit:
+        prev = None
+        next_to_visit = []
+        for curr in to_visit:
+            if curr.left:
+                next_to_visit.append(curr.left)
+            if curr.right:
+                next_to_visit.append(curr.right)
+            if prev:
+                prev.next = curr
+            prev = curr
+        to_visit = next_to_visit
+
+    return root
