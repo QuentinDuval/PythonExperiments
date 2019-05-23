@@ -46,3 +46,33 @@ def connect(root: TreeLinkNode):
             toVisit.append(node.left)
         if node.right:
             toVisit.append(node.right)
+
+
+def connect_better(root: TreeLinkNode):
+    """
+    Another solution is to:
+    - do a DFS starting from the right node
+    - keep an array of last seen node at depth 'd' ('d' -> next right node)
+    - and connect using this
+    """
+
+    to_visit = []
+    if root:
+        to_visit.append((root, 0))
+
+    last_seen = []
+
+    while to_visit:
+        node, depth = to_visit.pop()
+
+        # Check the last seen on the right and connect to it
+        if len(last_seen) <= depth:
+            last_seen.append(None)
+        node.next = last_seen[depth]
+        last_seen[depth] = node
+
+        # Put right after for it to be analyzed first
+        if node.left:
+            to_visit.append((node.left, depth + 1))
+        if node.right:
+            to_visit.append((node.right, depth + 1))
