@@ -18,14 +18,12 @@ class TreeNode:
 
 
 class Solution:
-    # TODO - to actually be tested
-
     def distributeCoins(self, root: TreeNode) -> int:
         """
         The key here is to draw the tree, and see that the problem can be solved recursively
 
         At node N, if left tree has excedent X, and right tree has excedent Y (both X and Y can be negative),
-        then the node N, has excedent X + Y and the flow from or to this node is abs(X + Y) moves.
+        then the node N, has excedent X + Y and the flow from or to this node is abs(X) + abs(Y) moves.
         """
 
         moves = 0
@@ -37,7 +35,8 @@ class Solution:
 
             left = visit(node.left)
             right = visit(node.right)
-            moves += abs(left + right)
-            return left + right
+            moves += abs(left) + abs(right)
+            return left + right + (node.val - 1)
 
+        visit(root)
         return moves
