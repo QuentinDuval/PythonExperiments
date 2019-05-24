@@ -10,6 +10,9 @@ class ListNode:
         self.next = None
 
 
+# TODO - iterative solution
+
+
 class Solution:
     def reverseKGroup(self, head: ListNode, k: int) -> ListNode:
 
