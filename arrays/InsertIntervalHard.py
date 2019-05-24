@@ -24,6 +24,8 @@ class Solution:
 
         All elements in this open range must be fused:
         [[1,2],[3,10],[12,16]]
+
+        Complexity stays O(N) in worst case, so we could just do a sweep on the collection...
         """
         if not intervals:
             return [newInterval]
