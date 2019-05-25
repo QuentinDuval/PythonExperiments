@@ -2,6 +2,10 @@ from collections import deque
 
 
 class MaxQueue:
+    """
+    A queue that can always give you the maximum value in O(1)
+    """
+
     def __init__(self):
         self.queue = deque()
         self.maxs = deque()  # Holds (max value, count) pairs - the front always hold the highest value
