@@ -148,7 +148,7 @@ class Solution:
     def minWindow_3(self, s: str, t: str) -> str:
         """
         Just use plain maps and not Counter
-        => Complexity is O(N) and takes 100 ms (nice optimization)
+        => Complexity is O(N) and takes 108 ms (nice optimization)
         """
         if not t:
             return ""
@@ -187,3 +187,53 @@ class Solution:
 
         return s[min_window[0]:min_window[1] + 1] if min_window else ""
 
+    def minWindow_4(self, s: str, t: str) -> str:
+        """
+        Avoid allocating memory / modifying the map for characters not in the pattern 't'
+        => Complexity is O(N) and takes 84 ms (nice optimization)
+        """
+
+        if not t:
+            return ""
+
+        pattern = {}
+        for c in t:
+            pattern[c] = pattern.get(c, 0) + 1
+        match_count = 0
+        min_window = None
+
+        start = 0
+        for end in range(len(s)):
+            # Key optimization here:
+            # You do not need to check the whole pattern, instead just
+            # look for the current character and increase the count of
+            # matched characters
+            count = pattern.get(s[end])
+            if count is not None:
+                if count > 0:
+                    match_count += 1
+                pattern[s[end]] = count - 1
+
+            if match_count == len(t):
+                # Key optimisation here:
+                # You do not need to check the whole pattern, instead just
+                # look for a character whose count is == pattern count
+                while start < end:
+                    count = pattern.get(s[start])
+                    if count is None:
+                        start += 1
+                    elif count < 0:
+                        pattern[s[start]] = count + 1
+                        start += 1
+                    else:
+                        break
+
+                if not min_window or min_window[1] - min_window[0] > end - start:
+                    min_window = start, end
+
+                # Move past the current window (look for another one)
+                pattern[s[start]] += 1
+                match_count -= 1
+                start += 1
+
+        return s[min_window[0]:min_window[1] + 1] if min_window else ""
