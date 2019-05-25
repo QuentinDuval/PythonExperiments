@@ -27,7 +27,7 @@ class Solution:
         the inclusion.
 
         => Complexity is therefore O(N * K) where is the number of different
-        characters in 't' and it beats only 8%
+        characters in 't' and takes 600 ms
         """
 
         if not t:
@@ -57,7 +57,44 @@ class Solution:
             if not min_window or min_window[1] - min_window[0] > end - start + 1:
                 min_window = start - 1, end
 
-        if min_window:
-            return s[min_window[0]:min_window[1] + 1]
-        return ""
+        return s[min_window[0]:min_window[1] + 1] if min_window else ""
+
+    def minWindow_2(self, s: str, t: str) -> str:
+        """
+        Instead of looking for the full pattern when incrementing 'start', you can just look at the letter
+        in the pattern and the window and stop when their count is equal
+        => Complexity falls to O(N) and takes 500 ms
+        """
+
+        if not t:
+            return ""
+
+        pattern = Counter(t)
+        window = Counter()
+
+        def contains(window, pattern):
+            for c, count in pattern.items():
+                if window[c] < count:
+                    return False
+            return True
+
+        min_window = None
+
+        start = 0
+        for end in range(len(s)):
+            window[s[end]] += 1
+            if not contains(window, pattern):
+                continue
+
+            # Key optimisation here:
+            # You do not need to check the whole pattern, instead just
+            # look for a character whose count is == pattern count
+            while window[s[start]] > pattern[s[start]]:
+                window[s[start]] -= 1
+                start += 1
+
+            if not min_window or min_window[1] - min_window[0] > end - start:
+                min_window = start, end
+
+        return s[min_window[0]:min_window[1] + 1] if min_window else ""
 
