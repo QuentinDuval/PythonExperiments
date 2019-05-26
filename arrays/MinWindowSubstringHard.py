@@ -8,6 +8,9 @@ in complexity O(n).
 from collections import Counter
 
 
+# TODO - wonderful article on how you can optimize the code by algorithmic and then play will allocations
+
+
 class Solution:
     def minWindow(self, s: str, t: str) -> str:
         """
