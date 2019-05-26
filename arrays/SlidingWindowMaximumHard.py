@@ -72,6 +72,9 @@ Somehow we would like a max-fifo-queue that gives us the maximum in O(1)
 """
 
 
+# TODO - small article on using all the data of your problem (the contrary to abstraction)
+
+
 class Solution:
     def maxSlidingWindow(self, nums: List[int], k: int) -> List[int]:
         maximums = []
