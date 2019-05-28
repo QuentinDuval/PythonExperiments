@@ -35,6 +35,9 @@ class Solution:
         - If either child is not covered, you need to put a camera
         - Otherwise, if a child has a camera, you can get out without a camera
         - Otherwise, return not covered (case of the leaves)
+
+        Time complexity is O(N) for we have to analyse all nodes
+        Space complexity is O(H) which H being the height of the tree
         """
 
         if not root:
