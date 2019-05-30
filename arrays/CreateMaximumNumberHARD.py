@@ -63,7 +63,7 @@ class Solution:
         """
         Take the highest element, and in case of tie, look ahead
         """
-        # TODO - pass 'best_res' in parameter to prune
+        # TODO - pass 'best_res' in parameter to prune (does not change anything in terms of perf...)
         merged = []
         i1 = 0
         i2 = 0
