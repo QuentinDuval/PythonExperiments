@@ -27,10 +27,10 @@ Number of sub-problems:
 - sqrt(N) (cause we can increment by one, sum of 1 to N is N ** 2)
 => O(N ** 3/2)
 
-Time complexity is O(N ** 3/2)
+Time complexity is O(N ** 3/2 * log N) - the log N is due to binary search
 Space complexity is O(N ** 3/2)
 
-Beats 62%
+Beats 62% (200ms)
 """
 
 
@@ -76,3 +76,88 @@ class Solution:
             return False
 
         return visit(0, 0)
+
+
+"""
+We can improve efficiency by storing positions in a set:
+- we do not need to know the exact position in the list
+- we only need to know if we reached the end
+
+Time complexity decreased to O(N ** 3/2)
+
+Beats 86% (88%)
+"""
+
+
+class Solution:
+    def canCross(self, stones: List[int]) -> bool:
+        if not stones:
+            return True
+
+        start_pos = stones[0]
+        last_pos = stones[-1]
+        stones = set(stones)
+
+        def cache(f):
+            memo = {}
+
+            def wrapped(*args):
+                res = memo.get(args)
+                if res is not None:
+                    return res
+                res = f(*args)
+                memo[args] = res
+                return res
+
+            return wrapped
+
+        @cache
+        def visit(pos: int, last_jump: int) -> bool:
+            if pos == last_pos:
+                return True
+
+            for jump in reversed(range(max(1, last_jump - 1), last_jump + 2)):
+                if pos + jump in stones and visit(pos + jump, jump):
+                    return True
+            return False
+
+        return visit(start_pos, 0)
+
+
+"""
+Finally, we can reason that we do not really need the intermediary result of DP:
+- just do a DFS
+- keep a 'discovered' set to avoid visiting the same (position, last_jump) twice
+
+Complexity stays the same
+Beats 89% (76 ms)
+"""
+
+
+class Solution:
+    def canCross(self, stones: List[int]) -> bool:
+        if not stones:
+            return True
+
+        start_pos = stones[0]
+        last_pos = stones[-1]
+        stones = set(stones)
+
+        discovered = {(start_pos, 0)}
+        to_visit = [(start_pos, 0)]
+
+        while to_visit:
+            pos, last_jump = to_visit.pop()
+            for jump in range(max(1, last_jump - 1), last_jump + 2):
+                destination = pos + jump
+                if destination == last_pos:
+                    return True
+
+                if destination not in stones:
+                    continue
+
+                if (destination, jump) not in discovered:
+                    to_visit.append((destination, jump))
+                    discovered.add((destination, jump))
+
+        return False
