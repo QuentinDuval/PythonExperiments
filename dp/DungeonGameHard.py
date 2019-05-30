@@ -176,3 +176,5 @@ def cache(f):
         return res
     return wrapped
 
+
+# TODO - bottom up DP
