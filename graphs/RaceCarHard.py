@@ -20,6 +20,14 @@ from collections import deque
 
 class Solution:
     def racecar(self, target: int) -> int:
+        """
+        BFS from the starting position until we reach the target:
+
+        Complexity: O(2 ^ Result) since we expand the search by 2 almost every time
+        But since Result is some kind of log N, it is O(N ** K) - TODO: what is K?
+
+        Beats 22% (2548 ms)
+        """
         if target == 0:
             return 0
 
