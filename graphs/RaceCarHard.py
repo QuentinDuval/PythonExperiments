@@ -20,20 +20,17 @@ from collections import deque
 
 class Solution:
     def racecar(self, target: int) -> int:
-        """
-        BFS from the starting position until we reach the target:
-
-        Complexity: O(2 ^ Result) since we expand the search by 2 almost every time
-        But since Result is some kind of log N, it is O(N ** K) - TODO: what is K?
-
-        Beats 22% (2548 ms)
-        """
         if target == 0:
             return 0
 
         to_visit = deque()
         to_visit.append((0, 1))
         discovered = {(0, 1)}
+
+        def add(x):
+            if x not in discovered:
+                to_visit.append(x)
+                discovered.add(x)
 
         steps = 0
         while to_visit:
@@ -44,14 +41,8 @@ class Solution:
                 if accelerate[0] == target:
                     return steps + 1
 
-                if accelerate not in discovered:
-                    to_visit.append(accelerate)
-                    discovered.add(accelerate)
-
-                reverse = (pos, -1 if speed > 0 else 1)
-                if reverse not in discovered:
-                    to_visit.append(reverse)
-                    discovered.add(reverse)
+                add(accelerate)
+                add((pos, -1 if speed > 0 else 1))
 
             steps += 1
 
