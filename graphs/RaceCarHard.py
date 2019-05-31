@@ -16,6 +16,8 @@ Now for some target position, say the length of the shortest sequence of instruc
 
 
 from collections import deque
+import heapq
+
 
 
 class Solution:
@@ -55,3 +57,57 @@ class Solution:
             steps += 1
 
         return steps
+
+
+"""
+IMPORTANT:
+If you want to skip steps in a BFS, you can use a HEAP that will return
+the element with the min number of moves from the start.
+
+We can use this here to optimize our search and avoid adding to the queue
+elements that we know are of no importance.
+"""
+
+
+def cmp(a, b):
+    if a < b: return -1
+    if a > b: return 1
+    return 0
+
+
+class Solution(object):
+    def racecar(self, target):
+        if target == 0:
+            return 0
+
+        queue = [(0, 0, 1)]
+        discovered = {(0, 1)}
+
+        def add(curr, speed, move):
+            if (curr, speed) not in discovered:
+                discovered.add((curr, speed))
+                heapq.heappush(queue, (move, curr, speed))
+
+        while queue:
+            move, curr, speed = heapq.heappop(queue)
+            if curr == target:
+                return move
+
+            k = cmp(curr, target)  # -1 if need to go right, 1 if need to get left
+
+            # If wrong direction (speed negative while need right)
+            # Keep going in the wrong direction but not too far (3 / 2 * target away from 0)
+            # ABSOLUTELY NECESSARY... allows to try all possibilities in wrong direction
+            if k * speed > 0:
+                if abs(curr + speed) < 3 / 2 * target:
+                    add(curr + speed, speed * 2, move + 1)
+
+            # Let us now try in the right direction, but in this case, we avoid doing all steps
+            move += speed * k > 0  # If we have to change direction, count a 'R'
+            speed = -k  # Start at absolute speed 1 in good direction
+            while cmp(curr, target) * k > 0:  # while 'target' still on same side of 'curr'
+                move += 1  # Double the speed (galoping search)
+                curr += speed
+                speed *= 2
+            add(curr, speed, move)  # Try one overshooting target
+            add(curr - speed / 2, k, move)  # Try the one before target
