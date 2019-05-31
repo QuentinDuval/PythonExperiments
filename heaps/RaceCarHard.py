@@ -111,3 +111,4 @@ class Solution(object):
                 speed *= 2
             add(curr, speed, move)  # Try one overshooting target
             add(curr - speed / 2, k, move)  # Try the one before target
+
