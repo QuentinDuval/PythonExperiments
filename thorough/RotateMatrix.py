@@ -2,7 +2,7 @@ from typing import List
 
 
 """
-https://leetcode.com/problems/rotate-image/submissions/
+https://leetcode.com/problems/rotate-image/ (44ms)
 """
 
 
@@ -43,3 +43,36 @@ def rotate(matrix: List[List[int]]) -> None:
             x2, y2 = next_coordinate(depth, x2, y2)
             x3, y3 = next_coordinate(depth, x3, y3)
             x4, y4 = next_coordinate(depth, x4, y4)
+
+
+"""
+Simpler solution, using a lo and hi bounds instead of depth (36ms)
+"""
+
+
+class Solution:
+    def rotate(self, matrix: List[List[int]]) -> None:
+        def rotate_layer(lo, hi):
+            """
+                              matrix[lo][lo+i]
+                               v   v
+                               * * * * < matrix[lo+i][hi]
+                             > *     *
+                               *     * <
+            matrix[hi-i][lo] > * * * *
+                                 ^   ^
+                             matrix[hi][hi-i]
+            """
+
+            for i in range(hi - lo):
+                temp = matrix[hi - i][lo]
+                matrix[hi - i][lo] = matrix[hi][hi - i]
+                matrix[hi][hi - i] = matrix[lo + i][hi]
+                matrix[lo + i][hi] = matrix[lo][lo + i]
+                matrix[lo][lo + i] = temp
+
+        lo, hi = 0, len(matrix) - 1
+        while lo < hi:
+            rotate_layer(lo, hi)
+            lo += 1
+            hi -= 1

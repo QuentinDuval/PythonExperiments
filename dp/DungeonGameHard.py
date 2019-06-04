@@ -1,24 +1,71 @@
 """
 https://leetcode.com/problems/dungeon-game
+
+
 """
 
 
-# TODO - does not work - finish it
+from typing import List
 
+        
 
-def trace(f):
-    def wrapped(*args):
-        res = f(*args)
-        print(f, ":", args, "=>", res)
-        return res
+class Solution:
+    def calculateMinimumHP(self, grid: List[List[int]]) -> int:
+        """
+        Solution 1:
+        
+        The idea is to explore the neighbors, always selecting the neighbors leading the highest current HP.
+        - We stop when we reach the princess
+        - We keep the minimum HP seen so far on the way
+        
+        Why does it work? Why does it gives us the minimum?
+        Because we only visit a place if it is the highest possible path, so we can never go below the minimum.
+        
+        To make it work though, we have to limit the amount of paths visited:
+        We have to use a replacement heap, that only keeps the 'highest HP' for a given position (x, y)
 
-    return wrapped
+        Even with this, it does not work !!!
+        => Timeout, cause we can visit the same place several times
+        => If you try to add a 'visited', it fails (it is Dijsktra, but with negative weights...)
+        """
+        
+        if not grid or not grid[0]:
+            return 1
+        
+        h = len(grid)
+        w = len(grid[0])
+        princess = (h-1, w-1)
+        
+        def neighbors(x, y):
+            if x < h - 1:
+                yield x+1, y
+            if y < w - 1:
+                yield x, y+1
+        
+        min_hp = 0
+        to_visit = MaxHeap()
+        to_visit.push(grid[0][0], (0, 0))
+        visited = set()
+        
+        while to_visit:
+            hp, (x, y) = to_visit.pop()
+            visited.add((x, y))
+            
+            min_hp = min(min_hp, hp)
+            if (x, y) == princess:
+                break
+            
+            for i, j in neighbors(x, y):
+                if (i, j) not in visited:   # Without this, can visit same place several times
+                    to_visit.push(hp + grid[i][j], (i, j))
+        
+        return 1 - min_hp
 
 
 class MaxHeap:
-    # import heapq
-    # Because 'heapq' return the smallest
-    # Because we want a replacement strategy
+    """
+    Max Heap with replacement strategy to only keep the highest value
+    """
 
     def __init__(self):
         self.position = {}
@@ -27,29 +74,28 @@ class MaxHeap:
     def __len__(self):
         return len(self.position)
 
-    @trace
-    def push(self, prio, val):
-        pos = self.position.get(val)
-        if pos is not None:
-            prev_prio, val = self.heap[pos]
-            self.heap[pos] = (prio, val)
-            if prev_prio < prio:
-                self.swim_up(pos)
-            else:
-                self.sink_down(pos)
-        else:
-            pos = len(self.heap)
-            self.position[val] = pos
-            self.heap.append((prio, val))
-            self.swim_up(pos)
+    def __repr__(self):
+        return repr(self.heap)
 
-    @trace
+    def push(self, priority, value):
+        position = self.position.get(value)
+        if position is not None:
+            previous_priority = self.heap[position][0]
+            if previous_priority < priority:
+                self.heap[position] = (priority, value)
+                self.swim_up(position)
+        else:
+            position = len(self.heap)
+            self.position[value] = position
+            self.heap.append((priority, value))
+            self.swim_up(position)
+
     def pop(self):
-        self.swap(1, len(self.heap) - 1)
-        prio, val = self.heap.pop()
-        del self.position[val]
+        self.swap(1, -1)
+        priority, value = self.heap.pop()
+        del self.position[value]
         self.sink_down(1)
-        return prio, val
+        return priority, value
 
     def swim_up(self, pos):
         father = pos // 2
@@ -58,37 +104,41 @@ class MaxHeap:
             self.swim_up(father)
 
     def sink_down(self, pos):
-        higher_child = None
+        max_child = None
         if 2 * pos < len(self.heap):
-            higher_child = 2 * pos
+            max_child = 2 * pos
         if 2 * pos + 1 < len(self.heap):
-            if self.heap[2 * pos + 1][0] > self.heap[higher_child][0]:
-                higher_child = 2 * pos + 1
+            if self.heap[2 * pos + 1][0] > self.heap[max_child][0]:
+                max_child = 2 * pos + 1
 
-        if higher_child and self.heap[higher_child][0] > self.heap[pos][0]:
-            self.swap(higher_child, pos)
-            self.sink_down(higher_child)
+        if max_child and self.heap[max_child][0] > self.heap[pos][0]:
+            self.swap(max_child, pos)
+            self.sink_down(max_child)
 
     def swap(self, pos1, pos2):
         self.heap[pos1], self.heap[pos2] = self.heap[pos2], self.heap[pos1]
         for pos in [pos1, pos2]:
-            self.position[self.heap[pos][1]] = self.heap[pos][0]
+            self.position[self.heap[pos][1]] = pos
 
 
 class Solution:
     def calculateMinimumHP(self, grid: List[List[int]]) -> int:
         """
-        Solution 1:
+        Solution 2:
+        The minimum HP can be obtained recursively (and then dynamic programming)
 
-        The idea is to explore the neighbors, always selecting the neighbors leading the highest current HP.
-        - We stop when we reach the princess
-        - We keep the minimum HP seen so far on the way
+        If paths given a min HP of M1 and M2 recursively
+        - take the best of M1 and M2 => max(M1, M2)
+        - add the HP increase/decrease of current position
+        - take the min of current position and max(M1, M2)
 
-        Why does it work? Why does it gives us the minimum?
-        Because we only visit a place if it is the highest possible path, so we can never go below the minimum.
+        Why? Because we want the minimum of the rest, plus some buffer added by
+        current position. But if the current position is negative, it might
+        also be the lowest point of the path to the princess.
 
-        To make it work though, we have to limit the amount of paths visited:
-        We have to use a replacement heap, that only keeps the 'highest HP' for a given position (x, y)
+        Number of sub-problems: O(N**2)
+        - Time complexity O(N**2)
+        - Space complexity O(N**2)
         """
 
         if not grid or not grid[0]:
@@ -96,25 +146,35 @@ class Solution:
 
         h = len(grid)
         w = len(grid[0])
-        princess = (h - 1, w - 1)
 
-        def neighbors(x, y):
-            if x < h - 1:
-                yield x + 1, y
-            if y < w - 1:
-                yield x, y + 1
+        @cache
+        def min_decrease(i, j):
+            if i == h - 1 and j == w - 1:
+                return grid[i][j]
 
-        min_hp = 0
-        to_visit = MaxHeap()
-        to_visit.push(grid[0][0], (0, 0))
+            max_min = None
+            if i < h - 1:
+                max_min = min_decrease(i + 1, j)
+            if j < w - 1:
+                sub_min = min_decrease(i, j + 1)
+                if max_min is None or sub_min > max_min:
+                    max_min = sub_min
+            return min(grid[i][j], max_min + grid[i][j])
 
-        while to_visit:
-            hp, (x, y) = to_visit.pop()
-            min_hp = min(min_hp, hp)
-            if (x, y) == princess:
-                break
+        return 1 - min(0, min_decrease(0, 0))
 
-            for i, j in neighbors(x, y):
-                to_visit.push(hp + grid[i][j], (i, j))
 
-        return 1 - min_hp
+def cache(f):
+    memo = {}
+
+    def wrapped(*args):
+        res = memo.get(args)
+        if res is not None:
+            return res
+        res = f(*args)
+        memo[args] = res
+        return res
+    return wrapped
+
+
+# TODO - bottom up DP

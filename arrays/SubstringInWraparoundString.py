@@ -1,16 +1,14 @@
-from typing import *
+"""
+https://leetcode.com/problems/unique-substrings-in-wraparound-string
+
+Find all substrings in p that are also substrings of the wrap around string:
+"...zabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd...."
+
+These substrings are necessarily following the increasing order of the alphabet
+"""
 
 
 def findSubstringInWraproundString(p: str) -> int:
-    """
-    https://leetcode.com/problems/unique-substrings-in-wraparound-string
-
-    Find all substrings in p that are also substrings of the wrap around string:
-    "...zabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcd...."
-
-    These substrings are necessarily following the increasing order of the alphabet
-    """
-
     n = len(p)
     if n == 0:
         return 0
