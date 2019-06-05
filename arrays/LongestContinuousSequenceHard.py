@@ -33,7 +33,6 @@ def longestConsecutive(nums: List[int]) -> int:
     - Hash Map is the only associative container with good enough complexity
     - There are other approaches with bucket-ing but that does not seem to apply here
 
-
     How can we move on with Hash Maps?
     ----------------------------------
     - We could look for the neighbors 'n-1' and 'n+1' of each value 'n' we add
