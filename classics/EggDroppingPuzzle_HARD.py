@@ -71,29 +71,38 @@ class Solution:
 
 
 """
-This time using bottom-up DP
-- Space complexity is down to O(floors)
+Bottom-up memoization:
+Time complexity: O(N * N * K)
+Space complexity: O(N)
+
+ => TIMEOUT at eggs=4, floors=5000
 """
 
 
-def min_attempts_2(eggs, floors):
-    if eggs <= 1:
-        return floors
+class Solution:
+    def superEggDrop(self, eggs: int, floors: int) -> int:
+        if eggs == 1 or floors <= 1:
+            return floors
 
-    memo = list(range(floors + 1))
+        if eggs == 2:
+            return math.ceil(0.5 + 0.5 * math.sqrt(8 * floors + 1)) - 1
 
-    for _ in range(1, eggs):
-        new_memo = [0] * (floors + 1)
-        new_memo[1] = 1
-        for sub_floor in range(2, floors+1):
-            new_memo[sub_floor] = min(
-                1 + max(memo[h - 1], new_memo[sub_floor - h])
-                for h in range(1, sub_floor+1)
-            )
-        memo = new_memo
+        memo = list(range(floors + 1))
+        memo[1] = 1
+        for floor in range(2, floors + 1):
+            memo[floor] = math.ceil(0.5 + 0.5 * math.sqrt(8 * floor + 1)) - 1
 
-    return memo[-1]
+        for _ in range(eggs - 2):
+            new_memo = [0] * (floors + 1)
+            new_memo[1] = 1
+            for sub_floor in range(2, floors + 1):
+                new_memo[sub_floor] = min(
+                    1 + max(memo[h - 1], new_memo[sub_floor - h])
+                    for h in range(1, sub_floor + 1)
+                )
+            memo = new_memo
 
+        return memo[-1]
 
 # TODO - save from where you came from...
 
