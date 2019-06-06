@@ -18,11 +18,13 @@ class FreqNode:
     def __lt__(self, other):
         if len(self.stack) != len(other.stack):
             return len(self.stack) < len(other.stack)
-        else:
-            return self.stack[-1] < other.stack[-1]
+        return self.stack[-1] < other.stack[-1]
 
     def __eq__(self, other):
         return len(self.stack) == other.stack and self.stack[-1] == other.stack[-1]
+
+    def __repr__(self):
+        return repr((self.value, ":", self.stack))
 
 
 class FreqStack:
@@ -61,14 +63,31 @@ class FreqStack:
         else:
             self.swap(1, len(self.heap) - 1)
             self.heap.pop()
+            del self.values[top_node.value]
             self.sink_down(1)
         return top_node.value
 
     def swim_up(self, pos):
-        pass
+        father = pos // 2
+        while father > 0 and self.heap[pos] > self.heap[father]:
+            self.swap(father, pos)
+            pos = pos // 2
+            father = pos // 2
 
     def sink_down(self, pos):
-        pass
+        while 2 * pos < len(self.heap):
+            child_pos = 2 * pos
+            if 2 * pos + 1 < len(self.heap):
+                if self.heap[2 * pos + 1] > self.heap[2 * pos]:
+                    child_pos = 2 * pos + 1
+
+            if self.heap[child_pos] > self.heap[pos]:
+                self.swap(child_pos, pos)
+                pos = child_pos
+            else:
+                return
 
     def swap(self, pos1, pos2):
-        pass
+        self.heap[pos1], self.heap[pos2] = self.heap[pos2], self.heap[pos1]
+        for pos in pos1, pos2:
+            self.values[self.heap[pos].value] = pos
