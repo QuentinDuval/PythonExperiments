@@ -49,6 +49,7 @@ class FreqStack:
         if node_pos is None:
             node = FreqNode(value=val, time=self.next_index)
             self.heap.append(node)
+            self.values[val] = len(self.heap) - 1
             self.swim_up(len(self.heap) - 1)
         else:
             node = self.heap[node_pos]
@@ -91,3 +92,4 @@ class FreqStack:
         self.heap[pos1], self.heap[pos2] = self.heap[pos2], self.heap[pos1]
         for pos in pos1, pos2:
             self.values[self.heap[pos].value] = pos
+
