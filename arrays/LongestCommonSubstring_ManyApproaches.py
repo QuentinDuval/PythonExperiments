@@ -8,7 +8,7 @@ from typing import List
 
 
 class Solution:
-    def findLength(self, a: List[int], b: List[int]) -> int:
+    def findLength_dp(self, a: List[int], b: List[int]) -> int:
         """
         Brute force solution is to try every starting point on A and B and try to match:
         - O(N) starting point on A
@@ -34,7 +34,7 @@ class Solution:
         - Time complexity: O(N*M)
         - Space complexity: O(N*M) for top-bottom or O(min(N, M)) for bottom-up
 
-        Beats 70%
+        Beats 70% (93% for memory)
         """
 
         '''
@@ -80,3 +80,38 @@ class Solution:
                     max_len = max(max_len, new_memo[j])
             memo = new_memo
         return max_len
+
+    def findLength_hm(self, a: List[int], b: List[int]) -> int:
+        """
+        Solution based on hash maps:
+        - create all sub-array of a, compute their hash, and put this in a set 'seen'
+        - try all sub-array of b and check if it belongs in the set 'seen'
+
+        You have to be careful with this in how you compute the hashes:
+        - the brute force would take O(N) leading to a O(N**3) algorithm
+        - with rolling hash, the complexity is O(min(N**2, M**2))
+        """
+        pass  # TODO
+
+    def findLength(self, a: List[int], b: List[int]) -> int:
+        """
+        Binary search on the length of the longest sub-string:
+        - If we have length L1 and not length L2, try in-between to find the highest length
+        - Start between length 0 and O(min(N, M))
+
+        Brute force application of the idea is O(N * M * log(min(N, M)))
+
+        The idea is to use a hash-map to do better:
+        - compute a rolling hash of all windows of size L in a
+        - search for window of size L in this set (with rolling hashes)
+
+        Performance should be O(max(N, M) * log(min(N, M)))
+        """
+        pass  # TODO
+
+    def findLength_trie(self, a: List[int], b: List[int]) -> int:
+        """
+        Play with generalized suffix trees (trie)
+        Performance should be O(N)
+        """
+        pass  # TODO
