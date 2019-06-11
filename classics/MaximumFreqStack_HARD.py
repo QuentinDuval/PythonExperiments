@@ -10,6 +10,10 @@ If there is a tie for most frequent element, the element closest to the top of t
 """
 
 
+# TODO - this solution is stupid: it would be great if there was the rule about ties - but we have to keep the stacks
+# TODO - so you can just do something with stairs (several piles for different counts)
+
+
 class FreqNode:
     def __init__(self, value, time):
         self.value = value
