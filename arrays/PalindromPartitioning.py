@@ -89,3 +89,28 @@ class Solution:
                 solution.append(c)
         return solutions
 
+    def partition_brute(self, s: str) -> List[List[str]]:
+        """
+        This brutal backtracking works as well!
+        As fast as the DP solution in practice.
+        """
+
+        def visit(s, path):
+            if not s:
+                yield list(path)
+                return
+
+            if len(s) == 1:
+                path.append(s)
+                yield list(path)
+                path.pop()
+                return
+
+            for i in range(1, len(s) + 1):
+                word = s[:i]
+                if word == word[::-1]:
+                    path.append(word)
+                    yield from visit(s[i:], path)
+                    path.pop()
+
+        return list(visit(s, []))
