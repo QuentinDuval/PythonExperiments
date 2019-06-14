@@ -99,3 +99,11 @@ class Solution:
             found.insert(index, nums[i])
         return counts
 
+
+"""
+Solutions based on binary search tree or merge sort
+"""
+
+
+# TODO
+# https://leetcode.com/problems/count-of-smaller-numbers-after-self/discuss/305794/BST-solution-and-merge-sort-solution-written-in-C%2B%2B
