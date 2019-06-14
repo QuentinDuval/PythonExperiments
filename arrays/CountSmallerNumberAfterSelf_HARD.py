@@ -5,6 +5,10 @@ You are given an integer array nums and you have to return a new counts array.
 The counts array has the property where counts[i] is the number of smaller elements to the right of nums[i].
 """
 
+
+from typing import List
+
+
 """
 #include <map>
 
@@ -45,4 +49,27 @@ public:
 };
 """
 
-# TODO
+
+def lower_bound(nums, val):
+    lo = 0
+    hi = len(nums) - 1
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        if nums[mid] < val:     # nums[lo] will end at first nums[lo] >= val
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return lo
+
+
+class Solution:
+    def countSmaller(self, nums: List[int]) -> List[int]:
+        found = []
+        n = len(nums)
+        counts = [0] * n
+        for i in reversed(range(n)):
+            index = lower_bound(found, nums[i])
+            counts[i] = index
+            found.insert(index, nums[i])
+        return counts
+
