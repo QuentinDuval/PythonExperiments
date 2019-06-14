@@ -50,6 +50,14 @@ public:
 """
 
 
+"""
+Solution based on binary searching the values already seen on the right.
+Surprisingly, it passes all the tests, although the complexity is O(N**2).
+
+Note: counting the elements in a STL map would lead to O(N**2) as well due to std::distance(begin(), lower_bound).
+"""
+
+
 def lower_bound(nums, val):
     lo = 0
     hi = len(nums) - 1
