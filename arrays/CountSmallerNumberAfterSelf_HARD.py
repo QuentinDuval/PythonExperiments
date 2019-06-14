@@ -55,6 +55,24 @@ Solution based on binary searching the values already seen on the right.
 Surprisingly, it passes all the tests, although the complexity is O(N**2).
 
 Note: counting the elements in a STL map would lead to O(N**2) as well due to std::distance(begin(), lower_bound).
+
+#include <map>
+
+class Solution {
+public:
+    vector<int> countSmaller(vector<int>& nums)
+    {        
+        vector<int> smaller(nums.size());
+        vector<int> rights;
+        for (int i = nums.size() - 1; i >= 0; --i)
+        {            
+            auto insertion_point = lower_bound(rights.begin(), rights.end(), nums[i]);
+            smaller[i] = std::distance(rights.begin(), insertion_point);
+            rights.insert(insertion_point, nums[i]);
+        }
+        return smaller;
+    }
+};
 """
 
 
