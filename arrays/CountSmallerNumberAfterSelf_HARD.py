@@ -107,3 +107,43 @@ Solutions based on binary search tree or merge sort
 
 # TODO
 # https://leetcode.com/problems/count-of-smaller-numbers-after-self/discuss/305794/BST-solution-and-merge-sort-solution-written-in-C%2B%2B
+
+
+"""
+Solutions based on Fenwick tree (or Binary Index Tree)
+https://www.topcoder.com/community/competitive-programming/tutorials/binary-indexed-trees/
+"""
+
+
+class Solution:
+    def countSmaller(self, nums: List[int]) -> List[int]:
+        # Compressing the input to build a more compact tree afterwards
+        mapping = {n: i + 1 for i, n in enumerate(sorted(set(nums)))}
+
+        # Building a fenwick tree (binary indexed tree)
+        tree = [0] * (len(mapping) + 1)
+
+        def add_to_tree(val: int):
+            while val < len(tree):
+                tree[val] += 1
+                last_bit = val & -val
+                val += last_bit  # Go up (next higher power of 2)
+
+        def query_up_to(val: int):
+            count = 0
+            while val:
+                count += tree[val]
+                last_bit = val & -val
+                val -= last_bit  # Go down (next lower power of 2)
+            return count
+
+        # Using the Fenwick Tree to do range queries
+        res = [0] * len(nums)
+        for i in reversed(range(len(nums))):
+            val = nums[i]
+            idx = mapping[val]
+            add_to_tree(idx)
+            res[i] = query_up_to(idx - 1)
+        return res
+
+
