@@ -37,3 +37,105 @@ class Solution:
         """
 
         pass  # TODO
+
+
+"""
+class Solution {
+    private abstract class Event {
+        public final int position;
+        
+        public Event(int position) {
+            this.position = position;
+        }
+        
+        public abstract void apply(TreeMap<Integer, Integer> skyline);
+    }
+    
+    private class AddEvent extends Event {
+        public final int value;
+        
+        public AddEvent(int position, int value) {
+            super(position);
+            this.value = value;
+        }
+        
+        public void apply(TreeMap<Integer, Integer> skyline) {
+            int count = skyline.getOrDefault(value, 0);
+            if (count == -1)
+                skyline.remove(value);
+            else
+                skyline.put(value, count + 1);
+        }
+        
+        public String toString() {
+            return "Add{" + position + ";" + value + "}";
+        }
+    }
+    
+    private class RemoveEvent extends Event {
+        public final int value;
+        
+        public RemoveEvent(int position, int value) {
+            super(position);
+            this.value = value;
+        }
+        
+        public void apply(TreeMap<Integer, Integer> skyline) {
+            int count = skyline.getOrDefault(value, 0);
+            if (count == 1)
+                skyline.remove(value);
+            else
+                skyline.put(value, count - 1);
+        }
+        
+        public String toString() {
+            return "Remove{" + position + ";" + value + "}";
+        }
+    }
+    
+    public List<List<Integer>> getSkyline(int[][] buildings) {
+        /*
+        We could decompose the building in 'start building', 'stop building' events.
+        We could sort these events by 'x', and go from left to right (already done):
+        - add new height to a data structure when 'start building'
+        - remove the matching height when 'stop building'
+        
+        This data structure would have to:
+        - give us the maximum as fast as possible
+        - support adding and remove elements
+        => A TreeMap would do the job
+        => An indexed heap (but not really good for remove)
+        */
+        
+        ArrayList<Event> events = new ArrayList<>();
+        for (int i = 0; i < buildings.length; i++) {
+            int height = buildings[i][2];
+            events.add(new AddEvent(buildings[i][0], height));
+            events.add(new RemoveEvent(buildings[i][1], height));
+        }
+        Collections.sort(events, (l, r) -> l.position - r.position);
+        // System.out.println(events);
+        
+        int lastHeight = 0;
+        ArrayList<List<Integer>> ret = new ArrayList<>();
+        TreeMap<Integer, Integer> skyline = new TreeMap<>();
+        for (int i = 0; i < events.size();) {
+            Event event = events.get(i);
+            // TODO - instead of this ugly shit, group events by position
+            while (i < events.size() && events.get(i).position == event.position) {
+                events.get(i).apply(skyline);
+                i++;
+            }
+            
+            int p = event.position;
+            int h = skyline.isEmpty() ? 0 : skyline.lastKey();
+            if (h != lastHeight) {
+                ret.add(Arrays.asList(event.position, h));
+                lastHeight = h;
+            }
+        }
+        return ret;
+    }
+}
+"""
+
