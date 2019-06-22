@@ -28,9 +28,6 @@ def longest_increasing_subsequence(nums: List[int]) -> int:
     return max(longest_with(i) for i in range(len(nums)))
 
 
-# TODO - all of this should work but it does not work (pytest does not found the test_ functions nor TestClasses)...
-
-
 class TestLongestIncreasingSubsequence:
 
     def test_increasing_list(self):
@@ -47,4 +44,5 @@ def test_subsequence():
     assert 4 == longest_increasing_subsequence([5, 1, 4, 3, 2, 3, 4])
 
 
+# Only works if the file itself is named "test_*"
 pytest.main()
