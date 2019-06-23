@@ -85,7 +85,9 @@ class Solution:
         """
         For every beginning of 'a', do a KMP search on the array 'b'.
         Keep track of the maximum index you found in the KMP state machine.
-        => Complexity is O(M * (M + N))
+
+        => Time complexity is O(M * (M + N))
+        => Space complexity is O(M)
         """
         # TODO
 
