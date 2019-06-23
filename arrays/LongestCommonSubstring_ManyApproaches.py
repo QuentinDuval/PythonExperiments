@@ -81,6 +81,14 @@ class Solution:
             memo = new_memo
         return max_len
 
+    def findLength_kmp(self, a: List[int], b: List[int]) -> int:
+        """
+        For every beginning of 'a', do a KMP search on the array 'b'.
+        Keep track of the maximum index you found in the KMP state machine.
+        => Complexity is O(M * (M + N))
+        """
+        # TODO
+
     def findLength_hm(self, a: List[int], b: List[int]) -> int:
         """
         Solution based on hash maps:
