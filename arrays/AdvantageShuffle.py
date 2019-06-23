@@ -71,13 +71,16 @@ class Solution:
 
         """
         Sorting would also help us: we could sort both A and B, but since we have
-        to return the permutation, we could lose the ordering of B (!!!).
+        to return the permutation, we could lose the ordering of B...
+        
+        But we can instead sort the tables based on the indices.
 
-        We can also do 2 heaps:
+        Or we could also do 2 heaps:
         - min heap for elements of A ordered by value
         - min heap for elements of B ordered by (value, index)
         Then if A.top() is smaller than B.top(), reserve it for later (end of the list)
         But if A.top() is higher than B.top(), put it at the index place, and pop both
         """
 
+        # TODO
 
