@@ -38,7 +38,6 @@ class Solution:
             else:
                 sub_problems = (memo[i+jump] for jump in range(1, max_jump+1))
                 memo[i] = 1 + min(sub_problems, default=float('inf'))
-
         return memo[0]
 
     def jump_2(self, nums: List[int]) -> int:
@@ -67,7 +66,7 @@ class Solution:
         while to_visit:
             position, step = to_visit.popleft()
             max_jump = nums[position]
-            for jump in reversed(range(1, max_jump+1)): # 'reverse' is critical
+            for jump in reversed(range(1, max_jump+1)):     # 'reverse' is critical
                 destination = position + jump
                 if destination >= len(nums) - 1:
                     return step + 1
