@@ -74,13 +74,33 @@ class Solution:
         to return the permutation, we could lose the ordering of B...
         
         But we can instead sort the tables based on the indices.
+        
+        REMEMBER: YOU DO NOT NEED MAP WHEN ALL KEYS ARE INSERTED THEN READ (EXCEPT IF REMOVED).
 
         Or we could also do 2 heaps:
         - min heap for elements of A ordered by value
         - min heap for elements of B ordered by (value, index)
         Then if A.top() is smaller than B.top(), reserve it for later (end of the list)
         But if A.top() is higher than B.top(), put it at the index place, and pop both
+        
+        This implementation beats 90%!
         """
 
-        # TODO
+        A.sort()
+        indices = list(range(len(B)))
+        indices.sort(key=lambda i: B[i])
+
+        ia = 0
+        ib = 0
+        answer = [0] * len(B)
+        for _ in range(len(B)):
+            if A[ia] > B[indices[ib]]:
+                answer[indices[ib]] = A[ia]
+                ia += 1
+                ib += 1
+            else:
+                answer[indices[-1]] = A[ia]
+                ia += 1
+                indices.pop()
+        return answer
 
