@@ -57,28 +57,28 @@ class Solution:
         h = len(matrix)
         w = len(matrix[0])
 
-        def search(i_min, i_max, j_min, j_max):
-            if i_min > i_max or j_min > j_max:
+        def search(min_i, max_i, min_j, max_j):
+            if min_i > max_i or min_j > max_j:
                 return False
 
-            mid_i = i_min + (i_max - i_min) // 2
-            mid_j = j_min + (j_max - j_min) // 2
+            mid_i = min_i + (max_i - min_i) // 2
+            mid_j = min_j + (max_j - min_j) // 2
             mid_val = matrix[mid_i][mid_j]
             if mid_val == target:
                 return True
 
             # eliminate top-left corner
             if mid_val < target:
-                found = search(mid_i + 1, i_max, mid_j + 1, j_max)  # bottom-right
-                found = found or search(mid_i + 1, i_max, j_min, mid_j)  # bottom-left
-                found = found or search(i_min, mid_i, mid_j + 1, j_max)  # top-right
+                found = search(mid_i + 1, max_i, mid_j + 1, max_j)  # bottom-right
+                found |= search(mid_i + 1, max_i, min_j, mid_j)     # bottom-left
+                found |= search(min_i, mid_i, mid_j + 1, max_j)     # top-right
                 return found
 
             # eliminate bottom-right corder
             else:
-                found = search(i_min, mid_i - 1, j_min, mid_j - 1)  # top-left
-                found = found or search(mid_i, i_max, j_min, mid_j - 1)  # bottom-left
-                found = found or search(i_min, mid_i - 1, mid_j, j_max)  # top-right
+                found = search(min_i, mid_i - 1, min_j, mid_j - 1)  # top-left
+                found |= search(mid_i, max_i, min_j, mid_j - 1)     # bottom-left
+                found |= search(min_i, mid_i - 1, mid_j, max_j)     # top-right
                 return found
 
         return search(0, h - 1, 0, w - 1)
