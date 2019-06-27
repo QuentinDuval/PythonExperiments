@@ -18,4 +18,7 @@ class ThroughputAlerting:
         self.throughput_window_size = throughput_window_size
 
     def get_status(self, chunk: List[LogEntry]) -> ServiceStatus:
-        return len(chunk) / self.throughput_window_size > self.throughput_threshold
+        if len(chunk) / self.throughput_window_size > self.throughput_threshold:
+            return ServiceStatus.HIGH_TRAFFIC_ALERT
+        else:
+            return ServiceStatus.NORMAL_TRAFFIC

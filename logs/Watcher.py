@@ -3,8 +3,10 @@ Main entry point of the program
 """
 
 from logs.Alerting import *
+from logs.Configuration import *
 from logs.LogAcquisition import *
 from logs.LogParser import *
+
 
 import time
 
@@ -21,10 +23,20 @@ import time
 
 
 def main():
-    alerting = ThroughputAlerting(throughput_threshold=10, throughput_window_size=10)
+    configuration = Configuration(
+        poll_interval=10,
+        alert_window=120,
+        log_file_name="access.log",
+        throughput_threshold=10)
+
+    alerting = ThroughputAlerting(
+        throughput_threshold=configuration.throughput_threshold,
+        throughput_window_size=configuration.alert_window)
+
     log_parser = W3CLogParser()
-    with open("access.log") as log_file:
+    with open(configuration.log_file_name) as log_file:
         file_listener = LogFileStream(log_file)     # TODO - compose with parser ? Or do a wrapper around it...
+        time.sleep(configuration.poll_interval)
 
         while True:
             chunk = []
@@ -33,11 +45,12 @@ def main():
                 log_entry = log_parser.parse(line)
                 if log_entry is not None:
                     chunk.append(log_entry)
+                    print(log_entry)
 
             # TODO - the time window is not the same => so you must accumulate entries and get rid of oldest ones
             print(alerting.get_status(chunk))
 
-            time.sleep(10)  # TODO - not good, this will drift
+            time.sleep(configuration.poll_interval)  # TODO - not good, this will drift
 
 
 if __name__ == '__main__':
