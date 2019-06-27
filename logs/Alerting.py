@@ -6,6 +6,9 @@ from logs.LogEntry import *
 from typing import List
 
 
+# TODO - make this generic: an interface with "check_alert" that returns an Alert data structure
+
+
 class ThroughputAlerting:
     def __init__(self, throughput_threshold: int, throughput_window_size: int):
         self.throughput_threshold = throughput_threshold
