@@ -4,7 +4,9 @@ Listening to a file being written to
 
 import os
 
-# TODO - class to read a file and trigger some actions from this
+
+# TODO - acquire the log datetime (the last line) to get the current time?
+# TODO - or do we fix the datetime at the beginning ?
 
 
 class LogFileStream:
