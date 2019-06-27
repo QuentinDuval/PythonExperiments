@@ -3,14 +3,15 @@ Data structure for the log
 """
 
 from dataclasses import dataclass
+from datetime import datetime
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class LogEntry:
     remote_host_name: str
     auth_user: str
-    date: str           # TODO - better type than this
+    date: datetime
     section: str
     request: str
-    http_status: str    # TODO - better type than this
+    http_status: int    # TODO - better type than this
     content_length: int

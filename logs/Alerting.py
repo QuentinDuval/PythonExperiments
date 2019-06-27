@@ -12,6 +12,10 @@ class ServiceStatus(enum.Enum):
     NORMAL_TRAFFIC = 2
 
 
-def service_status(log_entries: List[LogEntry]) -> ServiceStatus:
-    # TODO
-    pass
+class ThroughputAlerting:
+    def __init__(self, throughput_threshold: int, throughput_window_size: int):
+        self.throughput_threshold = throughput_threshold
+        self.throughput_window_size = throughput_window_size
+
+    def get_status(self, chunk: List[LogEntry]) -> ServiceStatus:
+        return len(chunk) / self.throughput_window_size > self.throughput_threshold
