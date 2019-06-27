@@ -14,4 +14,4 @@ class Configuration:
     alert_window: int
     log_file_name: str
     throughput_threshold: float
-
+    error_threshold: float

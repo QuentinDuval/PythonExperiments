@@ -27,11 +27,14 @@ def main():
         poll_interval=10,
         alert_window=120,
         log_file_name="access.log",
-        throughput_threshold=10)
+        throughput_threshold=10,
+        error_threshold=0.5)
 
-    alerting = ThroughputAlerting(
+    throughput_alerting = ThroughputAlerting(
         throughput_threshold=configuration.throughput_threshold,
         throughput_window_size=configuration.alert_window)
+
+    error_rate_alerting = ErrorRateAlerting(error_rate_threshold=configuration.error_threshold)
 
     log_parser = W3CLogParser()
     with open(configuration.log_file_name) as log_file:
@@ -48,9 +51,12 @@ def main():
                     print(log_entry)
 
             # TODO - the time window is not the same => so you must accumulate entries and get rid of oldest ones
-            print(alerting.get_status(chunk))
+            # TODO - the accumulation must be done by each check ? NO, HAVE an alerting window for all alerts
 
-            time.sleep(configuration.poll_interval)  # TODO - not good, this will drift
+            print(throughput_alerting.is_high_throughput(chunk))    # TODO - abstract the two alerting behind interface
+            print(error_rate_alerting.is_high_error(chunk))         # TODO - abstract the two alerting behind interface
+
+            time.sleep(configuration.poll_interval)  # TODO - not good, this will drift (capture the time at beginning)
 
 
 if __name__ == '__main__':
