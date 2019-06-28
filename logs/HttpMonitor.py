@@ -6,6 +6,7 @@ from logs.Analytics import *
 from logs.Alerting import *
 from logs.Configuration import *
 from logs.LogAcquisition import *
+from logs.LogConsumer import *
 from logs.LogParser import *
 from logs.Scheduler import *
 
@@ -34,11 +35,12 @@ def read_configuration():
 
 
 class Monitor:
-    def __init__(self, config: Configuration):
+    # TODO - extract in other module (decoupled from this)
+
+    def __init__(self, config: Configuration, consumers: List[LogConsumer]):
         self.config = config
-        self.throughput_alerting = ThroughputAlerting(threshold=config.throughput_threshold, window_size=config.alert_window)
-        self.error_rate_alerting = ErrorRateAlerting(error_rate_threshold=config.error_threshold)
         self.log_parser = ApacheCommonLogParser()
+        self.consumers = consumers
 
     def start(self):
         with open(self.config.log_file_name) as log_file:
@@ -52,13 +54,17 @@ class Monitor:
             if log_entry is not None:
                 chunk.append(log_entry)
 
-        print(self.throughput_alerting.is_high_throughput(chunk))       # TODO - abstract the two alerting behind interface
-        print(self.error_rate_alerting.is_high_error(chunk))            # TODO - abstract the two alerting behind interface
-        print(most_impacted_sessions(chunk))                            # TODO - we can also abstract the statistics
+        for consumer in self.consumers:
+            consumer.on_log_entry_chunk(chunk)
 
 
 def main():
-    scheduler = Monitor(config=read_configuration())
+    config = read_configuration()
+    throughput_monitor = ThroughputAlerting(threshold=config.throughput_threshold, window_size=config.alert_window)
+    statistics = Statistic()
+    # error_monitor = ErrorRateAlerting(error_rate_threshold=config.error_threshold)
+
+    scheduler = Monitor(config=read_configuration(), consumers=[throughput_monitor, statistics])
     scheduler.start()
 
 
