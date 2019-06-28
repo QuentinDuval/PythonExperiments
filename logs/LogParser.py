@@ -5,7 +5,34 @@ Parser for log (could be replaced to support different formats)
 from logs.LogEntry import *
 
 import datetime
-import re
+
+
+class Tokenizer:
+    def __init__(self, text):
+        self.text = text
+        self.pos = 0
+
+    def take_until(self, delimiter):
+        end = self.text.index(delimiter, self.pos)
+        token = self.text[self.pos:end]
+        self.pos = end + len(delimiter)
+        self.skip_spaces()
+        return token
+
+    def take_between(self, start_delimiter, end_delimiter):
+        start = self.text.index(start_delimiter, self.pos)
+        start = start + len(start_delimiter)
+        end = self.text.index(end_delimiter, start)
+        self.pos = end + len(end_delimiter)
+        self.skip_spaces()
+        return self.text[start:end]
+
+    def remaining(self):
+        return self.text[self.pos:]
+
+    def skip_spaces(self):
+        while self.pos < len(self.text) and self.text[self.pos] == ' ':
+            self.pos += 1
 
 
 class W3CLogParser:
@@ -43,72 +70,53 @@ class W3CLogParser:
         127.0.0.1 - mary [09/May/2018:16:00:42 +0000] "POST /api/user HTTP/1.0" 503 12
     """
 
-    EXPECTED_TOKEN_COUNT = 7
-
     def __init__(self):
-        """
-        self.matcher = re.compile("([a-zA-Z1-9._-]+) (\w) (\w) [(.*)] \"(.+)\" ([1-9]{3}) ([1-9]+)")
-        self.token_parsers = [
-            self.parse_host,
-            self.parse_log_name,
-            self.parse_auth_user,
-            self.parse_date,
-            self.parse_request,
-            self.parse_status,
-            self.parse_content_length
-        ]
-        """
-        pass
+        self.date_format = '%d/%m/%Y:%H:%M:%S'  # Missing the +0000
 
     def parse(self, line: str) -> LogEntry:
-        tokens = line.split(" ")    # TODO - Does not work because of the date format...
-        if len(tokens) != self.EXPECTED_TOKEN_COUNT:
-            # TODO - better management of errors (return a parse result... success or error)
+        try:
+            tokenizer = Tokenizer(line)
+            host = self.parse_host(tokenizer.take_until(' '))
+            tokenizer.take_until(" ")
+            auth_user = self.parse_auth_user(tokenizer.take_until(' '))
+            date = self.parse_date(tokenizer.take_between('[', ']'))
+            request = self.parse_request(tokenizer.take_between('"', '"'))
+            http_status = self.parse_status(tokenizer.take_until(' '))
+            content_length = self.parse_content_length(tokenizer.remaining())
+            return LogEntry(host=host, auth_user=auth_user, date=date, request=request,
+                            http_status=http_status, content_length=content_length)
+        except ValueError as e:
+            print("ERROR", e)
             return None
 
-        return LogEntry(
-            remote_host_name=self.parse_host(tokens[0]),
-            auth_user=self.parse_auth_user(tokens[2]),
-            date=self.parse_date(tokens[3]),
-            request=self.parse_request(tokens[4]),
-            http_status=self.parse_status(tokens[5]),
-            content_length=self.parse_content_length(tokens[6])
-        )
+    @staticmethod
+    def parse_host(token: str) -> str:
+        return token.strip()
 
-    @classmethod
-    def parse_host(cls, token: str) -> str:
-        return token
+    @staticmethod
+    def parse_auth_user(token: str) -> str:
+        return token.strip()
 
-    @classmethod
-    def parse_log_name(cls, token: str) -> str:
-        return token # TODO - unused
+    def parse_date(self, token: str) -> datetime:
+        return datetime.datetime.strptime(token.strip(), self.date_format)
 
-    @classmethod
-    def parse_auth_user(cls, token: str) -> str:
-        return token
+    @staticmethod
+    def parse_request(token: str) -> Request:
+        request = Request()
+        tokenizer = Tokenizer(token.strip())
+        request.http_verb = tokenizer.take_until(' ')
+        request.http_path = tokenizer.take_until(' ')
+        return request
 
-    @classmethod
-    def parse_date(cls, token: str) -> datetime:
-        if not token:
-            # TODO - better management of errors (return a parse result... success or error)
-            return None
+    @staticmethod
+    def parse_http_path(token):
+        token = token.strip('/')
+        return list(token.split('/'))
 
-        if token[0] != "[" or token[-1] != "]":
-            return None
+    @staticmethod
+    def parse_status(token: str) -> int:
+        return int(token.strip())
 
-        "09/May/2018:16:00:39 +0000"
-        date_time = datetime.datetime.strptime(token, '%d/%m/%Y:%H:%M:%S') # Missing the +0000
-
-    @classmethod
-    def parse_request(cls, token: str) -> Request:
-        pass
-
-    @classmethod
-    def parse_status(cls, token: str) -> int:
-        pass
-
-    @classmethod
-    def parse_content_length(cls, token: str) -> int:
-        pass
-
-
+    @staticmethod
+    def parse_content_length(token: str) -> int:
+        return int(token.strip())

@@ -44,6 +44,8 @@ class Watcher:
         self.log_parser = W3CLogParser()
 
     def start(self):
+        # TODO - better error in case the file does not exist
+
         with open(self.config.log_file_name) as log_file:
             file_listener = FileStream(log_file)
             schedule_every(self.config.log_poll_interval, lambda: self.poll(file_listener))
