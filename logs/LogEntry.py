@@ -7,13 +7,13 @@ from datetime import datetime
 from typing import List
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class Request:
     http_verb: str
     http_path: List[str]
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class LogEntry:
     remote_host_name: str
     auth_user: str

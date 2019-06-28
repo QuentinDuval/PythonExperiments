@@ -36,12 +36,12 @@ def read_configuration():
     return configuration
 
 
-class Watcher:
+class Monitor:
     def __init__(self, config: Configuration):
         self.config = config
         self.throughput_alerting = ThroughputAlerting(threshold=config.throughput_threshold, window_size=config.alert_window)
         self.error_rate_alerting = ErrorRateAlerting(error_rate_threshold=config.error_threshold)
-        self.log_parser = W3CLogParser()
+        self.log_parser = ApacheCommonLogParser()
 
     def start(self):
         # TODO - better error in case the file does not exist
@@ -53,11 +53,9 @@ class Watcher:
     def poll(self, file_listener):
         chunk = []
         for line in file_listener.read_tail():
-            print(line)
             log_entry = self.log_parser.parse(line)
             if log_entry is not None:
                 chunk.append(log_entry)
-                print(log_entry)
 
         print(self.throughput_alerting.is_high_throughput(chunk))    # TODO - abstract the two alerting behind interface
         print(self.error_rate_alerting.is_high_error(chunk))         # TODO - abstract the two alerting behind interface
@@ -65,7 +63,7 @@ class Watcher:
 
 
 def main():
-    scheduler = Watcher(config=read_configuration())
+    scheduler = Monitor(config=read_configuration())
     scheduler.start()
 
 

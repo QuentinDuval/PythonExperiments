@@ -4,6 +4,10 @@ Parser for log (could be replaced to support different formats)
 
 from logs.LogEntry import *
 
+# TODO: https://github.com/rory/apache-log-parser
+import apache_log_parser
+
+
 import datetime
 
 
@@ -35,7 +39,7 @@ class Tokenizer:
             self.pos += 1
 
 
-class W3CLogParser:
+class ApacheCommonLogParser:
     """
     Parser for the log format described in
     https://www.w3.org/Daemon/User/Config/Logging.html#common-logfile-format
@@ -71,7 +75,7 @@ class W3CLogParser:
     """
 
     def __init__(self):
-        self.date_format = '%d/%m/%Y:%H:%M:%S'  # Missing the +0000
+        self.date_format = '%d/%B/%Y:%H:%M:%S %z'
 
     def parse(self, line: str) -> LogEntry:
         try:
@@ -83,10 +87,10 @@ class W3CLogParser:
             request = self.parse_request(tokenizer.take_between('"', '"'))
             http_status = self.parse_status(tokenizer.take_until(' '))
             content_length = self.parse_content_length(tokenizer.remaining())
-            return LogEntry(host=host, auth_user=auth_user, date=date, request=request,
+            return LogEntry(remote_host_name=host, auth_user=auth_user, date=date, request=request,
                             http_status=http_status, content_length=content_length)
-        except ValueError as e:
-            print("ERROR", e)
+        except ValueError:
+            # TODO - return some errors - but the console is already taken
             return None
 
     @staticmethod
@@ -100,13 +104,12 @@ class W3CLogParser:
     def parse_date(self, token: str) -> datetime:
         return datetime.datetime.strptime(token.strip(), self.date_format)
 
-    @staticmethod
-    def parse_request(token: str) -> Request:
-        request = Request()
+    @classmethod
+    def parse_request(cls, token: str) -> Request:
         tokenizer = Tokenizer(token.strip())
-        request.http_verb = tokenizer.take_until(' ')
-        request.http_path = tokenizer.take_until(' ')
-        return request
+        http_verb = tokenizer.take_until(' ')
+        http_path = cls.parse_http_path(tokenizer.take_until(' '))
+        return Request(http_verb=http_verb, http_path=http_path)
 
     @staticmethod
     def parse_http_path(token):
