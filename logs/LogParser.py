@@ -70,26 +70,25 @@ class W3CLogParser:
             remote_host_name=self.parse_host(tokens[0]),
             auth_user=self.parse_auth_user(tokens[2]),
             date=self.parse_date(tokens[3]),
-            section=self.parse_section(tokens[4]),
             request=self.parse_request(tokens[4]),
             http_status=self.parse_status(tokens[5]),
             content_length=self.parse_content_length(tokens[6])
         )
 
     @classmethod
-    def parse_host(cls, token: str):
+    def parse_host(cls, token: str) -> str:
         return token
 
     @classmethod
-    def parse_log_name(cls, token: str):
+    def parse_log_name(cls, token: str) -> str:
         return token # TODO - unused
 
     @classmethod
-    def parse_auth_user(cls, token: str):
+    def parse_auth_user(cls, token: str) -> str:
         return token
 
     @classmethod
-    def parse_date(cls, token: str):
+    def parse_date(cls, token: str) -> datetime:
         if not token:
             # TODO - better management of errors (return a parse result... success or error)
             return None
@@ -101,15 +100,15 @@ class W3CLogParser:
         date_time = datetime.datetime.strptime(token, '%d/%m/%Y:%H:%M:%S') # Missing the +0000
 
     @classmethod
-    def parse_request(cls, token: str):
+    def parse_request(cls, token: str) -> Request:
         pass
 
     @classmethod
-    def parse_status(cls, token: str):
+    def parse_status(cls, token: str) -> int:
         pass
 
     @classmethod
-    def parse_content_length(cls, token: str):
+    def parse_content_length(cls, token: str) -> int:
         pass
 
 

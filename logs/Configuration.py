@@ -1,17 +1,10 @@
-# Read the configuration:
-# - poll interval (default 10s)
-# - alert window (default 2 min)
-# - log file name (default "/tmp/access.log")
-# - high traffic threshold (default 10/s)
-# - log format parser (default is W3C)
-
 from dataclasses import dataclass
 
 
 @dataclass
 class Configuration:
-    poll_interval: int
-    alert_window: int
     log_file_name: str
+    log_poll_interval: int          # Time interval between successive log file polls: TODO - rename
+    alert_window: int               # Number of relevant intervals to test alerts on
     throughput_threshold: float
     error_threshold: float

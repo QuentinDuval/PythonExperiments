@@ -9,7 +9,7 @@ import os
 # TODO - or do we fix the datetime at the beginning ?
 
 
-class LogFileStream:
+class FileStream:
     def __init__(self, file):
         self.file = file
         self.file.seek(0, os.SEEK_END)
@@ -24,16 +24,3 @@ class LogFileStream:
             else:
                 # self.file.seek(self.position)
                 break
-
-    '''
-    # TODO - rather than this, just compose with the with(open)?
-
-    def __enter__(self):
-        self.file = open(self.file_path, 'r')
-        return self
-
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        self.file.close()
-        return False    # Do not ignore exceptions
-    '''
-

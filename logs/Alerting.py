@@ -7,12 +7,13 @@ from typing import List
 
 
 # TODO - make this generic: an interface with "check_alert" that returns an Alert data structure
+# TODO - the alerting process is stateful...
 
 
 class ThroughputAlerting:
-    def __init__(self, throughput_threshold: int, throughput_window_size: int):
-        self.throughput_threshold = throughput_threshold
-        self.throughput_window_size = throughput_window_size
+    def __init__(self, threshold: int, window_size: int):
+        self.throughput_threshold = threshold
+        self.throughput_window_size = window_size
 
     def is_high_throughput(self, chunk: List[LogEntry]) -> bool:
         return len(chunk) / self.throughput_window_size > self.throughput_threshold
@@ -23,6 +24,9 @@ class ErrorRateAlerting:
         self.error_rate_threshold = error_rate_threshold
 
     def is_high_error(self, chunk: List[LogEntry]) -> bool:
+        if not chunk:
+            return False
+
         error_count = 0
         for log_entry in chunk:
             status_category = log_entry.http_status // 100
