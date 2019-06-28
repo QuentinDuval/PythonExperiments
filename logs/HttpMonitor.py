@@ -37,10 +37,10 @@ def read_configuration():
 class Monitor:
     # TODO - extract in other module (decoupled from this)
 
-    def __init__(self, config: Configuration, consumers: List[LogConsumer]):
+    def __init__(self, config: Configuration, activity_trackers: List[ActivityTracker]):
         self.config = config
         self.log_parser = ApacheCommonLogParser()
-        self.consumers = consumers
+        self.activity_trackers = activity_trackers
 
     def start(self):
         with open(self.config.log_file_name) as log_file:
@@ -50,21 +50,20 @@ class Monitor:
     def poll(self, file_listener):
         chunk = []
         for line in file_listener.read_tail():
-            log_entry = self.log_parser.parse(line)
+            log_entry = self.log_parser.parse(line)     # TODO - better handle error here
             if log_entry is not None:
                 chunk.append(log_entry)
-
-        for consumer in self.consumers:
-            consumer.on_log_entry_chunk(chunk)
+        for tracker in self.activity_trackers:
+            tracker.on_log_entry_chunk(chunk)
 
 
 def main():
     config = read_configuration()
-    throughput_monitor = ThroughputAlerting(threshold=config.throughput_threshold, window_size=config.alert_window)
+    throughput_monitor = ThroughputTracker(threshold=config.throughput_threshold, window_size=config.alert_window)
     statistics = Statistic()
     # error_monitor = ErrorRateAlerting(error_rate_threshold=config.error_threshold)
 
-    scheduler = Monitor(config=read_configuration(), consumers=[throughput_monitor, statistics])
+    scheduler = Monitor(config=read_configuration(), activity_trackers=[throughput_monitor, statistics])
     scheduler.start()
 
 

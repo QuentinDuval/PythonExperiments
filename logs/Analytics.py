@@ -5,14 +5,14 @@ Compute useful information about a bunch of logs
 from collections import Counter
 from typing import List
 
-from logs.LogConsumer import *
+from logs.ActivityTracker import *
 from logs.LogEntry import *
 
 
 # TODO - try to use pandas here
 
 
-class Statistic(LogConsumer):
+class Statistic(ActivityTracker):
     # TODO - rename
 
     def on_log_entry_chunk(self, chunk: List[LogEntry]):

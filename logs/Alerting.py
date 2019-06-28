@@ -2,31 +2,29 @@
 Algorithm for alerting
 """
 
-from logs.LogConsumer import *
+from logs.ActivityTracker import *
 from logs.LogEntry import *
 
-from collections import deque
 from typing import List
 
 
-class ThroughputAlerting(LogConsumer):
+class ThroughputTracker(SlidingWindowActivityTracker):
     def __init__(self, threshold: int, window_size: int):
-        self.throughput_threshold = threshold
-        self.throughput_window_size = window_size
-        self.window = deque()
+        super().__init__(window_size)
+        self.threshold = threshold
         self.alert_start_time = None
 
-    def on_log_entry_chunk(self, chunk: List[LogEntry]):
-        self.window.append(len(chunk))
-        if len(self.window) > self.throughput_window_size:
-            self.window.popleft()
-            if self.is_high_throughput():
-                if not self.alert_start_time:
-                    self.alert_start_time = self.get_time()
-                self.show_alert()
-            elif self.alert_start_time:
-                self.show_alert_recovered()
-                self.alert_start_time = None
+    def transform_chunk(self, chunk: List[LogEntry]):
+        return len(chunk)
+
+    def monitor_window(self, window):
+        if self.is_high_throughput(window):
+            if not self.alert_start_time:
+                self.alert_start_time = self.get_time()
+            self.show_alert()
+        elif self.alert_start_time:
+            self.show_alert_recovered()
+            self.alert_start_time = None
 
     def show_alert(self):
         # TODO - fill the content
@@ -36,15 +34,15 @@ class ThroughputAlerting(LogConsumer):
         # TODO - fill the content
         print("High traffic alert is recovered - recovered at {time}")
 
-    def is_high_throughput(self) -> bool:
-        return sum(self.window) / len(self.window) > self.throughput_threshold
+    def is_high_throughput(self, window) -> bool:
+        return sum(window) / len(window) > self.threshold
 
     def get_time(self):
         return repr(datetime.now())     # TODO - use the right format
 
 
 class ErrorRateAlerting:
-    # TODO - add some other Alter
+    # TODO - add some other Alert
 
     def __init__(self, error_rate_threshold: int):
         self.error_rate_threshold = error_rate_threshold
