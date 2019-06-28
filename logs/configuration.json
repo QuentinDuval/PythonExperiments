@@ -1,0 +1,4 @@
+{
+  "log_file_name": "tmp/access.log",
+  "throughput_threshold": 10.0
+}

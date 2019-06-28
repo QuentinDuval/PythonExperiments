@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=False)
 class Configuration:
     log_file_name: str
     log_poll_interval: int          # Time interval between successive log file polls: TODO - rename
