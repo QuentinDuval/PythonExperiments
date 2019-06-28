@@ -12,12 +12,7 @@ from logs.Scheduler import *
 import json
 
 
-# - Read the configuration
-# - Use asyncIO to read the file from time to time
-#   (every 10s... but how do you check it does not drift? could have fixed windows...)
-#   (other possibility is to fixed 10s like 0, 10, 20, 30... and just do a kind of "modulo" to group)
-# - Each time your read it, compute the statistics and status alert
-# - Print these information on the screen
+# TODO - use argparse to avoid this pesky configuration from JSON... or add the name of the configuration in argument
 
 
 def read_configuration():
@@ -28,11 +23,13 @@ def read_configuration():
         throughput_threshold=10,
         error_threshold=0.5)
 
-    with open('configuration.json') as config_file:
-        data = json.load(config_file)
-        configuration.log_file_name = data["log_file_name"]
-        configuration.throughput_threshold = data["throughput_threshold"]
-
+    try:
+        with open('configuration.json') as config_file:
+            data = json.load(config_file)
+            configuration.log_file_name = data["log_file_name"]
+            configuration.throughput_threshold = data["throughput_threshold"]
+    except FileNotFoundError:
+        pass    # Just use default configuration in that case
     return configuration
 
 
@@ -44,8 +41,6 @@ class Monitor:
         self.log_parser = ApacheCommonLogParser()
 
     def start(self):
-        # TODO - better error in case the file does not exist
-
         with open(self.config.log_file_name) as log_file:
             file_listener = FileStream(log_file)
             schedule_every(self.config.log_poll_interval, lambda: self.poll(file_listener))
@@ -57,9 +52,9 @@ class Monitor:
             if log_entry is not None:
                 chunk.append(log_entry)
 
-        print(self.throughput_alerting.is_high_throughput(chunk))    # TODO - abstract the two alerting behind interface
-        print(self.error_rate_alerting.is_high_error(chunk))         # TODO - abstract the two alerting behind interface
-        print(most_impacted_sessions(chunk))
+        print(self.throughput_alerting.is_high_throughput(chunk))       # TODO - abstract the two alerting behind interface
+        print(self.error_rate_alerting.is_high_error(chunk))            # TODO - abstract the two alerting behind interface
+        print(most_impacted_sessions(chunk))                            # TODO - we can also abstract the statistics
 
 
 def main():

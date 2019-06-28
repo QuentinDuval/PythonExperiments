@@ -32,4 +32,4 @@ class ErrorRateAlerting:
             status_category = log_entry.http_status // 100
             if status_category == 5:
                 error_count += 1
-        return error_count / len(chunk) > self.throughput_threshold
+        return error_count / len(chunk) >= self.error_rate_threshold
