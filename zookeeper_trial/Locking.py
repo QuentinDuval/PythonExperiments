@@ -7,26 +7,26 @@ class TestClient:
 
     def __init__(self):
         self.acquired = {}
+        self.keep_looping = True
 
     def loop(self):
-        while True:
-            is_exit = self.ask_input()
-            if is_exit:
-                break
+        while self.keep_looping:
+            self.ask_input()
         self.release_all()
 
     def ask_input(self):
         command = input("object>")
         if command == "exit":
-            return True
+            self.keep_looping = False
+            return
 
         if command == "ls":
             self.list_acquired_locks()
-            return False
+            return
 
         if any(not c.isdigit() for c in command):
             print("invalid object id")
-            return False
+            return
 
         object_id = int(command)
         if object_id in self.acquired:
@@ -54,12 +54,18 @@ class TestClient:
         for object_id, lock in self.acquired.items():
             self.release(object_id, lock)
 
+    def on_zookeeper_status_update(self, state):
+        # print(state)
+        # self.keep_looping = False
+        pass
+
 
 if __name__ == '__main__':
+    client = TestClient()
     zk = KazooClient(hosts='127.0.0.1:2181')
     try:
+        zk.add_listener(lambda zk_state: client.on_zookeeper_status_update(zk_state))
         zk.start()
-        client = TestClient()
         client.loop()
     finally:
         zk.stop()
