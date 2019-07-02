@@ -19,19 +19,15 @@ class TestClient:
         command = input("command>")
         if command == "exit":
             self.keep_looping = False
-            return
-
-        if command == "reserve":
+        elif command == "reserve":
             self.reserve_id()
-            return
-
-        if command == "ls":
+        elif command == "ls":
             self.list_acquired_locks()
-            return
-
-        if command.strip("lock"):
+        elif command.strip("lock"):
             lock_id = command[len("lock")+1:]
             self.lock_object(lock_id)
+        else:
+            print("Unknown command")
 
     def lock_object(self, lock_id):
         if any(not c.isdigit() for c in lock_id):
