@@ -20,6 +20,10 @@ class TestClient:
             self.keep_looping = False
             return
 
+        if command == "reserve":
+            self.reserve_id()
+            return
+
         if command == "ls":
             self.list_acquired_locks()
             return
@@ -35,8 +39,14 @@ class TestClient:
         else:
             self.acquire(object_id)
 
+    def reserve_id(self):
+        counter = zk.Counter("/id", default=1)
+        counter += 1
+        print(counter.value)
+
     def list_acquired_locks(self):
-        pass
+        children = zk.get_children(path="/object")
+        print(children) # TODO - problem here: we get children that are unlocked
 
     def acquire(self, object_id):
         lock = zk.Lock("/object/{object_id}".format(object_id=object_id), str(os.getpid()))
