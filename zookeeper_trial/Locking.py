@@ -45,11 +45,8 @@ class TestClient:
         print(counter.value)
 
     def list_acquired_locks(self):
-        locked_children = []
-        for child in zk.get_children(path="/object"):
-            # ZK will keep listing as children released locks (need this filter)
-            if self.is_locked(child):
-                locked_children.append(child)
+        # ZK will keep listing as children released locks (need this filter)
+        locked_children = [child for child in zk.get_children(path="/object") if self.is_locked(child)]
         print(locked_children)
 
     def is_locked(self, lock_id):
