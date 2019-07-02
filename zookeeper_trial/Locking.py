@@ -15,7 +15,7 @@ class TestClient:
         self.release_all()
 
     def ask_input(self):
-        command = input("object>")
+        command = input("command>")
         if command == "exit":
             self.keep_looping = False
             return
@@ -28,11 +28,16 @@ class TestClient:
             self.list_acquired_locks()
             return
 
-        if any(not c.isdigit() for c in command):
+        if command.strip("lock"):
+            lock_id = command[len("lock")+1:]
+            self.lock_object(lock_id)
+
+    def lock_object(self, lock_id):
+        if any(not c.isdigit() for c in lock_id):
             print("invalid object id")
             return
 
-        object_id = int(command)
+        object_id = int(lock_id)
         if object_id in self.acquired:
             self.release(object_id, self.acquired[object_id])
             del self.acquired[object_id]
