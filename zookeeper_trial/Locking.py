@@ -1,5 +1,6 @@
 from kazoo.client import KazooClient
 import os
+import time
 
 
 class TestClient:
@@ -21,25 +22,28 @@ class TestClient:
             self.keep_looping = False
         elif command == "reserve":
             self.reserve_id()
+        elif command == "leader":
+            self.elect_leader()
         elif command == "ls":
             self.list_acquired_locks()
-        elif command.strip("lock"):
+        elif command.startswith("lock"):
             lock_id = command[len("lock")+1:]
             self.lock_object(lock_id)
         else:
             print("Unknown command")
 
-    def lock_object(self, lock_id):
-        if any(not c.isdigit() for c in lock_id):
-            print("invalid object id")
-            return
+    def elect_leader(self):
+        def when_elected():
+            print("Taking the lead for 10s...")
+            time.sleep(10)
+            print("Dropping the lead now...")
 
-        object_id = int(lock_id)
-        if object_id in self.acquired:
-            self.release(object_id, self.acquired[object_id])
-            del self.acquired[object_id]
+        children = zk.get_children("/leader")
+        if not children:
+            election = zk.Election("/leader", str(os.getpid()))
+            election.run(when_elected)
         else:
-            self.acquire(object_id)
+            print("Leader already exists", children[0])
 
     def reserve_id(self):
         counter = zk.Counter("/id", default=1)
@@ -54,6 +58,18 @@ class TestClient:
     def is_locked(self, lock_id):
         _, stats = zk.get(path="/object/{child}".format(child=lock_id))
         return stats.numChildren != 0
+
+    def lock_object(self, lock_id):
+        if any(not c.isdigit() for c in lock_id):
+            print("invalid object id")
+            return
+
+        object_id = int(lock_id)
+        if object_id in self.acquired:
+            self.release(object_id, self.acquired[object_id])
+            del self.acquired[object_id]
+        else:
+            self.acquire(object_id)
 
     def acquire(self, object_id):
         lock = zk.Lock("/object/{object_id}".format(object_id=object_id), str(os.getpid()))
@@ -78,8 +94,8 @@ class TestClient:
 
 
 if __name__ == '__main__':
-    client = TestClient(reservation_size=1)
     zk = KazooClient(hosts='127.0.0.1:2181')
+    client = TestClient(reservation_size=1)
     try:
         zk.add_listener(lambda zk_state: client.on_zookeeper_status_update(zk_state))
         zk.start()
