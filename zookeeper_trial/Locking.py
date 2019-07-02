@@ -45,8 +45,16 @@ class TestClient:
         print(counter.value)
 
     def list_acquired_locks(self):
-        children = zk.get_children(path="/object")
-        print(children) # TODO - problem here: we get children that are unlocked
+        locked_children = []
+        for child in zk.get_children(path="/object"):
+            # ZK will keep listing as children released locks (need this filter)
+            if self.is_locked(child):
+                locked_children.append(child)
+        print(locked_children)
+
+    def is_locked(self, lock_id):
+        _, stats = zk.get(path="/object/{child}".format(child=lock_id))
+        return stats.numChildren != 0
 
     def acquire(self, object_id):
         lock = zk.Lock("/object/{object_id}".format(object_id=object_id), str(os.getpid()))
