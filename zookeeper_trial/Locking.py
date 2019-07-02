@@ -5,9 +5,10 @@ import os
 class TestClient:
     # TODO - lack the support for Zookeeper falling
 
-    def __init__(self):
+    def __init__(self, reservation_size):
         self.acquired = {}
         self.keep_looping = True
+        self.reservation_size = reservation_size
 
     def loop(self):
         while self.keep_looping:
@@ -81,7 +82,7 @@ class TestClient:
 
 
 if __name__ == '__main__':
-    client = TestClient()
+    client = TestClient(reservation_size=1)
     zk = KazooClient(hosts='127.0.0.1:2181')
     try:
         zk.add_listener(lambda zk_state: client.on_zookeeper_status_update(zk_state))
