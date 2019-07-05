@@ -83,26 +83,29 @@ class TestClient:
 
         object_id = int(lock_id)
         if object_id in self.acquired:
-            self.release(object_id, self.acquired[object_id])
-            del self.acquired[object_id]
+            self.release(object_id)
+            print("Object {object_id} release".format(object_id=object_id))
         else:
-            self.acquire(object_id)
+            if self.acquire(object_id):
+                print("Object {object_id} locked".format(object_id=object_id))
+            else:
+                print("Object {object_id} is already locked".format(object_id=object_id))
 
     def acquire(self, object_id):
         lock = self.zk.Lock("/object/{object_id}".format(object_id=object_id), str(os.getpid()))
         if lock.acquire(blocking=False, ephemeral=True):
             self.acquired[object_id] = lock
-            print("Object {object_id} locked".format(object_id=object_id))
-        else:
-            print("Object {object_id} is already locked".format(object_id=object_id))
+            return True
+        return False
 
-    def release(self, object_id, lock):
-        lock.release()
-        print("Object {object_id} release".format(object_id=object_id))
+    def release(self, object_id):
+        self.acquired[object_id].release()
+        del self.acquired[object_id]
 
     def release_all(self):
         for object_id, lock in self.acquired.items():
-            self.release(object_id, lock)
+            lock.release()
+        self.acquired.clear()
 
     def on_zookeeper_status_update(self, state):
         # TODO - lack the support for Zookeeper falling ?
