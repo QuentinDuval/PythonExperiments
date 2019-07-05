@@ -40,7 +40,7 @@ class TestClient:
         if command == "exit":
             self.keep_looping = False
         elif command == "reserve":
-            self.reserve_id()
+            print(self.reserve_id())
         elif command == "leader":
             self.elect_leader()
         elif command == "ls":
@@ -65,7 +65,7 @@ class TestClient:
             print("Leader already exists", children[0])
 
     def reserve_id(self):
-        print(next(self.id_stream))
+        return next(self.id_stream)
 
     def list_acquired_locks(self):
         # ZK will keep listing as children released locks (need this filter)

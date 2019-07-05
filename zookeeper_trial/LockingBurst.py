@@ -5,7 +5,7 @@ import numpy as np
 import time
 
 
-def go_crazy_go_baby(client: TestClient, task_size: int):
+def go_baby_go_locky(client: TestClient, task_size: int):
     locked = set()
     for object_id in np.random.randint(1, 1000, size=task_size):
         if object_id in locked:
@@ -16,9 +16,14 @@ def go_crazy_go_baby(client: TestClient, task_size: int):
                 locked.add(object_id)
 
 
+def go_baby_go_incry(client: TestClient, task_size: int):
+    for _ in range(task_size):
+        client.reserve_id()
+
+
 def main():
     zk = KazooClient(hosts='127.0.0.1:2181')
-    client = TestClient(zk, reservation_size=5)
+    client = TestClient(zk, reservation_size=1)
     try:
         zk.add_listener(lambda zk_state: client.on_zookeeper_status_update(zk_state))
         zk.start()
@@ -32,7 +37,8 @@ def main():
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = []
             for _ in range(tasks):
-                future = pool.submit(lambda: go_crazy_go_baby(client, task_size))
+                future = pool.submit(lambda: go_baby_go_locky(client, task_size))   # reach easily 1000 req / s (increases with number of workers)
+                # future = pool.submit(lambda: go_baby_go_incry(client, task_size)) # decreases with number of workers (due to retries)
                 futures.append(future)
             print(futures)
             wait(futures)
