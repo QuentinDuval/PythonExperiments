@@ -23,8 +23,8 @@ def main():
         zk.add_listener(lambda zk_state: client.on_zookeeper_status_update(zk_state))
         zk.start()
 
-        workers = 4
-        tasks = 100
+        workers = 100
+        tasks = 1000
         task_size = 10
         start = time.time()
 
@@ -39,7 +39,7 @@ def main():
 
         end = time.time()
         duration = end - start
-        total_request = workers * tasks * task_size
+        total_request = tasks * task_size
         print("Took {duration} seconds for {request} requests ({throughput} request/s)".format(
             duration=duration, request=total_request, throughput=total_request/duration
         ))
