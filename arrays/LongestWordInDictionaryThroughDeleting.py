@@ -31,6 +31,7 @@ class Solution:
         But this is too slow, and much too complex:
         - we could just try every word in the dictionary
         - and check if this word is a subsequence of s
+        => In the end, this is what we do if a we a trie !!! (we just avoid backing off when we do a TRIE)
         """
 
         if not d:
