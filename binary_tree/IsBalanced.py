@@ -38,5 +38,11 @@ bool isBalanced(Node *root)
 """
 
 
-# TODO - not using any form of recursion... is it even possible?
+from binary_tree.TreeNode import *
+
+
+def is_balanced(root: TreeNode) -> bool:
+    pass
+
+    # TODO - not using any form of recursion... is it even possible?
 

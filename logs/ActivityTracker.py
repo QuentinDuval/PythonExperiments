@@ -26,12 +26,12 @@ class SlidingWindowActivityTracker(ActivityTracker):
 
     def on_log_entry_chunk(self, chunk: List[LogEntry]):
         self.window.append(self.transform_chunk(chunk))
-        if len(self.window) == self.throughput_window_size:
+        if len(self.window) == self.window_size:
             self.resize_window()
             self.monitor_window(self.window)
 
     def resize_window(self):
-        while len(self.window) > self.throughput_window_size:
+        while len(self.window) > self.window_size:
             self.window.popleft()
 
     @abc.abstractmethod
