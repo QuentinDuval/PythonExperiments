@@ -25,6 +25,8 @@ class Solution:
         do a binary search to find the last valid triangle biggest side
         """
 
+        # TODO - can do better: no binary search - just advance the bigger side (it necessarily grows) => O(N ** 2)
+
         n = len(nums)
         if n < 3:
             return 0
