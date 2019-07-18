@@ -48,3 +48,5 @@ class Solution:
             return 1 + min_ops  # The 1 is for the original copy
 
         return visit(1)
+
+    # TODO - improve with bottom - up + try to beat the best players
