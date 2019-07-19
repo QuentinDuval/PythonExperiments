@@ -69,3 +69,6 @@ class Solution:
                 for j in range(i + 1, len(multiples)):
                     multiples[j] = multiples[j - 1] * 2
         return decr_count + mult_count
+
+        # TODO - check this solution
+        #  https://leetcode.com/problems/broken-calculator/discuss/330325/Python-99
