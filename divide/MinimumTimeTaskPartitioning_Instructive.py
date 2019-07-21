@@ -49,4 +49,18 @@ def minimum_time_dp(jobs: List[int], assignees: int, time_by_job: int) -> int:
     return visit(0, assignees)
 
 
+def minimum_time_divide(jobs: List[int], assignees: int, time_by_job: int) -> int:
+    """
+    A completely different approach is to do a binary search on the minimum time:
+    - start with minimum time = total time
+    - then try to reduce by 2 and check if it is possible
+    - if possible, lower half recursion, else higher half recursion
+
+    To check if something is possible:
+    - do repeated binary searched (requires computing the prefix sums)
+    - check if the last binary search reach past the end
+    """
+    # TODO
+
+
 print(minimum_time_dp(assignees=4, time_by_job=5, jobs=[10, 7, 8, 12, 6, 8]))
