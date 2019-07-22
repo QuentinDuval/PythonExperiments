@@ -50,6 +50,17 @@ def minimum_time_dp(jobs: List[int], assignees: int, time_by_job: int) -> int:
     return visit(0, assignees)
 
 
+def lower_bound(vals, val, lo=0) -> int:
+    hi = len(vals) - 1
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        if vals[mid] < val:
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return lo
+
+
 def minimum_time_divide(jobs: List[int], assignees: int, time_by_job: int) -> int:
     """
     A completely different approach is to do a binary search on the minimum time:
@@ -92,7 +103,7 @@ def minimum_time_divide(jobs: List[int], assignees: int, time_by_job: int) -> in
                 return False
 
             next_limit = prefix_sums[current_pos-1] + max_job_size
-            current_pos = bisect.bisect_left(prefix_sums, next_limit + 1, lo=current_pos + 1)
+            current_pos = lower_bound(prefix_sums, next_limit + 1, lo=current_pos + 1)
         return True
 
     res = 0
