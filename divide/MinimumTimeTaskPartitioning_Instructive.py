@@ -9,6 +9,7 @@ Find the minimum time to finish all jobs with following constraints:
 * Two assignees cannot share (or co-assigned) a job.
 """
 
+import bisect
 from functools import lru_cache
 from typing import List, Tuple
 
@@ -60,7 +61,52 @@ def minimum_time_divide(jobs: List[int], assignees: int, time_by_job: int) -> in
     - do repeated binary searched (requires computing the prefix sums)
     - check if the last binary search reach past the end
     """
-    # TODO
+
+    '''
+    # Linear check => leads to O(N log N) algorithm
+    def is_possible(max_job_size: int) -> bool:
+        partitions = 1
+        cumulative_sum = 0
+        for job in jobs:
+            if cumulative_sum + job * time_by_job > max_job_size:
+                partitions += 1
+                if partitions > assignees:
+                    return False
+                cumulative_sum = job * time_by_job
+            else:
+                cumulative_sum += job * time_by_job
+        return True
+    '''
+
+    # Log N check of feasibility
+    prefix_sums = [0]
+    for job in jobs:
+        prefix_sums.append(prefix_sums[-1] + job * time_by_job)
+
+    def is_possible(max_job_size: int) -> bool:
+        partitions = 0
+        current_pos = 1
+        while current_pos < len(prefix_sums):
+            partitions += 1
+            if partitions > assignees:
+                return False
+
+            next_limit = prefix_sums[current_pos-1] + max_job_size
+            current_pos = bisect.bisect_left(prefix_sums, next_limit + 1, lo=current_pos + 1)
+        return True
+
+    res = 0
+    lo = 0
+    hi = sum(jobs) * time_by_job
+    while lo <= hi:
+        mid = lo + (hi - lo) // 2
+        if is_possible(mid):
+            res = mid
+            hi = mid - 1
+        else:
+            lo = mid + 1
+    return res
 
 
 print(minimum_time_dp(assignees=4, time_by_job=5, jobs=[10, 7, 8, 12, 6, 8]))
+print(minimum_time_divide(assignees=4, time_by_job=5, jobs=[10, 7, 8, 12, 6, 8]))
