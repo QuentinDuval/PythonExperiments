@@ -27,9 +27,6 @@ def max_sum_sub_array_with_k_numbers(nums: List[int], k: int):
         prefix_sum_at.append(prefix_sum_at[-1] + num)
         max_sum_ending_at.append(max(num, max_sum_ending_at[-1] + num))
 
-    print(prefix_sum_at)
-    print(max_sum_ending_at)
-
     max_sum = float('-inf')
     for i in range(k, len(max_sum_ending_at)):
         k_sum = prefix_sum_at[i] - prefix_sum_at[i - k]
