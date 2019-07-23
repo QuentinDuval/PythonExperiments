@@ -25,4 +25,4 @@ def max_sum_sub_array(nums: List[int]):
     return max_sum
 
 
-print(max_sub_array([-4, 3, -2, 3, -3]))
+print(max_sum_sub_array([-4, 3, -2, 3, -3]))
