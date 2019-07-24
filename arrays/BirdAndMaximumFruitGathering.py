@@ -92,6 +92,48 @@ def maximize_gathering(nums, starting_fuel):
 
 """
 SOLUTION WHEN THE BIRD CANNOT SKIP ANY TREES
+
+Observations:
+
+There is no reason to go right only to go left after:
+If so, you should just start from the left and go further
+=> There is no reason to chose a different way of moving than
+   from left to right (all equivalent).
+
+Easy cases:
+M >= N => collect everything
+M == 1 => collect the best
+
+Brute force algorithm:
+Try for every starting point 'i' (first point to be consumed)
+=> Complexity is O(N * M)
+
+But we can do better:
+- compute the prefix sums
+- search for the largest array of size M
+
+But we can do still better:
+- just a sliding window: substract first, add last
+=> O(N) algorithm
 """
 
-# TODO
+
+def maximize_gathering(nums, starting_fuel):
+    if not nums:
+        return 0
+
+    if starting_fuel == 1:
+        return max(nums)
+
+    if starting_fuel >= len(nums):
+        return sum(nums)
+
+    window = 0
+    for i in range(starting_fuel):
+        window += nums[i]
+
+    max_window = window
+    for i in range(starting_fuel, len(nums) + starting_fuel):
+        window = window - nums[i - starting_fuel] + nums[i % len(nums)]
+        max_window = max(max_window, window)
+    return max_window
