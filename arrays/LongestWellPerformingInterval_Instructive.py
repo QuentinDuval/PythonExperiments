@@ -35,6 +35,20 @@ class Solution:
         * 1 is not useful: if you are superior to 1, you are superior to 0, and thus can start at -1
         * -1 is useful: it is after 0, so if 0 is not available, you might need to consider it
         => So we only need to add values that are lesser than previous (and so we can binary search)
+        => If fact, we will systematically have all numbers (0, -1, -2 .. -k) so we can index in O(1)
         """
+        max_len = 0
+        previous = [(0, -1)]
+        cumulative = 0
 
-        # TODO
+        for i, hour in enumerate(hours):
+            cumulative += 1 if hour > 8 else -1
+            if previous[-1][0] > cumulative:
+                previous.append((cumulative, i))
+
+            previous_index = abs(cumulative-1) if cumulative <= 0 else 0
+            if previous_index < len(previous):
+                interval_len = i - previous[previous_index][1]
+                max_len = max(max_len, interval_len)
+
+        return max_len
