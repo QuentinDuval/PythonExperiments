@@ -52,3 +52,5 @@ class Solution:
                 max_len = max(max_len, interval_len)
 
         return max_len
+
+        # TODO - do better (only beats 28 %)
