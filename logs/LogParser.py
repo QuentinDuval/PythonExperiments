@@ -4,9 +4,6 @@ Parser for log (could be replaced to support different formats)
 
 from logs.LogEntry import *
 
-# TODO: https://github.com/rory/apache-log-parser
-import apache_log_parser
-
 
 import datetime
 

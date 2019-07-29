@@ -6,7 +6,7 @@ from logs.Analytics import *
 from logs.Alerting import *
 from logs.Configuration import *
 from logs.LogAcquisition import *
-from logs.LogConsumer import *
+from logs.ActivityTracker import *
 from logs.LogParser import *
 from logs.Scheduler import *
 
