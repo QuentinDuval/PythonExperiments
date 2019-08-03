@@ -21,6 +21,9 @@ class Solution:
         To implement it, we have to turn it around:
 
         P(i) = 2 * P(i-1) - all cases where we end up with s[i]
+
+        Amazing solution as well:
+        https://leetcode.com/problems/distinct-subsequences-ii/discuss/292365/Classic-O(N*N)-dp-solution-and-0(n)-count-solution
         """
 
         mod = 10 ** 9 + 7
