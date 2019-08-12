@@ -121,6 +121,20 @@ class MaxHeap:
             self.position[self.heap[pos][1]] = pos
 
 
+def cache(f):
+    memo = {}
+
+    def wrapped(*args):
+        res = memo.get(args)
+        if res is not None:
+            return res
+        res = f(*args)
+        memo[args] = res
+        return res
+
+    return wrapped
+
+
 class Solution:
     def calculateMinimumHP(self, grid: List[List[int]]) -> int:
         """
@@ -135,10 +149,6 @@ class Solution:
         Why? Because we want the minimum of the rest, plus some buffer added by
         current position. But if the current position is negative, it might
         also be the lowest point of the path to the princess.
-
-        Number of sub-problems: O(N**2)
-        - Time complexity O(N**2)
-        - Space complexity O(N**2)
         """
 
         if not grid or not grid[0]:
@@ -147,21 +157,24 @@ class Solution:
         h = len(grid)
         w = len(grid[0])
 
+        def neighbors(i, j):
+            if i < h - 1:
+                yield i + 1, j
+            if j < w - 1:
+                yield i, j + 1
+
         @cache
-        def min_decrease(i, j):
+        def lowest_hp(i, j):
             if i == h - 1 and j == w - 1:
                 return grid[i][j]
 
-            max_min = None
-            if i < h - 1:
-                max_min = min_decrease(i + 1, j)
-            if j < w - 1:
-                sub_min = min_decrease(i, j + 1)
-                if max_min is None or sub_min > max_min:
-                    max_min = sub_min
-            return min(grid[i][j], max_min + grid[i][j])
+            lowest = max(lowest_hp(x, y) for x, y in neighbors(i, j))
+            return min(grid[i][j], grid[i][j] + lowest)
 
-        return 1 - min(0, min_decrease(0, 0))
+        lo = lowest_hp(0, 0)
+        if lo >= 0:
+            return 1
+        return -lo + 1
 
 
 def cache(f):
