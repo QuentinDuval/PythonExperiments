@@ -33,3 +33,6 @@ def remove_extra_edge(root: TreeNode):
         node = to_visit.pop()
         node.right = add_to_visit(node.right)
         node.left = add_to_visit(node.left)
+
+
+# TODO - do the follow up
