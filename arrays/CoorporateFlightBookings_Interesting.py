@@ -92,6 +92,8 @@ class Solution:
         => Beats 70% (988 ms)
         """
 
+        # TODO - it is interesting to see how the pattern of query influences the complexity (you cannot beat the BIT but if you take in order)
+
         diffs = [0] * (n + 1)
         for start, end, count in bookings:
             diffs[start - 1] += count
