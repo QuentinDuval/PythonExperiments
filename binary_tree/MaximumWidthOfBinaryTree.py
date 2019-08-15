@@ -58,9 +58,11 @@ class Solution:
                 max_width = max(max_width, 1)
             else:
                 max_width = max(max_width, position - min_pos_by_level[depth] + 1)
+
+            offset = min_pos_by_level[depth]  # to avoid overflows (we only need relative)
             if node.right:
-                to_visit.append((node.right, depth + 1, 2 * position + 1))
+                to_visit.append((node.right, depth + 1, 2 * (position - offset) + 1))
             if node.left:
-                to_visit.append((node.left, depth + 1, 2 * position))
+                to_visit.append((node.left, depth + 1, 2 * (position - offset)))
 
         return max_width
