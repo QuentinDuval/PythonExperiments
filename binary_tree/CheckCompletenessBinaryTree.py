@@ -10,6 +10,9 @@ and all nodes in the last level are as far left as possible.
 It can have between 1 and 2h nodes inclusive at the last level h.
 """
 
+from collections import deque
+from typing import Tuple
+
 
 # Definition for a binary tree node.
 class TreeNode:
@@ -17,9 +20,6 @@ class TreeNode:
         self.val = x
         self.left = None
         self.right = None
-
-
-from typing import Tuple
 
 
 class Solution:
@@ -44,3 +44,27 @@ class Solution:
 
         last_id, count = visit(root, 1)
         return last_id == count
+
+
+# Other valid solution based on BFS (and identify if nodes follow)
+
+
+class Solution:
+    def isCompleteTree(self, root: TreeNode) -> bool:
+        if not root:
+            return True
+        missing = False
+        q = deque([root])
+        while q:
+            n = len(q)
+            while n > 0:
+                n -= 1
+                temp = q.popleft()
+                if temp:
+                    if missing:
+                        return False
+                    q.append(temp.left)
+                    q.append(temp.right)
+                else:
+                    missing = True
+        return True
