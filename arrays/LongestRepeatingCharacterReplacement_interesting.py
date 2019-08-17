@@ -50,7 +50,7 @@ class Solution:
         - else extend the window
         - and keep track of longest window
 
-        Complexity is the same, but 152 ms and beats 52%.
+        Complexity is the same, but 188 ms and beats 35%.
         """
 
         counter = defaultdict(int)
@@ -61,7 +61,8 @@ class Solution:
         while end < len(s):
             counter[s[end]] += 1
             end += 1
-            if end - start - max(counter.values()) > k:
+            # While is important cause you could delete from the maximum of the counter
+            while end - start - max(counter.values()) > k:
                 counter[s[start]] -= 1
                 start += 1
             longest = max(longest, end - start)
