@@ -25,6 +25,8 @@ class Solution:
         Just invest the capital needed to make as much money as possible
         Keep track of which investment you can do
         (put in a priority queue only profits that are possible)
+
+        Complexity is O(N log N) and beats 79%
         """
 
         # Sort the investments by capital
