@@ -27,44 +27,46 @@ class Solution:
 
         Complexity stays O(N) in worst case, so we could just do a sweep on the collection...
         """
-        if not intervals:
-            return [newInterval]
-
-        n = len(intervals)
-        start, stop = newInterval
+        start, end = newInterval
 
         # Quickly identify easy cases
+        if not intervals:
+            return [newInterval]
         if intervals[-1][1] < start:
             intervals.append(newInterval)
             return intervals
-        if intervals[0][0] > stop:
+        if intervals[0][0] > end:
             return [newInterval] + intervals
 
-        def lower():
-            lo = 0
-            hi = n - 1
-            while lo <= hi:
-                mid = lo + (hi - lo) // 2
-                interval = intervals[mid]
-                if interval[1] < start:  # Will stop at intervals[lo][1] >= start
-                    lo = mid + 1
-                else:
-                    hi = mid - 1
-            return lo
+        intervals.sort(key=lambda p: p[1])
 
-        def higher():
-            lo = 0
-            hi = n - 1
-            while lo <= hi:
-                mid = lo + (hi - lo) // 2
-                interval = intervals[mid]
-                if interval[0] <= stop:  # Will stop at intervals[lo][0] > stop
-                    lo = mid + 1
-                else:
-                    hi = mid - 1
-            return lo
+        # Search for first interval whose end is after newInterval's start
+        lpos = self.lower_bound_end(intervals, start)
 
-        lo = lower()  # intervals[lo] has 'end' >= start
-        hi = higher()  # intervals[hi] has 'start' > stop
-        fused = [min(intervals[lo][0], start), max(intervals[hi - 1][1], stop)]
-        return intervals[:lo] + [fused] + intervals[hi:]
+        # Search for last interval whose start is before newInterval's end
+        rpos = self.higher_bound_start(intervals, end)
+
+        newInterval = min(start, intervals[lpos][0]), max(end, intervals[rpos - 1][1])
+        return intervals[:lpos] + [newInterval] + intervals[rpos:]
+
+    def lower_bound_end(self, intervals, start):
+        lo = 0
+        hi = len(intervals) - 1
+        while lo <= hi:
+            mid = lo + (hi - lo) // 2
+            if intervals[mid][1] < start:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return lo
+
+    def higher_bound_start(self, intervals, end):
+        lo = 0
+        hi = len(intervals) - 1
+        while lo <= hi:
+            mid = lo + (hi - lo) // 2
+            if intervals[mid][0] <= end:
+                lo = mid + 1
+            else:
+                hi = mid - 1
+        return lo
