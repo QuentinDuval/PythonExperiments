@@ -129,7 +129,7 @@ class Solution:
         hi = len(nums) - k - 1
         while lo <= hi:
             mid = lo + (hi - lo) // 2
-            # If delta is too big on left side, we should try left
+            # If delta is too big on left side, we should try to go right
             if x - nums[mid] > nums[mid + k] - x:
                 lo = mid + 1
             else:
