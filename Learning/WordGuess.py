@@ -201,8 +201,8 @@ def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb
                                              window_size=window_size)
     print("Data set size:", len(data_set))
 
-    # model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
-    model = RNNLanguageModeling(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
+    model = WordPrediction(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
+    # model = RNNLanguageModeling(vocab_size=vocab_size, embedding_dim=20, context_size=window_size - 1, hidden_dim=128)
     objective = nn.CrossEntropyLoss()
     optimizer = optim.Adam(params=model.parameters(), lr=1e-3)
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda e: 0.98 ** e)
@@ -230,7 +230,7 @@ def train_word_predictor(window_size, data_set_factory: DataSetFactory, epoch_nb
 
 
 def train_commit_generation():
-    guesser = train_word_predictor(window_size=4, data_set_factory=LanguageModelingDataSet(), epoch_nb=5)
+    guesser = train_word_predictor(window_size=4, data_set_factory=LanguageModelingDataSet(), epoch_nb=20)
     for _ in range(20):
         print(guesser.generate_sentence(max_words=50))
     guesser.save('models/generation.model')
@@ -240,6 +240,7 @@ def load_commit_generation():
     return WordGuesser.load('models/generation.model')
 
 
+# torch.set_num_threads(4)
 # train_commit_generation()
 # generator = load_commit_generation()
 

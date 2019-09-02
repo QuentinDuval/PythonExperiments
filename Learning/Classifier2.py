@@ -13,8 +13,7 @@ class RegexVectorizer(Vectorizer):
     def __init__(self):
         self.features = HardCodedClassifier.features_list +\
                         HardCodedClassifier.fixes_list +\
-                        HardCodedClassifier.refactoring_list +\
-                        HardCodedClassifier.revert_list
+                        HardCodedClassifier.refactoring_list
 
     def vectorize(self, fix_description):
         fix_description = fix_description.lower()
@@ -30,11 +29,11 @@ class PerceptronModel(nn.Module):
         super().__init__()
         self.vocabulary_len = vocabulary_len
         self.nb_classes = nb_classes
-        self.output_layer = nn.Linear(self.vocabulary_len, self.nb_classes)
-        torch.nn.init.xavier_normal_(self.output_layer.weight)
+        self.linear = nn.Linear(self.vocabulary_len, self.nb_classes)
+        torch.nn.init.xavier_normal_(self.linear.weight)  # The goal is to create some asymmetry (to get things moving)
 
     def forward(self, x, apply_softmax=True):
-        x = self.output_layer(x)
+        x = self.linear(x)
         if apply_softmax:
             x = fn.softmax(x, dim=-1)
         return x
@@ -138,24 +137,24 @@ Observe that:
 
 Model 1:
 ----------------------------------------
-Training (max): 2899/4244 (68.30819981149858%)
-Validation (max): 311/472 (65.88983050847457%)
-------------------------------
-Accuracy: 62.297496318114874 %
+Training (max): 2832/4221 (67.09310589907605%)
+Validation (max): 309/469 (65.88486140724946%)
+--------------------------------------------------
+Accuracy: 64.63595839524517 %
 
 Model 2:
 ----------------------------------------
-Training (max): 3178/4244 (74.88218661639962%)
-Validation (max): 327/472 (69.27966101694916%)
-------------------------------
-Accuracy: 63.770250368188506 %
+Training (max): 3070/4221 (72.73158019426677%)
+Validation (max): 315/469 (67.16417910447761%)
+--------------------------------------------------
+Accuracy: 64.78454680534918 %
 
 Model 3:
 ------------------------------
-Training (max): 3216/4244 (75.7775683317625%)
-Validation (max): 338/472 (71.61016949152543%)
-------------------------------
-Accuracy: 63.91752577319587 %
+Training (max): 2940/4221 (69.65174129353234%)
+Validation (max): 316/469 (67.37739872068231%)
+--------------------------------------------------
+Accuracy: 65.67607726597325 %
 """
 
 # test_model_2(split_seed=0)

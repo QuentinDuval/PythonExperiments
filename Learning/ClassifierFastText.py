@@ -49,7 +49,7 @@ def test_fast_text():
         output = model.predict(x.strip())
         print(x, output)
         predicted.append(int(output[0][0][-1]))
-    print_confusion_matrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES)
+    ConfusionMatrix(expected, predicted, CommitMessageCorpus.TARGET_CLASSES).show()
 
 
 """
