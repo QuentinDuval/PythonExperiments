@@ -6,7 +6,7 @@ import re
 import trio
 
 
-class Extractor:
+class LinkExtractor:
     def __init__(self, domain: str):
         self.domain = domain
         self.parser = etree.HTMLParser()
@@ -15,8 +15,8 @@ class Extractor:
         response = await asks.get(url)
         try:
             content = response.content.decode('utf-8')
-            visit_url(url, content)
             tree = etree.parse(StringIO(content), self.parser)
+            visit_url(url, tree)
             for href in tree.xpath('//a/@href'):
                 url = self.clean_href(href)
                 if url is not None:
@@ -42,7 +42,7 @@ class Crawler:
 
     async def collect_links(self, start_url: str):
         self.add_url(start_url)
-        extractor = Extractor(self.domain)
+        extractor = LinkExtractor(self.domain)
         while self.queue:
             # TODO - this is a BFS by design... try a DFS by using channels
             async with trio.open_nursery() as nursery:
@@ -60,16 +60,30 @@ class Crawler:
             self.queue.append(url)
 
 
+class ContentExtractor:
+    def __init__(self):
+        pass
+
+    def extract(self, tree):
+        for node in tree.xpath("//article/div"):
+            print(etree.tostring(node))
+            if "post-content" in node.attrib["class"]:
+                return etree.tostring(node).decode('utf-8')
+
+
 crawler = Crawler("https://deque.blog", "https://deque.blog/\d{4}/\d{2}/\d{2}.*")
 trio.run(crawler.collect_links, "https://deque.blog/posts")
 
 print("Visited", len(crawler.visited), "links")
+contentExtract = ContentExtractor()
 
 if not os.path.exists("posts"):
     os.makedirs("posts")
 
-for i, (url, content) in enumerate(crawler.visited.items()):
+for i, (url, tree) in enumerate(crawler.visited.items()):
     file_name = "posts/deque-blog-" + str(i) + ".html"
-    with open(file_name, 'w', encoding='utf-8') as file:
-        file.write(content)
+    content = contentExtract.extract(tree)
+    if content is not None:
+        with open(file_name, 'w', encoding='utf-8') as file:
+            file.write(content)
 
