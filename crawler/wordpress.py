@@ -1,9 +1,10 @@
-import asks
-from io import StringIO
-from lxml import etree
 import os
 import re
+
+import asks
 import trio
+from lxml import etree
+from lxml import html
 
 
 class LinkExtractor:
@@ -15,7 +16,8 @@ class LinkExtractor:
         response = await asks.get(url)
         try:
             content = response.content.decode('utf-8')
-            tree = etree.parse(StringIO(content), self.parser)
+            tree = html.fromstring(content)
+            # tree = etree.parse(io.StringIO(content), self.parser) # Would parse in XML
             visit_url(url, tree)
             for href in tree.xpath('//a/@href'):
                 url = self.clean_href(href)
@@ -60,30 +62,28 @@ class Crawler:
             self.queue.append(url)
 
 
-class ContentExtractor:
-    def __init__(self):
-        pass
+class BlogPostExtractor:
+    def __init__(self, domain: str, blog_post_regex: str):
+        self.crawler = Crawler(domain=domain, blog_post_regex=blog_post_regex)
 
-    def extract(self, tree):
+    def extract(self, first_url: str, folder: str, file_prefix: str):
+        trio.run(self.crawler.collect_links, first_url)
+        print("Visited", len(self.crawler.visited), "links")
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        for i, (url, tree) in enumerate(self.crawler.visited.items()):
+            file_name = "posts/" + file_prefix + str(i) + ".html"
+            content = self.get_blog_content(tree)
+            if content is not None:
+                with open(file_name, 'w', encoding='utf-8') as file:
+                    file.write(content)
+
+    def get_blog_content(self, tree):
         for node in tree.xpath("//article/div"):
-            print(etree.tostring(node))
             if "post-content" in node.attrib["class"]:
-                return etree.tostring(node).decode('utf-8')
+                # TODO - it would be nice to try to keep some of the formatting
+                return node.text_content()
 
 
-crawler = Crawler("https://deque.blog", "https://deque.blog/\d{4}/\d{2}/\d{2}.*")
-trio.run(crawler.collect_links, "https://deque.blog/posts")
-
-print("Visited", len(crawler.visited), "links")
-contentExtract = ContentExtractor()
-
-if not os.path.exists("posts"):
-    os.makedirs("posts")
-
-for i, (url, tree) in enumerate(crawler.visited.items()):
-    file_name = "posts/deque-blog-" + str(i) + ".html"
-    content = contentExtract.extract(tree)
-    if content is not None:
-        with open(file_name, 'w', encoding='utf-8') as file:
-            file.write(content)
-
+extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}.*")
+extractor.extract(first_url="https://deque.blog/posts", folder="posts", file_prefix="deque-blog-")
