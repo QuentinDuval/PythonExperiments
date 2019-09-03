@@ -13,8 +13,11 @@ class LinkExtractor:
         self.parser = etree.HTMLParser()
 
     async def extract_links(self, url: str, visit_url, queue_url):
-        response = await asks.get(url)
         try:
+            print("Try:", url)
+            response = await asks.get(url)
+            print("Got:", url)
+
             content = response.content.decode('utf-8')
             tree = html.fromstring(content)
             # tree = etree.parse(io.StringIO(content), self.parser) # Would parse in XML
@@ -87,3 +90,8 @@ class BlogPostExtractor:
 
 extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}.*")
 extractor.extract(first_url="https://deque.blog/posts", folder="posts", file_prefix="deque-blog-")
+
+# TODO - add a rate limiter using a Semaphore (it is not nice on the web sites right now)
+
+# extractor = BlogPostExtractor(domain="https://www.fluentcpp.com", blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}.*")
+# extractor.extract(first_url="https://www.fluentcpp.com/posts/", folder="posts", file_prefix="fluentcpp-")
