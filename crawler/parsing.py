@@ -27,7 +27,7 @@ class NltkTokenizer:
         sentence = self.clean_sentence(sentence)
         for token in nltk.word_tokenize(sentence):
             if not self.is_punctuation(token):
-                tokens.append(token)
+                tokens.append(token.lower())
         return tokens
 
     def clean_sentence(self, sentence: str) -> str:
