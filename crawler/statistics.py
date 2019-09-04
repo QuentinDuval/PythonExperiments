@@ -1,21 +1,12 @@
-import os
-
-from crawler.parsing import NltkTokenizer
-
-
-def list_files(folder: str):
-    files = []
-    for dir_path, dir_names, file_names in os.walk(folder):
-        files.extend(file_names)
-    return file_names
+from crawler.parsing import NltkTokenizer, list_files_in_folder, stop_words
 
 
 def count_words(folder: str):
     word_groups = {}
     word_bigrams = {}
     tokenizer = NltkTokenizer()
-    for file_name in list_files(folder):
-        with open(os.path.join(folder, file_name), 'r', encoding='utf-8') as file:
+    for file_name in list_files_in_folder(folder):
+        with open(file_name, 'r', encoding='utf-8') as file:
             for line in file:
                 line_words = tokenizer.tokenize(line)
                 prev = None
@@ -31,7 +22,8 @@ def count_words(folder: str):
 
 words, bigrams = count_words("posts/fluentcpp")
 for word, count in sorted(words.items(), key=lambda p: p[1], reverse=True):
-    print(word, count)
+    if word not in stop_words:
+        print(word, count)
 
 print("-" * 50)
 

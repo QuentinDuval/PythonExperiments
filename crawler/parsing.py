@@ -1,8 +1,21 @@
 from typing import List
 
+import os
 import nltk
 import string
 import unicodedata
+
+
+stop_words = {
+    "the", "of", "a", "to", "is", "am", "and", "in", "that", "this", "it", "we", "you"
+}
+
+
+def list_files_in_folder(folder: str):
+    files = []
+    for dir_path, dir_names, file_names in os.walk(folder):
+        files.extend(os.path.join(folder, file_name) for file_name in file_names)
+    return files
 
 
 class NltkTokenizer:
