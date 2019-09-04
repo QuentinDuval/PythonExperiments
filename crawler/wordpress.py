@@ -116,12 +116,12 @@ class UrlExtractor:
 
 
 class Crawler:
-    def __init__(self, domain: str, blog_post_regex: str, max_connection: int):
+    def __init__(self, domain: str, blog_post_regex, max_connection: int):
         self.domain = domain
         self.queue = []
         self.discovered = set()
         self.visited = {}
-        self.blog_post_regex = re.compile(blog_post_regex)
+        self.blog_post_regex = blog_post_regex
         self.session = Session(self.domain, connections=max_connection)
         self.extractor = UrlExtractor(self.domain)
 
@@ -146,22 +146,29 @@ class Crawler:
 
 class BlogPostExtractor:
     def __init__(self, domain: str, blog_post_regex: str):
-        self.crawler = Crawler(domain=domain, blog_post_regex=blog_post_regex, max_connection=10)
+        self.blog_post_regex = re.compile(blog_post_regex)
+        self.crawler = Crawler(domain=domain, blog_post_regex=self.blog_post_regex, max_connection=10)
 
-    def extract(self, first_url: str, folder: str, file_prefix: str):
+    def extract(self, first_url: str, folder: str):
         trio.run(self.crawler.collect_links, first_url)
         print("Visited", len(self.crawler.visited), "links")
-        self.dump_result(folder, file_prefix)
+        self.dump_result(folder)
 
-    def dump_result(self, folder, file_prefix):
+    def dump_result(self, folder):
         if not os.path.exists(folder):
             os.makedirs(folder)
-        for i, (url, tree) in enumerate(self.crawler.visited.items()):
+        for url, tree in self.crawler.visited.items():
+            file_name = self.get_file_name(url)
             content = self.get_blog_content(tree)
-            file_name = folder + "/" + file_prefix + str(i) + ".html"
+            full_file_path = folder + "/" + file_name + ".html"
             if content is not None:
-                with open(file_name, 'w', encoding='utf-8') as file:
+                with open(full_file_path, 'w', encoding='utf-8') as file:
                     file.write(content)
+
+    def get_file_name(self, url):
+        m = self.blog_post_regex.match(url)
+        article_name = m.group(1)
+        return article_name.strip("/")
 
     def get_blog_content(self, tree):
         title = ""
@@ -175,10 +182,8 @@ class BlogPostExtractor:
         return title + "\n\n" + content
 
 
-extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}.*")
-extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque", file_prefix="deque-blog-")
+extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}/(.*)")
+extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque")
 
-# TODO - add a rate limiter using a Semaphore (it is not nice on the web sites right now)
-
-# extractor = BlogPostExtractor(domain="https://www.fluentcpp.com", blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}.*")
-# extractor.extract(first_url="https://www.fluentcpp.com/posts/", folder="posts", file_prefix="fluentcpp-")
+# extractor = BlogPostExtractor(domain="https://www.fluentcpp.com", blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}/(.*)")
+# extractor.extract(first_url="https://www.fluentcpp.com/posts/", folder="posts/fluentcpp")
