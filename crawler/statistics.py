@@ -1,5 +1,7 @@
 import os
 
+from crawler.parsing import NltkTokenizer
+
 
 def list_files(folder: str):
     files = []
@@ -11,10 +13,11 @@ def list_files(folder: str):
 def count_words(folder: str):
     word_groups = {}
     word_bigrams = {}
+    tokenizer = NltkTokenizer()
     for file_name in list_files(folder):
         with open(os.path.join(folder, file_name), 'r', encoding='utf-8') as file:
             for line in file:
-                line_words = line.split()
+                line_words = tokenizer.tokenize(line)
                 prev = None
                 for word in line_words:
                     word = word.lower().strip(".?!")
