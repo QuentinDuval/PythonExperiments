@@ -171,6 +171,9 @@ class BlogPostExtractor:
         return article_name.strip("/")
 
     def get_blog_content(self, tree):
+        for article in tree.xpath("//article"):
+            return article.text_content()
+        '''
         title = ""
         content = ""
         for article in tree.xpath("//article"):
@@ -180,10 +183,11 @@ class BlogPostExtractor:
                 if node.tag == "div" and "post-content" in node.attrib.get("class", ""):
                     content = node.text_content()
         return title + "\n\n" + content
+        '''
 
 
-extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}/(.*)")
-extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque")
+# extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}/(.*)")
+# extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque")
 
 # extractor = BlogPostExtractor(domain="https://www.fluentcpp.com", blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}/(.*)")
 # extractor.extract(first_url="https://www.fluentcpp.com/posts/", folder="posts/fluentcpp")
