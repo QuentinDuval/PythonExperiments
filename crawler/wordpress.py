@@ -157,17 +157,22 @@ class BlogPostExtractor:
         if not os.path.exists(folder):
             os.makedirs(folder)
         for i, (url, tree) in enumerate(self.crawler.visited.items()):
-            file_name = folder + "/" + file_prefix + str(i) + ".html"
             content = self.get_blog_content(tree)
+            file_name = folder + "/" + file_prefix + str(i) + ".html"
             if content is not None:
                 with open(file_name, 'w', encoding='utf-8') as file:
                     file.write(content)
 
     def get_blog_content(self, tree):
-        for node in tree.xpath("//article/div"):
-            if "post-content" in node.attrib["class"]:
-                # TODO - it would be nice to try to keep some of the formatting
-                return node.text_content()
+        title = ""
+        content = ""
+        for article in tree.xpath("//article"):
+            for node in article:
+                if node.tag == "header" and "post-header" in node.attrib.get("class", ""):
+                    title = node.text_content()
+                if node.tag == "div" and "post-content" in node.attrib.get("class", ""):
+                    content = node.text_content()
+        return title + "\n\n" + content
 
 
 extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}.*")
