@@ -7,7 +7,7 @@ import datetime
 import trio
 from lxml import etree
 from lxml import html
-
+from crawler.parsing import list_files_in_folder
 
 """
 New version
@@ -99,7 +99,7 @@ class UrlExtractor:
             response = await session.get(url)
             content = response.content.decode('utf-8')
             tree = html.fromstring(content)
-            on_visit_url(url, tree)
+            await on_visit_url(url, tree)
             for href in tree.xpath('//a/@href'):
                 url = self.clean_href(href)
                 if url is not None:
@@ -116,12 +116,11 @@ class UrlExtractor:
 
 
 class Crawler:
-    def __init__(self, domain: str, blog_post_regex, max_connection: int):
+    def __init__(self, domain: str, max_connection: int, on_visited):
         self.domain = domain
         self.queue = []
         self.discovered = set()
-        self.visited = {}
-        self.blog_post_regex = blog_post_regex
+        self.on_visited = on_visited
         self.session = Session(self.domain, connections=max_connection)
         self.extractor = UrlExtractor(self.domain)
 
@@ -133,11 +132,6 @@ class Crawler:
                     url = self.queue.pop()
                     nursery.start_soon(self.extractor.extract_links, self.session, url, self.on_visited, self.add_url_link)
 
-    def on_visited(self, url, content):
-        print("[{when}] Visited {url}".format(url=url, when=datetime.datetime.now()))
-        if self.blog_post_regex.match(url):
-            self.visited[url] = content
-
     def add_url_link(self, url):
         if url not in self.discovered:
             self.discovered.add(url)
@@ -145,25 +139,29 @@ class Crawler:
 
 
 class BlogPostExtractor:
-    def __init__(self, domain: str, blog_post_regex: str):
+    def __init__(self, domain: str, blog_post_regex: str, output_folder: str, max_connection=10):
         self.blog_post_regex = re.compile(blog_post_regex)
-        self.crawler = Crawler(domain=domain, blog_post_regex=self.blog_post_regex, max_connection=10)
+        self.output_folder = output_folder
+        self.crawler = Crawler(domain=domain, on_visited=self.on_visited, max_connection=max_connection)
+        self.visited = {}
 
-    def extract(self, first_url: str, folder: str):
+    def extract(self, first_url: str):
+        if not os.path.exists(self.output_folder):
+            os.makedirs(self.output_folder)
         trio.run(self.crawler.collect_links, first_url)
-        print("Visited", len(self.crawler.visited), "links")
-        self.dump_result(folder)
+        print("Visited", len(self.visited), "links")
+        print("Total under", self.output_folder, "is:", len(list_files_in_folder(self.output_folder)))
 
-    def dump_result(self, folder):
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        for url, tree in self.crawler.visited.items():
+    async def on_visited(self, url, tree):
+        print("[{when}] Visited {url}".format(url=url, when=datetime.datetime.now()))
+        if self.blog_post_regex.match(url):
+            self.visited[url] = tree
             file_name = self.get_file_name(url)
             content = self.get_blog_content(tree)
-            full_file_path = folder + "/" + file_name + ".html"
+            full_file_path = os.path.join(self.output_folder, file_name + ".html")
             if content is not None:
-                with open(full_file_path, 'w', encoding='utf-8') as file:
-                    file.write(content)
+                async with await trio.open_file(full_file_path, 'w', encoding='utf-8') as file:
+                    await file.write(content)
 
     def get_file_name(self, url):
         m = self.blog_post_regex.match(url)
@@ -186,8 +184,18 @@ class BlogPostExtractor:
         '''
 
 
-# extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}/(.*)")
-# extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque")
+'''
+extractor = BlogPostExtractor(domain="https://deque.blog",
+                              blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}/(.*)",
+                              output_folder="posts/deque",
+                              max_connection=20)
+extractor.extract(first_url="https://deque.blog/posts")
+'''
 
-# extractor = BlogPostExtractor(domain="https://www.fluentcpp.com", blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}/(.*)")
-# extractor.extract(first_url="https://www.fluentcpp.com/posts/", folder="posts/fluentcpp")
+'''
+extractor = BlogPostExtractor(domain="https://www.fluentcpp.com",
+                              blog_post_regex="https://www.fluentcpp.com/\d{4}/\d{2}/\d{2}/(.*)",
+                              output_folder="posts/fluentcpp",
+                              max_connection=20)
+extractor.extract(first_url="https://www.fluentcpp.com/posts/")
+'''
