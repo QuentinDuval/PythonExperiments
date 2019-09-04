@@ -3,9 +3,90 @@ import re
 
 import asks
 from asks.sessions import Session
+import datetime
 import trio
 from lxml import etree
 from lxml import html
+
+
+"""
+New version
+"""
+
+'''
+class UrlWorker:
+    def __init__(self, domain: str, input_channel, content_out_channel, url_out_channel):
+        self.domain = domain
+        self.parser = etree.HTMLParser()
+        self.input_channel = input_channel
+        self.content_out_channel = content_out_channel
+        self.url_out_channel = url_out_channel
+
+    async def consume(self):
+        async with self.input_channel:
+            async for url in self.input_channel:
+                await self.extract_links(url)
+
+    async def extract_links(self, url: str):
+        try:
+            response = await asks.get(url)
+            content = response.content.decode('utf-8')
+            tree = html.fromstring(content)
+            self.content_out_channel.send((url, tree))
+            for href in tree.xpath('//a/@href'):
+                url = self.clean_href(href)
+                if url is not None:
+                    self.url_out_channel.send(url)
+        except Exception as e:
+            print("Failed to parse content of", url, "due to", e)
+
+    def clean_href(self, href):
+        if not href.startswith(self.domain):
+            return None
+        href = href.split("#")[0]
+        href = href.split("?")[0]
+        return href
+
+
+class UrlCrawler:
+    def __init__(self, domain: str, blog_post_regex: str, max_connection: int):
+        self.domain = domain
+        self.queue = []
+        self.discovered = set()
+        self.visited = {}
+        self.blog_post_regex = re.compile(blog_post_regex)
+        self.max_connection = max_connection
+
+    async def collect_links(self, start_url: str):
+        self.add_url_link(start_url)
+
+        url_in_channel, url_out_channel = trio.open_memory_channel(0)
+
+        async with trio.open_nursery() as nursery:
+            for _ in range(self.max_connection):
+                worker = UrlWorker(self.domain, input_channel, content_out_channel, url_out_channel)
+                nursery.start_soon(worker.consume)
+
+        while self.queue:
+            # TODO - this is a BFS by design... try a DFS by using channels
+            async with trio.open_nursery() as nursery:
+                while self.queue:
+                    url = self.queue.pop()
+                    nursery.start_soon(self.extractor.extract_links, self.session, url, self.on_visited, self.add_url_link)
+
+    def on_visited(self, url, content):
+        if self.blog_post_regex.match(url):
+            self.visited[url] = content
+
+    def add_url_link(self, url):
+        if url not in self.discovered:
+            self.discovered.add(url)
+            self.queue.append(url)
+'''
+
+"""
+Old version using BFS
+"""
 
 
 class UrlExtractor:
@@ -47,13 +128,13 @@ class Crawler:
     async def collect_links(self, start_url: str):
         self.add_url_link(start_url)
         while self.queue:
-            # TODO - this is a BFS by design... try a DFS by using channels
             async with trio.open_nursery() as nursery:
                 while self.queue:
                     url = self.queue.pop()
                     nursery.start_soon(self.extractor.extract_links, self.session, url, self.on_visited, self.add_url_link)
 
     def on_visited(self, url, content):
+        print("[{when}] Visited {url}".format(url=url, when=datetime.datetime.now()))
         if self.blog_post_regex.match(url):
             self.visited[url] = content
 
@@ -70,10 +151,13 @@ class BlogPostExtractor:
     def extract(self, first_url: str, folder: str, file_prefix: str):
         trio.run(self.crawler.collect_links, first_url)
         print("Visited", len(self.crawler.visited), "links")
+        self.dump_result(folder, file_prefix)
+
+    def dump_result(self, folder, file_prefix):
         if not os.path.exists(folder):
             os.makedirs(folder)
         for i, (url, tree) in enumerate(self.crawler.visited.items()):
-            file_name = "posts/" + file_prefix + str(i) + ".html"
+            file_name = folder + "/" + file_prefix + str(i) + ".html"
             content = self.get_blog_content(tree)
             if content is not None:
                 with open(file_name, 'w', encoding='utf-8') as file:
@@ -87,7 +171,7 @@ class BlogPostExtractor:
 
 
 extractor = BlogPostExtractor(domain="https://deque.blog", blog_post_regex="https://deque.blog/\d{4}/\d{2}/\d{2}.*")
-extractor.extract(first_url="https://deque.blog/posts", folder="posts", file_prefix="deque-blog-")
+extractor.extract(first_url="https://deque.blog/posts", folder="posts/deque", file_prefix="deque-blog-")
 
 # TODO - add a rate limiter using a Semaphore (it is not nice on the web sites right now)
 
