@@ -5,8 +5,6 @@ from crawler.parsing import NltkTokenizer, list_files_in_folder
 from collections import defaultdict
 import os
 
-# TODO - classify document based on TF-IDF
-
 
 class PostingList:
     """
