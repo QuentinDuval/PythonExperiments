@@ -7,6 +7,7 @@ import os
 
 
 # TODO - use Whoosh (indexing in pure Python): https://whoosh.readthedocs.io/en/latest/quickstart.html
+# TODO - how to extract the significant terms: https://whoosh.readthedocs.io/en/latest/keywords.html
 
 class PostingList:
     """
