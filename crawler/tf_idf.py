@@ -6,6 +6,8 @@ from collections import defaultdict
 import os
 
 
+# TODO - use Whoosh (indexing in pure Python): https://whoosh.readthedocs.io/en/latest/quickstart.html
+
 class PostingList:
     """
     Posting list for a given word:
@@ -17,7 +19,7 @@ class PostingList:
         self.total = 0
         self.postings = defaultdict(int)
 
-    def add_document(self, document):
+    def add_posting(self, document):
         self.total += 1
         self.postings[document] += 1
 
@@ -31,21 +33,31 @@ class InvertedIndex:
     """
 
     def __init__(self):
-        self.posting_lists = defaultdict(PostingList)
+        self.documents = defaultdict(set)
+        self.document_postings = defaultdict(PostingList)
+        self.next_word_postings = defaultdict(PostingList)
         self.tokenizer = NltkTokenizer()
 
     def add_document(self, file_path: str):
         folder_name, file_name = os.path.split(file_path)
         with open(file_path, 'r', encoding='utf-8') as file:
             for line in file:
+                prev_word = None
                 for word in self.tokenizer.tokenize(line):
-                    self.posting_lists[word].add_document(file_name)
+                    self.documents[file_name].add(word)
+                    self.document_postings[word].add_posting(file_name)
+                    if prev_word is not None:
+                        self.next_word_postings[prev_word].add_posting(word)
+                    prev_word = word
 
     def get_topic(self, document_title: str) -> List[str]:
         """
         Return the titles of the document that are the most related to the document_title
         """
-        pass  # TODO
+        # TODO
+        #   - get the words in the document, and look at the words in the posting list of documents
+        #   - check if the document is among the most representative for each word (and keep this word)
+        pass
 
     def get_documents(self, words: List[str]) -> List[str]:
         """
@@ -59,12 +71,15 @@ class InvertedIndex:
         """
         pass  # TODO
 
+    def get_most_common_next_words(self) -> List[str]:
+        pass
+
 
 inv_index = InvertedIndex()
 for file_path in list_files_in_folder("posts/fluentcpp"):
     inv_index.add_document(file_path)
 
-for i, (word, posting) in enumerate(sorted(inv_index.posting_lists.items(), key=lambda p: p[1].total, reverse=True)):
+for i, (word, posting) in enumerate(sorted(inv_index.document_postings.items(), key=lambda p: p[1].total, reverse=True)):
     if i < 10:
         print(word)
         print(posting)
