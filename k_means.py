@@ -1,5 +1,8 @@
 from typing import List, Any
 import numpy as np
+import math
+import timeit
+import time
 
 
 def randomly_select(points, k):
@@ -8,7 +11,13 @@ def randomly_select(points, k):
 
 
 def distance_squared(p1, p2):   # Idea: show the typical change if you compute the sqrt...
-    return sum((p1[i] - p2[i]) ** 2 for i in range(len(p1)))
+    # l2_norm = sum((p1[i] - p2[i]) ** 2 for i in range(len(p1)))
+    # return math.sqrt(l2_norm)
+    # return l2_norm
+
+    # Goes way faster than the of of squared numbers
+    diff = p1 - p2
+    return np.dot(diff, diff)
 
 
 def assign_to_nearest_centroid(points, centroids):
@@ -98,9 +107,11 @@ def test_huge(size=1000):
     points2 = random_points(loc=[5., 3., 6.], scale=[1., 1., 1.], size=size // 3)
     points3 = random_points(loc=[10., 4., 6.], scale=[1., 1., 1.], size=size // 3)
     points = np.concatenate([points1, points2, points3], axis=0)
+
     np.random.shuffle(points)
-    centroids = k_means(points, k=3, max_iter=100)
-    print(centroids)
+    start_time = time.time()
+    print(k_means(points, k=3, max_iter=100))
+    print(time.time() - start_time)
 
 
 test()
