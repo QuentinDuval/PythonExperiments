@@ -68,13 +68,14 @@ def test():
         return [new_point(x, y) for x, y in zip(xs, ys)]
 
     inputs = generate_inputs(size=1000)
-    tests = [new_point(1, 1)]
-
     pca = PrincipalComponentExtraction(feature_size=3, output_size=2)
     pca.fit(inputs=inputs, nb_epoch=300, learning_rate=1e-3, weight_decay=0.)
-    tests_res = pca.transform(tests)
-    print(tests_res)
-    print(tests, "=>", pca.decode(tests_res))
+
+    tests = [new_point(1, 1), new_point(100, 100)]  # In and out of training distribution
+    encoded = pca.transform(tests)
+    decoded = pca.decode(encoded)
+    for i in range(len(tests)):
+        print(tests[i], "=>", decoded[i])
 
 
 test()
