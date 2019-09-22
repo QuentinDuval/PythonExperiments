@@ -25,9 +25,9 @@ class PrincipalComponentExtraction(nn.Module):
         ys = self.encoder(xs)
         return self.decoder(ys)
 
-    def fit(self, inputs, nb_epoch: int = 10):
+    def fit(self, inputs, nb_epoch: int = 100, learning_rate: float = 1e-3, weight_decay: float = 0.):
         self.train()
-        optimizer = optim.Adam(self.parameters(), lr=1e-3, weight_decay=1e-3)
+        optimizer = optim.Adam(self.parameters(), lr=learning_rate, weight_decay=weight_decay)
         criterion = nn.MSELoss()
         training_set = torch.stack([torch.from_numpy(x) for x in inputs])
         training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
@@ -63,18 +63,18 @@ def test():
         return np.array([x, y, 2 * x + y], dtype=np.float32)
 
     def generate_inputs(size=100):
-        xs = np.random.normal(loc=1, scale=2, size=size)
-        ys = np.random.normal(loc=1, scale=2, size=size)
+        xs = np.random.uniform(low=-10, high=10, size=size)
+        ys = np.random.normal(loc=1, scale=10, size=size)
         return [new_point(x, y) for x, y in zip(xs, ys)]
 
-    inputs = generate_inputs(size=5000)
+    inputs = generate_inputs(size=1000)
     tests = [new_point(1, 1)]
 
     pca = PrincipalComponentExtraction(feature_size=3, output_size=2)
-    pca.fit(inputs=inputs, nb_epoch=200)
+    pca.fit(inputs=inputs, nb_epoch=300, learning_rate=1e-3, weight_decay=0.)
     tests_res = pca.transform(tests)
     print(tests_res)
-    print(pca.decode(tests_res))
+    print(tests, "=>", pca.decode(tests_res))
 
 
 test()
