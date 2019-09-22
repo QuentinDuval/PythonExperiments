@@ -12,11 +12,15 @@ def distance_squared(p1, p2):   # Idea: show the typical change if you compute t
 
 
 def assign_to_nearest_centroid(points, centroids):
-    groups = [[] for _ in range(len(centroids))]
+    """
+    Complexity is: len(points) * len(centroids) * dimension
+    """
+    k = len(centroids)
+    groups = [[] for _ in range(k)]
     for point in points:
         min_dist = distance_squared(point, centroids[0])
         closest = 0
-        for i in range(1, len(centroids)):
+        for i in range(1, k):
             dist = distance_squared(point, centroids[i])
             if dist < min_dist:
                 min_dist = dist
@@ -31,6 +35,9 @@ def compute_center_of_mass(points):
 
 
 def adjust_centroids(points, centroids):
+    """
+    Complexity is: len(points) * len(centroids) * dimension
+    """
     new_centroids = []
     groups = assign_to_nearest_centroid(points, centroids)
     for group in groups:
@@ -44,6 +51,9 @@ def to_point_set(points):
 
 
 def k_means(points, k: int, max_iter: int) -> List[Any]:
+    """
+    Complexity is: max_iter * len(points) * len(centroids) * dimension
+    """
     if k >= len(points):
         return points
 
@@ -84,11 +94,12 @@ def random_points(loc, scale, size):
 
 
 def test_huge(size=1000):
-    points1 = random_points(loc=[0., 0., 0.], scale=[1., 1., 1.], size=size // 2)
-    points2 = random_points(loc=[5., 3., 6.], scale=[1., 1., 1.], size=size // 2)
-    points = np.concatenate((points1, points2), axis=0)
+    points1 = random_points(loc=[0., 0., 0.], scale=[1., 1., 1.], size=size // 3)
+    points2 = random_points(loc=[5., 3., 6.], scale=[1., 1., 1.], size=size // 3)
+    points3 = random_points(loc=[10., 4., 6.], scale=[1., 1., 1.], size=size // 3)
+    points = np.concatenate([points1, points2, points3], axis=0)
     np.random.shuffle(points)
-    centroids = k_means(points, k=2, max_iter=100)
+    centroids = k_means(points, k=3, max_iter=100)
     print(centroids)
 
 
