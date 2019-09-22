@@ -59,6 +59,11 @@ def k_means(points, k: int, max_iter: int) -> List[Any]:
     return centroids
 
 
+"""
+Tests
+"""
+
+
 def test():
     all_points = [
         np.array([1, 1, 1], dtype=np.float64),
@@ -70,4 +75,22 @@ def test():
     print(all_centroids)
 
 
+def random_points(loc, scale, size):
+    d = len(loc)
+    points = np.zeros(shape=(size, d))
+    for i in range(d):
+        points[:, i] = np.random.normal(loc=loc[i], scale=scale[i], size=size)
+    return points
+
+
+def test_huge(size=1000):
+    points1 = random_points(loc=[0., 0., 0.], scale=[1., 1., 1.], size=size // 2)
+    points2 = random_points(loc=[5., 3., 6.], scale=[1., 1., 1.], size=size // 2)
+    points = np.concatenate((points1, points2), axis=0)
+    np.random.shuffle(points)
+    centroids = k_means(points, k=2, max_iter=100)
+    print(centroids)
+
+
 test()
+test_huge(size=10_000)
