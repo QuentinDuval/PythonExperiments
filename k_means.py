@@ -3,36 +3,31 @@ import numpy as np
 
 
 def randomly_select(points, k):
-    centroids_indexes = np.arange(len(points))
-    centroids_indexes = np.random.choice(centroids_indexes, size=k, replace=False)
-    centroids = [points[i] for i in centroids_indexes]
-    return centroids
+    indexes = np.arange(len(points))
+    return [points[i] for i in np.random.choice(indexes, size=k, replace=False)]
 
 
-def distance_between(p1, p2):
-    distance = 0
-    for i in range(len(p1)):
-        distance = (p1[i] - p2[i]) ** 2
-    return distance
+def distance_squared(p1, p2):   # Idea: show the typical change if you compute the sqrt...
+    return sum((p1[i] - p2[i]) ** 2 for i in range(len(p1)))
 
 
 def assign_to_nearest_centroid(points, centroids):
     groups = [[] for _ in range(len(centroids))]
-    for p in points:
-        min_dist = distance_between(p, centroids[0])
+    for point in points:
+        min_dist = distance_squared(point, centroids[0])
         closest = 0
         for i in range(1, len(centroids)):
-            dist = distance_between(p, centroids[i])
+            dist = distance_squared(point, centroids[i])
             if dist < min_dist:
                 min_dist = dist
                 closest = i
-        groups[closest].append(p)
+        groups[closest].append(point)
     return groups
 
 
 def compute_center_of_mass(points):
-    total = np.sum(points, axis=0)  # Axis 0 means first dimension, so a list of array will sum the array by index
-    return total / len(points)
+    # Axis 0 means first dimension, so a list of array will sum the array by index
+    return np.sum(points, axis=0) / len(points)
 
 
 def adjust_centroids(points, centroids):
@@ -45,7 +40,7 @@ def adjust_centroids(points, centroids):
 
 
 def to_point_set(points):
-    return set(tuple(point.flat) for point in points)
+    return set(tuple(point) for point in points)
 
 
 def k_means(points, k: int, max_iter: int) -> List[Any]:
@@ -64,11 +59,15 @@ def k_means(points, k: int, max_iter: int) -> List[Any]:
     return centroids
 
 
-all_points = [
-    np.array([1, 1, 1], dtype=np.float64),
-    np.array([2, 2, 2], dtype=np.float64),
-    np.array([5, 5, 5], dtype=np.float64),
-    np.array([6, 6, 6], dtype=np.float64),
-]
-all_centroids = k_means(all_points, k=2, max_iter=10)
-print(all_centroids)
+def test():
+    all_points = [
+        np.array([1, 1, 1], dtype=np.float64),
+        np.array([2, 2, 2], dtype=np.float64),
+        np.array([5, 5, 5], dtype=np.float64),
+        np.array([6, 6, 6], dtype=np.float64),
+    ]
+    all_centroids = k_means(all_points, k=2, max_iter=10)
+    print(all_centroids)
+
+
+test()
