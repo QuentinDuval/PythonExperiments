@@ -31,7 +31,7 @@ class Spammer:
             if not self.session:
                 r = await asks.get(url)
             else:
-                r = self.session.get(url)
+                r = await self.session.get(url)
             self.count += 1
             print(r.text)
 
@@ -58,7 +58,7 @@ class KeepConnectionSpammer:
             # await trio.sleep_until(time + 1)
 
 
-spammer = Spammer(timeout=2, keep_connections=False)
+spammer = Spammer(timeout=2, keep_connections=True)
 trio.run(spammer.spam_server, "http://127.0.0.1:8889/threading/wait?millis=1000", [30, 10, 10])
 print(spammer.count)
 
