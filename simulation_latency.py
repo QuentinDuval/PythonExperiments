@@ -25,12 +25,15 @@ class Service:
 class Parameters:
     iter_count: int
     default_processing_time: float
+    network_latency: float
 
 
 services = {
     "a": Service(processing_time=1, dependencies=["b", "c"]),
     "b": Service(processing_time=1, dependencies=["d", "e", "f", "g"]),
-    "c": Service(processing_time=1, dependencies=["i", "j"])
+    "c": Service(processing_time=1, dependencies=["h", "i"]),
+    "d": Service(processing_time=1, dependencies=["j", "k", "l", "m"]),
+    "e": Service(processing_time=1, dependencies=["n", "o"]),
 }
 
 
@@ -40,7 +43,7 @@ def compute_delay(services, start, params: Parameters):
         if not service:
             return np.random.exponential(params.default_processing_time, 1)
         spent = np.random.exponential(service.processing_time, 1)
-        return spent + max(recur(child) for child in service.dependencies)
+        return spent + max(recur(d) + np.random.exponential(params.network_latency, 1) for d in service.dependencies)
     return recur(start)
 
 
@@ -56,10 +59,9 @@ def expected_delay(services, start, params: Parameters):
     plt.show()
 
 
-expected_delay(services, start="a", params=Parameters(default_processing_time=5, iter_count=10_000))
+expected_delay(services, start="a", params=Parameters(default_processing_time=5, iter_count=10_000, network_latency=1))
 
 
 # TODO - show the expected delay by node (waiting time) and the processing time
 # TODO - show the graph of the services
-# TODO - show a graph (histogram of the distribution)
 # TODO - you could have a time that depends on the number of times a service is being used (to simulate overload)

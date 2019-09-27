@@ -35,7 +35,7 @@ class Spammer:
             print(r.text)
 
 
-spammer = Spammer(timeout=2, keep_connections=True)
+spammer = Spammer(timeout=2, keep_connections=False)
 trio.run(spammer.spam_server, "http://127.0.0.1:8889/threading/wait?millis=1000", [30, 10, 10])
 print(spammer.count)
 
