@@ -39,8 +39,9 @@ class ServerSimulation:
         def server_thread():
             while True:
                 sent_time = yield request_queue.get()
-                yield env.timeout(self.processing_time)
+                # yield env.timeout(self.processing_time)
                 # yield env.timeout(np.random.exponential(self.processing_time))
+                yield env.timeout(np.random.normal(self.processing_time, self.processing_time * 0.1))
                 served_time = env.now
                 times.append(served_time - sent_time)
 
@@ -71,6 +72,8 @@ def simulate(avg_percentage, spike_multiplier):
 def test():
     spike = 2.0
     simulations = [
+        simulate(0.3, spike),
+        simulate(0.4, spike),
         simulate(0.5, spike),
         simulate(0.6, spike),
         simulate(0.7, spike),
@@ -90,7 +93,7 @@ def test():
     # '''
     fig, ax = plot.subplots()
     for i, (avg, sim) in enumerate(simulations):
-        ax.hist(x=sim, bins=100, range=(0.75, 5), density=True)
+        ax.hist(x=sim, bins=100, range=(0., 5), density=True)
     plot.show()
     # '''
 
