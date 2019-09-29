@@ -52,7 +52,10 @@ class ServerSimulation:
 
 
 def simulate(avg_percentage, spike_multiplier):
-    proc_time = 1
+    # TODO - instead of this logic with SPIKE, do a standard distribution ? not really... TREND modeling
+    # TODO - add a logic to do the retry past a given threshold...
+
+    proc_time = 0.2
     nb_threads = 200
     max_throughput = nb_threads / proc_time
     avg = max_throughput * avg_percentage
@@ -62,7 +65,7 @@ def simulate(avg_percentage, spike_multiplier):
     nb_spike = 3
     normal = int((nb_period * avg - spike * nb_spike) / (nb_period - nb_spike))
     schedule = [normal] * 10 + [normal, spike, normal, normal, spike, normal, normal, spike, normal, normal] + [normal] * 10
-    return avg_percentage, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(until=50, schedule=schedule)
+    return avg_percentage, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(until=nb_period * 2, schedule=schedule)
 
 
 def test():
