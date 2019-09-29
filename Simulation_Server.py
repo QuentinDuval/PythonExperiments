@@ -55,15 +55,19 @@ def simulate(avg_percentage, spike_multiplier):
     proc_time = 1
     nb_threads = 10
     max_throughput = nb_threads / proc_time
-    avg = int(max_throughput * avg_percentage)
+    avg = max_throughput * avg_percentage
     spike = int(avg * spike_multiplier)
+
+    nb_period = 20
+    nb_spike = 3
+    normal = int((nb_period * avg - spike * nb_spike) / (nb_period - nb_spike))
     return avg_percentage, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
-        schedule=[avg, spike, avg, avg, spike, avg, avg, spike, avg, avg] + [avg] * 10,
+        schedule=[normal, spike, normal, normal, spike, normal, normal, spike, normal, normal] + [normal] * 10,
         until=50)
 
 
 def test():
-    spike = 1.5
+    spike = 2.0
     simulations = [
         simulate(0.5, spike),
         simulate(0.6, spike),
@@ -84,7 +88,7 @@ def test():
     # '''
     fig, ax = plot.subplots()
     for i, (avg, sim) in enumerate(simulations):
-        ax.hist(x=sim, bins=100, range=(0.75, 3), density=True)
+        ax.hist(x=sim, bins=100, range=(0.75, 5), density=True)
     plot.show()
     # '''
 
