@@ -51,13 +51,13 @@ class ServerSimulation:
         return times
 
 
-def simulate(avg, spike_multiplier):
+def simulate(avg_percentage, spike_multiplier):
     proc_time = 1
     nb_threads = 10
     max_throughput = nb_threads / proc_time
-    avg = int(max_throughput * avg)
+    avg = int(max_throughput * avg_percentage)
     spike = int(avg * spike_multiplier)
-    return avg, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
+    return avg_percentage, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
         schedule=[avg, spike, avg, avg, spike, avg, avg, spike, avg, avg] + [avg] * 10,
         until=50)
 
