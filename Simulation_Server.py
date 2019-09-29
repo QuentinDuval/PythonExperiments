@@ -53,7 +53,7 @@ class ServerSimulation:
 
 def simulate(avg_percentage, spike_multiplier):
     proc_time = 1
-    nb_threads = 10
+    nb_threads = 200
     max_throughput = nb_threads / proc_time
     avg = max_throughput * avg_percentage
     spike = int(avg * spike_multiplier)
@@ -62,8 +62,8 @@ def simulate(avg_percentage, spike_multiplier):
     nb_spike = 3
     normal = int((nb_period * avg - spike * nb_spike) / (nb_period - nb_spike))
     return avg_percentage, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
-        schedule=[normal, spike, normal, normal, spike, normal, normal, spike, normal, normal] + [normal] * 10,
-        until=50)
+        until=50,
+        schedule=[normal, spike, normal, normal, spike, normal, normal, spike, normal, normal] + [normal] * 10)
 
 
 def test():
