@@ -51,24 +51,26 @@ class ServerSimulation:
         return times
 
 
-def simulate(avg):
-    proc_time = 0.1
-    nb_threads = 100
+def simulate(avg, spike_multiplier):
+    proc_time = 1
+    nb_threads = 10
     max_throughput = nb_threads / proc_time
     avg = int(max_throughput * avg)
+    spike = int(avg * spike_multiplier)
     return avg, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
-        schedule=[avg, avg * 3, avg, avg, avg],
-        until=15)
+        schedule=[avg, spike, avg, avg, spike, avg, avg, spike, avg, avg] + [avg] * 10,
+        until=50)
 
 
 def test():
+    spike = 1.5
     simulations = [
-        simulate(0.5),
-        simulate(0.6),
-        simulate(0.7),
-        simulate(0.8),
-        simulate(0.9),
-        simulate(1.0),
+        simulate(0.5, spike),
+        simulate(0.6, spike),
+        simulate(0.7, spike),
+        simulate(0.8, spike),
+        simulate(0.9, spike),
+        simulate(1.0, spike),
     ]
 
     dfs = []
@@ -82,7 +84,7 @@ def test():
     # '''
     fig, ax = plot.subplots()
     for i, (avg, sim) in enumerate(simulations):
-        ax.hist(x=sim, bins=100, range=(0, 4), density=True)
+        ax.hist(x=sim, bins=100, range=(0.75, 3), density=True)
     plot.show()
     # '''
 
