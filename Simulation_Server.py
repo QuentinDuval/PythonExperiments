@@ -40,6 +40,7 @@ class ServerSimulation:
             while True:
                 sent_time = yield request_queue.get()
                 yield env.timeout(self.processing_time)
+                # yield env.timeout(np.random.exponential(self.processing_time))
                 served_time = env.now
                 times.append(served_time - sent_time)
 
@@ -51,11 +52,22 @@ class ServerSimulation:
 
 
 def test():
-    simulation = ServerSimulation(processing_time=1, nb_threads=15)
-    times = simulation.run(schedule=[10, 30, 10, 10], until=10)
-    df = pd.DataFrame(data=times, columns=['delay'])
-    print(df.describe())
-    df.plot.hist()
+    simulations = [
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1000, 1000 * 3, 1000, 1000, 1000], until=10),
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1250, 1250 * 3, 1250, 1250, 1250], until=10),
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1500, 1500 * 3, 1500, 1500, 1500], until=10),
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1750, 1750 * 3, 1750, 1750, 1750], until=10),
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[2000, 2000 * 3, 2000, 2000, 2000], until=10),
+        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[2250, 2250 * 3, 2250, 2250, 2250], until=10),
+    ]
+
+    fig, ax = plot.subplots(nrows=len(simulations), ncols=1, sharex='all')
+
+    for i, sim in enumerate(simulations):
+        df = pd.DataFrame(data=sim, columns=['latency'])
+        print(df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95]))
+        ax[i].hist(x=sim, bins=20, density=True)
+
     plot.show()
 
 
