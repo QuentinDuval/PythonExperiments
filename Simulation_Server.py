@@ -51,24 +51,51 @@ class ServerSimulation:
         return times
 
 
+def simulate(avg):
+    proc_time = 0.1
+    nb_threads = 100
+    max_throughput = nb_threads / proc_time
+    avg = int(max_throughput * avg)
+    return avg, ServerSimulation(processing_time=proc_time, nb_threads=nb_threads).run(
+        schedule=[avg, avg * 3, avg, avg, avg],
+        until=15)
+
+
 def test():
     simulations = [
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1000, 1000 * 3, 1000, 1000, 1000], until=10),
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1250, 1250 * 3, 1250, 1250, 1250], until=10),
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1500, 1500 * 3, 1500, 1500, 1500], until=10),
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[1750, 1750 * 3, 1750, 1750, 1750], until=10),
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[2000, 2000 * 3, 2000, 2000, 2000], until=10),
-        ServerSimulation(processing_time=0.1, nb_threads=200).run(schedule=[2250, 2250 * 3, 2250, 2250, 2250], until=10),
+        simulate(0.5),
+        simulate(0.6),
+        simulate(0.7),
+        simulate(0.8),
+        simulate(0.9),
+        simulate(1.0),
     ]
 
+    dfs = []
+    for i, (avg, sim) in enumerate(simulations):
+        dfs.append(pd.DataFrame(data=sim, columns=[str(avg)]))
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+    df = pd.concat(dfs, sort=False)
+    print(df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95]))
+
+    # '''
+    fig, ax = plot.subplots()
+    for i, (avg, sim) in enumerate(simulations):
+        ax.hist(x=sim, bins=100, range=(0, 4), density=True)
+    plot.show()
+    # '''
+
+    '''
     fig, ax = plot.subplots(nrows=len(simulations), ncols=1, sharex='all')
 
     for i, sim in enumerate(simulations):
         df = pd.DataFrame(data=sim, columns=['latency'])
         print(df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95]))
-        ax[i].hist(x=sim, bins=20, density=True)
+        ax[i].hist(x=sim, bins=100, density=True)
 
     plot.show()
+    '''
 
 
 test()
