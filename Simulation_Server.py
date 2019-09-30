@@ -99,6 +99,7 @@ def test():
     # '''
     # fig, ax = plot.subplots(nrows=len(simulations) // 2, ncols=2, sharey='all')
     fig, ax = plot.subplots(nrows=len(simulations) // 2, ncols=2)
+    fig.suptitle('Distribution of latency with increasing throughput')
     for i, (avg, sim) in enumerate(simulations):
         graph_coord = (i // 2, i % 2)
         ax[graph_coord].set_title(str(avg * 100))
@@ -108,10 +109,12 @@ def test():
     # '''
 
     fig, ax = plot.subplots(nrows=2, ncols=2)
+    fig.suptitle('Measures of latency with increasing throughput')
     for i, name in enumerate(['mean', '50%', '75%', '95%']):
         graph_coord = (i // 2, i % 2)
         ax[graph_coord].set_title(name)
-        ax[graph_coord].plot(summary.loc[name, :])
+        print(summary.loc[name, :])
+        ax[graph_coord].plot(summary.loc[name, :], '-', summary.loc[name, :], 'o')
     plot.tight_layout()
     plot.show()
 
