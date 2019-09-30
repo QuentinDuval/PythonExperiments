@@ -72,8 +72,6 @@ def simulate(avg_percentage, spike_multiplier):
 def test():
     spike = 2.0
     simulations = [
-        simulate(0.3, spike),
-        simulate(0.4, spike),
         simulate(0.5, spike),
         simulate(0.6, spike),
         simulate(0.7, spike),
@@ -88,25 +86,34 @@ def test():
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
     df = pd.concat(dfs, sort=False)
-    print(df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95]))
+    summary = df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95])
+    print(summary)
 
-    # '''
+    '''
     fig, ax = plot.subplots()
     for i, (avg, sim) in enumerate(simulations):
         ax.hist(x=sim, bins=100, range=(0., 5), density=True)
     plot.show()
+    '''
+
+    # '''
+    # fig, ax = plot.subplots(nrows=len(simulations) // 2, ncols=2, sharey='all')
+    fig, ax = plot.subplots(nrows=len(simulations) // 2, ncols=2)
+    for i, (avg, sim) in enumerate(simulations):
+        graph_coord = (i // 2, i % 2)
+        ax[graph_coord].set_title(str(avg * 100))
+        ax[graph_coord].hist(x=sim, bins=400, range=(0., 3), density=True)
+    plot.tight_layout()
+    plot.show()
     # '''
 
-    '''
-    fig, ax = plot.subplots(nrows=len(simulations), ncols=1, sharex='all')
-
-    for i, sim in enumerate(simulations):
-        df = pd.DataFrame(data=sim, columns=['latency'])
-        print(df.describe(percentiles=[0.1, 0.5, 0.75, 0.9, 0.95]))
-        ax[i].hist(x=sim, bins=100, density=True)
-
+    fig, ax = plot.subplots(nrows=2, ncols=2)
+    for i, name in enumerate(['mean', '50%', '75%', '95%']):
+        graph_coord = (i // 2, i % 2)
+        ax[graph_coord].set_title(name)
+        ax[graph_coord].plot(summary.loc[name, :])
+    plot.tight_layout()
     plot.show()
-    '''
 
 
 test()
