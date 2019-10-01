@@ -72,6 +72,21 @@ class TwoLayerPCA(nn.Module):
         return self.decoder(ys)
 
 
+class ThreeLayerPCA(nn.Module):
+    def __init__(self, feature_size: int, hidden_size: int, output_size: int):
+        super().__init__()
+        self.encoder = nn.Sequential(nn.Linear(feature_size, hidden_size),
+                                     nn.ReLU(), nn.Linear(hidden_size, hidden_size),
+                                     nn.ReLU(), nn.Linear(hidden_size, output_size))
+        self.decoder = nn.Sequential(nn.Linear(output_size, hidden_size),
+                                     nn.ReLU(), nn.Linear(hidden_size, hidden_size),
+                                     nn.ReLU(), nn.Linear(hidden_size, feature_size))
+
+    def forward(self, xs):
+        ys = self.encoder(xs)
+        return self.decoder(ys)
+
+
 """
 Tests:
 - linear approximation
@@ -115,7 +130,8 @@ def test_sphere():
 
     inputs = generate_inputs(size=1000)
     pca = AutoEncoder(model=TwoLayerPCA(feature_size=3, hidden_size=20, output_size=2))
-    pca.fit(inputs=inputs, nb_epoch=500, learning_rate=1e-3, weight_decay=1e-4)
+    # pca = AutoEncoder(model=ThreeLayerPCA(feature_size=3, hidden_size=20, output_size=2))
+    pca.fit(inputs=inputs, nb_epoch=600, learning_rate=1e-3, weight_decay=1e-4)
 
     tests = [new_point(0, 0), new_point(1, 1)]  # TODO - In and out of training distribution
     encoded = pca.encode(tests)
@@ -129,4 +145,4 @@ Running tests
 """
 
 # test_linear()
-# test_sphere()
+test_sphere()
