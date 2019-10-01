@@ -26,14 +26,15 @@ class Parameters:
     iter_count: int
     default_processing_time: float
     network_latency: float
+    sequential_requests: bool
 
 
 services = {
-    "a": Service(processing_time=1, dependencies=["b", "c"]),
-    "b": Service(processing_time=1, dependencies=["d", "e", "f", "g"]),
-    "c": Service(processing_time=1, dependencies=["h", "i"]),
-    "d": Service(processing_time=1, dependencies=["j", "k", "l", "m"]),
-    "e": Service(processing_time=1, dependencies=["n", "o"]),
+    "a": Service(processing_time=5, dependencies=["b", "c"]),
+    "b": Service(processing_time=5, dependencies=["d", "e", "f", "g"]),
+    "c": Service(processing_time=5, dependencies=["h", "i"]),
+    # "d": Service(processing_time=1, dependencies=["j", "k", "l", "m"]),
+    # "e": Service(processing_time=1, dependencies=["n", "o"]),
 }
 
 
@@ -42,8 +43,9 @@ def compute_delay(services, start, params: Parameters):
         service = services.get(node)
         if not service:
             return np.random.exponential(params.default_processing_time, 1)
-        spent = np.random.exponential(service.processing_time, 1)
-        return spent + max(recur(d) + np.random.exponential(params.network_latency, 1) for d in service.dependencies)
+        spent = service.processing_time + np.random.exponential(service.processing_time * 0.2, 1)
+        reducer = sum if params.sequential_requests else max
+        return spent + reducer(recur(d) + params.network_latency + np.random.exponential(params.network_latency * 0.2, 1) for d in service.dependencies)
     return recur(start)
 
 
@@ -59,7 +61,10 @@ def expected_delay(services, start, params: Parameters):
     plt.show()
 
 
-expected_delay(services, start="a", params=Parameters(default_processing_time=5, iter_count=10_000, network_latency=1))
+expected_delay(services, start="a", params=Parameters(default_processing_time=5,
+                                                      iter_count=10_000,
+                                                      network_latency=1,
+                                                      sequential_requests=False))
 
 
 # TODO - show the expected delay by node (waiting time) and the processing time
