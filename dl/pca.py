@@ -169,3 +169,5 @@ Running tests
 # test_linear()
 # test_sphere()
 # test_random() # Cannot learn anything
+
+# TODO - mention that it would not be able to learn anything if the compression was possible with multiple points
