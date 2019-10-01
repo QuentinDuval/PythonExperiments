@@ -133,7 +133,29 @@ def test_sphere():
     # pca = AutoEncoder(model=ThreeLayerPCA(feature_size=3, hidden_size=20, output_size=2))
     pca.fit(inputs=inputs, nb_epoch=600, learning_rate=1e-3, weight_decay=1e-4)
 
-    tests = [new_point(0, 0), new_point(1, 1)]  # TODO - In and out of training distribution
+    tests = [new_point(0, 0), new_point(1, 1)]
+    encoded = pca.encode(tests)
+    decoded = pca.decode(encoded)
+    for i in range(len(tests)):
+        print(tests[i], "=>", decoded[i])
+
+
+def test_random():
+    def new_point(x, y, z):
+        return np.array([x, y, z], dtype=np.float32)
+
+    def generate_inputs(size=100):
+        xs = np.random.uniform(low=0, high=1, size=size)
+        ys = np.random.uniform(low=0, high=1, size=size)
+        zs = np.random.uniform(low=0, high=1, size=size)
+        return [new_point(a, b, c) for a, b, c in zip(xs, ys, zs)]
+
+    inputs = generate_inputs(size=1000)
+    pca = AutoEncoder(model=TwoLayerPCA(feature_size=3, hidden_size=20, output_size=2))
+    # pca = AutoEncoder(model=ThreeLayerPCA(feature_size=3, hidden_size=20, output_size=2))
+    pca.fit(inputs=inputs, nb_epoch=600, learning_rate=1e-3, weight_decay=1e-4)
+
+    tests = [new_point(0, 0, 0), new_point(0.5, 0.5, 0.5)]
     encoded = pca.encode(tests)
     decoded = pca.decode(encoded)
     for i in range(len(tests)):
@@ -145,4 +167,5 @@ Running tests
 """
 
 # test_linear()
-test_sphere()
+# test_sphere()
+# test_random() # Cannot learn anything
