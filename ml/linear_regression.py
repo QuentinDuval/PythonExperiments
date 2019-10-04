@@ -62,8 +62,36 @@ To find the minimum, solve for the gradient equal to 0.
 The gradient of this norm is equal to: 2 X^t X w - 2 X^t y
 
 => Solve: X^t X w = X^t y
+
+
+Solving techniques
+------------------
+* Inverting the matrix is costly (only to be used when you need to multiply by the reverse several times)
+* Gaussian elimination is the best way when you have to do it just once
 """
 
 import numpy as np
+
+
+def linear_regression(xs, ys):
+    X = np.stack(np.array(x, dtype=np.float32) for x in xs)
+    X = np.hstack((X, np.ones(shape=(len(xs), 1))))
+    y = np.array(ys)
+    XT = np.transpose(X)
+    try:
+        w = np.linalg.solve(XT @ X, XT @ y)
+        return w
+    except np.linalg.LinAlgError as e:
+        print(e)
+        return None
+
+
+# Non singular matrix are solved correctly
+ws = linear_regression(xs=[(3,), (5,), (7,), (9,), (11,)], ys=[4, 4, 6, 8, 8])
+print(ws)
+
+# Singular matrix cause it does not use the second dimension
+ws = linear_regression(xs=[(3,1), (5,1), (7,1), (9,1), (11,1)], ys=[4, 4, 6, 8, 8])
+print(ws)
 
 
