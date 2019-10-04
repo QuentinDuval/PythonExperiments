@@ -62,6 +62,10 @@ To find the minimum, solve for the gradient equal to 0.
 The gradient of this norm is equal to: 2 X^t X w - 2 X^t y
 
 => Solve: X^t X w = X^t y
+=> Complexity is O(D ^ 3) with gaussian elimination + O(N * D ^ 2) for the matrix products
+
+TODO - compare with inversion in terms of time as well
+TODO - compare with DL when you have lots of inputs and lots of dimensions (generate inputs with gaussian noise)
 
 
 Solving techniques

@@ -7,6 +7,9 @@ from torch.utils.data import *
 import numpy as np
 
 
+# TODO - do the classic PCA and compute the complexity
+
+
 class AutoEncoder:
     """
     Equivalent of PCA using an auto-encoder:
