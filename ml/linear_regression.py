@@ -128,7 +128,7 @@ def linear_regression_dl(xs, ys):
         for xs, ys in training_loader:
             optimizer.zero_grad()
             output = model(xs)
-            loss = criterion(output.reshape(ys.shape), ys)
+            loss = criterion(output.squeeze(dim=1), ys)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
