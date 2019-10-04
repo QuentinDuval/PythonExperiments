@@ -109,8 +109,9 @@ class Progress:
 
 
 def linear_regression_dl(xs, ys):
+    feature_size = len(xs[0])
     criterion = nn.MSELoss()
-    model = nn.Linear(len(xs[0]), 1)
+    model = nn.Linear(feature_size, 1)
     model.train()
 
     optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=0.)
@@ -127,15 +128,16 @@ def linear_regression_dl(xs, ys):
         for xs, ys in training_loader:
             optimizer.zero_grad()
             output = model(xs)
-            loss = criterion(output.reshape((5,)), ys)
+            loss = criterion(output.reshape(ys.shape), ys)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
         progress.new_loss(total_loss)
-        print(total_loss)
 
     model.eval()
-    return model.weight, model.bias     # TODO - return the weights, not tensors
+    weights = model.weight.detach().reshape((feature_size,)).numpy()
+    bias = model.bias.detach().numpy()
+    return np.hstack((weights, bias))
 
 
 # Non singular matrix are solved correctly
