@@ -91,6 +91,23 @@ def linear_regression(xs, ys):
         return None
 
 
+class Progress:
+    def __init__(self, limit):
+        self.increasing = 0
+        self.limit = limit
+        self.previous = float('inf')
+
+    def new_loss(self, val):
+        if val >= self.previous:
+            self.increasing += 1
+        else:
+            self.increasing = 0
+        self.previous = val
+
+    def __bool__(self):
+        return self.increasing < self.limit
+
+
 def linear_regression_dl(xs, ys):
     criterion = nn.MSELoss()
     model = nn.Linear(len(xs[0]), 1)
@@ -101,11 +118,11 @@ def linear_regression_dl(xs, ys):
     training_set = TensorDataset(inputs, torch.FloatTensor(ys))
     training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
 
-    # TODO - continue while the loss decreases (stop when it does not improve)
     # TODO - check how we can get rid of the reshape
     # TODO - implement the derivative stuff by hand
 
-    for _ in range(10_000):
+    progress = Progress(limit=20)
+    while progress:
         total_loss = 0.
         for xs, ys in training_loader:
             optimizer.zero_grad()
@@ -114,6 +131,7 @@ def linear_regression_dl(xs, ys):
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+        progress.new_loss(total_loss)
         print(total_loss)
 
     model.eval()
