@@ -34,6 +34,12 @@ ANCCHOM;Ancienneté de chômage en 8 postes;6;De 1 an et demi à moins de 2 ans;
 ANCCHOM;Ancienneté de chômage en 8 postes;7;De 2 ans à moins de 3 ans;CHAR;1
 ANCCHOM;Ancienneté de chômage en 8 postes;8;3 ans ou plus;CHAR;1
 
+ANCENTR4;Ancienneté dans l'entreprise ou dans la fonction publique (4 postes);;Sans objet (personnes non actives occupées, travailleurs informels et travailleurs intérimaires,en activité temporaire ou d'appoint) ou non renseigné;CHAR;1
+ANCENTR4;Ancienneté dans l'entreprise ou dans la fonction publique (4 postes);1;Moins d'un an;CHAR;1
+ANCENTR4;Ancienneté dans l'entreprise ou dans la fonction publique (4 postes);2;De 1 an à moins de 5 ans;CHAR;1
+ANCENTR4;Ancienneté dans l'entreprise ou dans la fonction publique (4 postes);3;De 5 ans à moins de 10 ans;CHAR;1
+ANCENTR4;Ancienneté dans l'entreprise ou dans la fonction publique (4 postes);4;10 ans ou plus;CHAR;1
+
 QPRC;Position professionnelle dans l'emploi principal;;Sans objet (personnes non actives occupées et actifs occupés exerçant pour le compte d'un particulier ou de plusieurs employeurs sans principal) ;CHAR;1
 QPRC;Position professionnelle dans l'emploi principal;1;Manoeuvre ou ouvrier spécialisé;CHAR;1
 QPRC;Position professionnelle dans l'emploi principal;2;Ouvrier qualifié ou hautement qualifié, technicien d'atelier;CHAR;1
@@ -128,8 +134,11 @@ HPLUSA;Nombre d'heures de travail souhaitées par semaine dans l'idéal (avec la
 NBTOTE;Nombre d'heures travaillées en moyenne par semaine pour l'ensemble des activités professionnelles de l'individu (pour ceux ayant plusieurs activités professionnelles);;Sans objet (voir commentaires);NUM;3.1
 """
 
-import pandas as pd
+
 import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+from sklearn import linear_model
 
 
 df = pd.read_csv("FD_csv_EEC18.csv", sep=';')
@@ -155,9 +164,25 @@ def amount_of_work_desired(df):
     worked = reduced["HHCE"]
     worked_desired = reduced["HPLUSA"]
     ratio = worked_desired / worked
+    print(df['HHCE'].describe())
     print(worked.describe())
     print(worked_desired.describe())
     print(ratio.describe())
+
+    # Trying a linear regression but it is actually not very well adapted
+    reg = linear_model.LinearRegression()
+    reg.fit(X=worked.values.reshape(-1, 1), y=worked_desired.values)
+    slope = reg.coef_[0]
+    intercept = reg.intercept_
+    lo, hi = worked.min(), worked.max()
+    lo_val = lo * slope + intercept
+    hi_val = hi * slope + intercept
+
+    plt.scatter(x=worked, y=worked_desired, alpha=0.01, marker='.')
+    # plt.hexbin(x=worked, y=worked_desired, gridsize=(10, 10))
+    plt.plot([lo, hi], [lo_val, hi_val], linestyle='-', color='orange')
+    plt.plot([lo, hi], [lo, hi], linestyle='-', color='darkgreen')
+    plt.show()
 
 
 amount_of_work_desired(df)
