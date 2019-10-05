@@ -114,16 +114,16 @@ class Progress:
 
 def linear_regression_dl(xs, ys):
     feature_size = len(xs[0])
-    criterion = nn.MSELoss()
+
+    inputs = torch.tensor(xs, dtype=torch.float32, requires_grad=False)
+    expected = torch.tensor(ys, dtype=torch.float32, requires_grad=False)
+    training_loader = DataLoader(TensorDataset(inputs, expected), batch_size=100, shuffle=True)
+
     model = nn.Linear(feature_size, 1)
     model.train()
-
     optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=0.)
-    inputs = torch.stack([torch.FloatTensor(x) for x in xs])
-    training_set = TensorDataset(inputs, torch.FloatTensor(ys))
-    training_loader = DataLoader(training_set, batch_size=100, shuffle=True)
+    criterion = nn.MSELoss()
 
-    # TODO - check how we can get rid of the reshape
     # TODO - implement the derivative stuff by hand
 
     progress = Progress(limit=20)
