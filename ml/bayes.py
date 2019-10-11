@@ -75,3 +75,42 @@ print(bayes.posteriors())
 bayes.observation(6)
 print(bayes.posteriors())
 
+
+"""
+Diagnosing a disease:
+- two tests, A and B, with some false positive and false negative
+- get the probability of being infected from observations
+"""
+
+p_sick = 0.001
+bayes = BayesRule(
+    priors={"infected": p_sick, "healthy": (1-p_sick)},
+    conditions={
+        "infected": {
+            ("A", True): 0.99,
+            ("A", False): 0.01,
+            ("B", True): 0.9,
+            ("B", False): 0.1
+        },
+        "healthy": {
+            ("A", True): 0.02,
+            ("A", False): 0.98,
+            ("B", True): 0.03,
+            ("B", False): 0.97
+        }
+    }
+)
+
+bayes.observation(("A", True))
+print(bayes.posterior_of("infected"))
+bayes.observation(("B", True))
+print(bayes.posterior_of("infected"))
+
+
+"""
+Diagnosing a disease:
+- imagine that all tests are independents and all have the same probabilities of false positive and false negative
+- check how many iteration of observations you need before the priors do not matter much anymore
+"""
+
+# TODO
