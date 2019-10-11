@@ -67,8 +67,11 @@ bayes = BayesRule(
 
 print(bayes.posteriors())
 bayes.observation(4)
+print(bayes.posteriors())
 bayes.observation(6)
+print(bayes.posteriors())
 bayes.observation(7)
+print(bayes.posteriors())
 bayes.observation(6)
 print(bayes.posteriors())
 
