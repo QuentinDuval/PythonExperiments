@@ -113,4 +113,4 @@ Diagnosing a disease:
 - check how many iteration of observations you need before the priors do not matter much anymore
 """
 
-# TODO
+# check the 'bayes_schemas' notebook
