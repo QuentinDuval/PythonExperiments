@@ -107,12 +107,17 @@ def test_huge(size=1000):
     points2 = random_points(loc=[5., 3., 6.], scale=[1., 1., 1.], size=size // 3)
     points3 = random_points(loc=[10., 4., 6.], scale=[1., 1., 1.], size=size // 3)
     points = np.concatenate([points1, points2, points3], axis=0)
-
     np.random.shuffle(points)
+
     start_time = time.time()
-    print(k_means(points, k=3, max_iter=100))
-    print(time.time() - start_time)
+    outputs = k_means(points, k=3, max_iter=100)
+    spent_time = time.time() - start_time
+    return {
+        'inputs': points,
+        'outputs': outputs,
+        'timing': spent_time
+    }
 
 
-test()
-test_huge(size=10_000)
+# test()
+# print(test_huge(size=10_000)['outputs'])
