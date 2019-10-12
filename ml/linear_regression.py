@@ -155,3 +155,5 @@ print(ws)
 # Now with deep learning
 ws = linear_regression_dl(xs=[(3,), (5,), (7,), (9,), (11,)], ys=[4, 4, 6, 8, 8])
 print(ws)
+
+# TODO - play with regression of higher degree polynomials (or even sin, cos acting as bases of the vectorial space)
