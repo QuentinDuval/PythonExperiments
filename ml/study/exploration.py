@@ -135,6 +135,7 @@ NBTOTE;Nombre d'heures travaillées en moyenne par semaine pour l'ensemble des a
 """
 
 
+from collections import *
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -150,7 +151,7 @@ def get_ration_male_female(df):
     return len(males.index) / (len(males.index) + len(females.index))
 
 
-def amount_of_work_desired(df):
+def amount_of_work_desired_1(df):
     active = df.loc[df["ACTEU"] == 1]
     reduced = active[["HHCE",       # Worked hours
                       "HPLUSA",     # Desired worked hours
@@ -160,6 +161,7 @@ def amount_of_work_desired(df):
                       ]].dropna()
     reduced = reduced.loc[(reduced["HPLUSA"] != 0) & (reduced["HHCE"] != 0)]
 
+    # First thing to notice, the sampling processes is biased:
     # Interestingly, those who answer the question "how much to increase" have lower work amount
     worked = reduced["HHCE"]
     worked_desired = reduced["HPLUSA"]
@@ -178,14 +180,28 @@ def amount_of_work_desired(df):
     lo_val = lo * slope + intercept
     hi_val = hi * slope + intercept
 
-    plt.scatter(x=worked, y=worked_desired, alpha=0.01, marker='.')
-    # plt.hexbin(x=worked, y=worked_desired, gridsize=(10, 10))
-    plt.plot([lo, hi], [lo_val, hi_val], linestyle='-', color='orange')
-    plt.plot([lo, hi], [lo, hi], linestyle='-', color='darkgreen')
+    # The scatter plot will leave you with the false impression that everyone is correctly represented
+    # The Hexbin will show that there are parts that are really dense for people working 40hours
+
+    # So the idea is to re-sample to have equal number of participants in all categories?
+    # Another alternative is just to compute percentages
+    # '''
+    reduced = reduced.groupby('HHCE').apply(lambda x: x[:1000])
+    worked = reduced["HHCE"]
+    worked_desired = reduced["HPLUSA"]
+    # '''
+
+    # plt.scatter(x=worked, y=worked_desired, alpha=0.01, marker='.')
+    fig, plots = plt.subplots(nrows=1, ncols=2)
+    plots[0].hexbin(x=worked, y=worked_desired, gridsize=(20, 20), cmap='Blues')
+    plots[0].plot([lo, hi], [lo_val, hi_val], linestyle='-', color='orange')
+    plots[0].plot([lo, hi], [lo, hi], linestyle='-', color='darkgreen')
+    plots[1].hist(worked, bins=100)
+    plt.tight_layout()
     plt.show()
 
 
-amount_of_work_desired(df)
+amount_of_work_desired_1(df)
 
 
 '''

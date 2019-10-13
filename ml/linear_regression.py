@@ -64,7 +64,7 @@ The gradient of this norm is equal to: 2 X^t X w - 2 X^t y
 => Solve: X^t X w = X^t y
 => Complexity is O(D ^ 3) with gaussian elimination + O(N * D ^ 2) for the matrix products
 
-TODO - compare with inversion in terms of time as well
+TODO - compare with implementation in terms of matrix inversion (compute time)
 TODO - compare with DL when you have lots of inputs and lots of dimensions (generate inputs with gaussian noise)
 
 
@@ -142,18 +142,3 @@ def linear_regression_dl(xs, ys):
     weights = model.weight.detach().reshape((feature_size,)).numpy()
     bias = model.bias.detach().numpy()
     return np.hstack((weights, bias))
-
-
-# Non singular matrix are solved correctly
-ws = linear_regression(xs=[(3,), (5,), (7,), (9,), (11,)], ys=[4, 4, 6, 8, 8])
-print(ws)
-
-# Singular matrix cause it does not use the second dimension
-ws = linear_regression(xs=[(3,1), (5,1), (7,1), (9,1), (11,1)], ys=[4, 4, 6, 8, 8])
-print(ws)
-
-# Now with deep learning
-ws = linear_regression_dl(xs=[(3,), (5,), (7,), (9,), (11,)], ys=[4, 4, 6, 8, 8])
-print(ws)
-
-# TODO - play with regression of higher degree polynomials (or even sin, cos acting as bases of the vectorial space)
