@@ -86,6 +86,7 @@ from torch.utils.data import DataLoader, TensorDataset
 Implementation based on the closed formula for the MSE error
 """
 
+
 def linear_regression(xs, ys):
     X = np.stack(np.array(x, dtype=np.float32) for x in xs)
     X = np.hstack((X, np.ones(shape=(len(xs), 1))))
@@ -102,6 +103,7 @@ def linear_regression(xs, ys):
 """
 Implementation based on pytorch and usual deep learning practices
 """
+
 
 class Progress:
     def __init__(self, limit):
@@ -156,6 +158,7 @@ def linear_regression_dl(xs, ys):
 Packaging the model to be more easily used
 """
 
+
 class LinearRegression:
     def __init__(self, regression_method):
         self.regression_method = regression_method
@@ -177,6 +180,7 @@ class LinearRegression:
 Packaging the model to include feature engineering:
 The transformation of input allows to accomodate for more models (like quadratic, cubic, etc)
 """
+
 
 class MappedRegression:
     def __init__(self, regression_method, transformation):
