@@ -179,7 +179,7 @@ def regression_dl(xs, ys, model):
 
     # TODO - implement the derivative stuff by hand
 
-    progress = Progress(limit=20)
+    progress = Progress(limit=50)
     while progress:
         total_loss = 0.
         for xs, ys in training_loader:
