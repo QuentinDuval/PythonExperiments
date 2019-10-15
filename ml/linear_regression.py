@@ -82,6 +82,10 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
 
+"""
+Implementation based on the closed formula for the MSE error
+"""
+
 def linear_regression(xs, ys):
     X = np.stack(np.array(x, dtype=np.float32) for x in xs)
     X = np.hstack((X, np.ones(shape=(len(xs), 1))))
@@ -94,6 +98,10 @@ def linear_regression(xs, ys):
         print(e)
         return None
 
+
+"""
+Implementation based on pytorch and usual deep learning practices
+"""
 
 class Progress:
     def __init__(self, limit):
@@ -142,3 +150,50 @@ def linear_regression_dl(xs, ys):
     weights = model.weight.detach().reshape((feature_size,)).numpy()
     bias = model.bias.detach().numpy()
     return np.hstack((weights, bias))
+
+
+"""
+Packaging the model to be more easily used
+"""
+
+class LinearRegression:
+    def __init__(self, regression_method):
+        self.regression_method = regression_method
+        self.slope = 0
+        self.intercept = 0
+        
+    def fit(self, xs, ys):
+        self.slope, self.intercept = self.regression_method(xs, ys)
+    
+    def transform(self, xs):
+        return self.intercept + np.array(xs) * self.slope
+    
+    @property
+    def parameters(self):
+        return {'slope': self.slope, 'intercept': self.intercept}
+
+
+"""
+Packaging the model to include feature engineering:
+The transformation of input allows to accomodate for more models (like quadratic, cubic, etc)
+"""
+
+class MappedRegression:
+    def __init__(self, regression_method, transformation):
+        self.regression_method = regression_method
+        self.transformation = transformation
+        self.weights = self.transformation([(0.,)])
+        self.intercept = 0
+        
+    def fit(self, xs, ys):
+        ws = self.regression_method(self.transformation(xs), ys)
+        self.weights = ws[:-1]
+        self.intercept = ws[-1]
+    
+    def transform(self, xs):
+        return self.intercept + self.transformation(xs) @ self.weights
+    
+    @property
+    def parameters(self):
+        return {'weights': self.weights, 'intercept': self.intercept}
+
