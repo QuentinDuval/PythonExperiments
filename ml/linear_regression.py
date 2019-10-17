@@ -87,13 +87,23 @@ Implementation based on the closed formula for the MSE error
 """
 
 
+def np_unsqueeze(xs, dim):
+    if xs.ndim == 1:
+        return np.expand_dims(xs, axis=dim)
+    return xs
+
+
 def linear_regression(xs, ys):
-    X = np.stack(np.array(x, dtype=np.float32) for x in xs)
+    """
+    Can be used for multivariate regression (several dimensions in Y)
+    """
+    X = np.array(xs, dtype=np.float32)
+    X = np_unsqueeze(X, dim=1)  # If the inputs just have one dimension: add a dimension to add the column for the bias
     X = np.hstack((X, np.ones(shape=(len(xs), 1))))
-    y = np.array(ys)
+    Y = np.array(ys)
     XT = np.transpose(X)
     try:
-        w = np.linalg.solve(XT @ X, XT @ y)
+        w = np.linalg.solve(XT @ X, XT @ Y)
         return w
     except np.linalg.LinAlgError as e:
         print(e)
@@ -130,7 +140,7 @@ class MappedRegression:
     def __init__(self, regression_method, transformation):
         self.regression_method = regression_method
         self.transformation = transformation
-        self.weights = self.transformation([(0.,)])
+        self.weights = None
         self.intercept = 0
 
     def fit(self, xs, ys):
@@ -169,9 +179,8 @@ class Progress:
 
 
 def regression_dl(xs, ys, model):
-    inputs = torch.tensor(xs, dtype=torch.float32, requires_grad=False)
-    expected = torch.tensor(ys, dtype=torch.float32, requires_grad=False)
-    training_loader = DataLoader(TensorDataset(inputs, expected), batch_size=100, shuffle=True)
+    ys = torch.tensor(ys, dtype=torch.float32, requires_grad=False)
+    training_loader = DataLoader(TensorDataset(xs, ys), batch_size=100, shuffle=True)
 
     model.train()
     optimizer = optim.Adam(model.parameters(), lr=1e-2, weight_decay=0.)
@@ -196,7 +205,9 @@ def regression_dl(xs, ys, model):
 
 
 def linear_regression_dl(xs, ys):
-    feature_size = len(xs[0])
+    xs = torch.tensor(xs, dtype=torch.float32, requires_grad=False)
+    xs = xs.unsqueeze(dim=1)
+    feature_size = xs.size()[1]
     model = regression_dl(xs, ys, model=nn.Linear(feature_size, 1))
     weights = model.weight.detach().reshape((feature_size,)).numpy()
     bias = model.bias.detach().numpy()
@@ -217,11 +228,16 @@ class MultiLayerRegressionDL:
         self.model = None
 
     def fit(self, xs, ys):
+        xs = self.to_tensor(xs)
         self.model = self.regression_method(xs, ys)
 
     def transform(self, xs):
-        xs = torch.tensor(xs, dtype=torch.float32, requires_grad=False)
+        xs = self.to_tensor(xs)
         return self.model(xs).detach().numpy()
+
+    def to_tensor(self, xs):
+        xs = torch.tensor(xs, dtype=torch.float32, requires_grad=False)
+        return xs.unsqueeze(dim=1)
 
     @property
     def parameters(self):
