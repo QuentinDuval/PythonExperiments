@@ -38,6 +38,11 @@ def guess_mapping(words: List[str]) -> Dict[str, str]:
     n = len(words)
     ordering_constraints = {c: set() for c in string.ascii_lowercase}
 
+    # TODO - you should be able to do it in O(N):
+    #   - scan first letters (to have the ordering there)
+    #   - scan second letters in each group having same first letter
+    #   - etc => can basically be done with a recursion
+
     for i in range(n):
         for j in range(i+1, n):
             w1 = words[i]
