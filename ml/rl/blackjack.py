@@ -168,6 +168,9 @@ class BlackJackTransition:
     reward: float
     state: VisibleState  # None if we reached the end of the game
 
+    def scale_prob(self, prob):
+        return BlackJackTransition(probability=self.probability * prob, reward=self.reward, state=self.state)
+
 
 class BlackJackModel(abc.ABC):
 
@@ -204,7 +207,7 @@ class BlackJackExactModel(BlackJackModel):
 
     def _on_hit(self, state: VisibleState) -> Generator[BlackJackTransition, None, None]:
         for card, prob in self.card_probs.items():
-            hand = self._to_hand(state)
+            hand = self._to_hand(state.current_total, state.has_usable_ace)
             hand.cards.append(card)
             new_state = VisibleState(dealer_card=state.dealer_card,
                                      current_total=hand.total,
@@ -214,28 +217,35 @@ class BlackJackExactModel(BlackJackModel):
             else:
                 yield BlackJackTransition(probability=prob, reward=0, state=new_state)
 
-    def _to_hand(self, state: VisibleState) -> Hand:
-        if not state.has_usable_ace:
-            return Hand(cards=[state.current_total])
+    def _to_hand(self, total: int, has_usable_ace: bool) -> Hand:
+        if not has_usable_ace:
+            return Hand(cards=[total])
         else:
-            return Hand(cards=[state.current_total - 11, 1])
+            return Hand(cards=[total - 11, 1])
 
-    def _on_stick(self, state: VisibleState) -> Generator[BlackJackTransition, None, None]:
+    def _on_stick(self, state: VisibleState) -> List[BlackJackTransition]:
+        all_transitions = []
         for card, prob in self.card_probs.items():
-            dealer_hand = Hand(cards=[state.dealer_card, card])
-            yield from self._on_dealer_turn(state, dealer_hand, prob)
+            hand = Hand(cards=[state.dealer_card, card])
+            transitions = self._on_dealer_turn(state.current_total, hand.total, hand.usable_ace)
+            all_transitions.extend(t.scale_prob(prob) for t in transitions)
+        return all_transitions
 
-    def _on_dealer_turn(self, state: VisibleState, dealer_hand: Hand, prob: float) -> Generator[
-        BlackJackTransition, None, None]:
-        if dealer_hand.total > 21:
-            yield BlackJackTransition(probability=prob, reward=1, state=None)
-        elif dealer_hand.total == 21 and state.current_total == 21:
-            yield BlackJackTransition(probability=prob, reward=0, state=None)
-        elif dealer_hand.total >= 17:
-            reward = 1 if state.current_total > dealer_hand.total else -1
-            yield BlackJackTransition(probability=prob, reward=reward, state=None)
-        else:
-            for card, card_prob in self.card_probs.items():
-                new_dealer_hand = Hand(dealer_hand.cards)
-                new_dealer_hand.cards.append(card)
-                yield from self._on_dealer_turn(state, new_dealer_hand, prob=prob * card_prob)
+    @lru_cache(maxsize=None)
+    def _on_dealer_turn(self, player_total: int, dealer_total: int, dealer_has_usable_ace: bool) -> List[BlackJackTransition]:
+        if dealer_total > 21:
+            return [BlackJackTransition(probability=1., reward=1, state=None)]
+        elif dealer_total == 21 and player_total == 21:
+            return [BlackJackTransition(probability=1., reward=0, state=None)]
+        elif dealer_total >= 17:
+            reward = 1 if player_total > dealer_total else -1
+            return [BlackJackTransition(probability=1., reward=reward, state=None)]
+
+        all_transitions = []
+        for card, prob in self.card_probs.items():
+            hand = self._to_hand(dealer_total, dealer_has_usable_ace)
+            hand.cards.append(card)
+            transitions = self._on_dealer_turn(player_total, hand.total, hand.usable_ace)
+            all_transitions.extend(t.scale_prob(prob) for t in transitions)
+        return all_transitions
+
