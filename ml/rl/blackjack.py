@@ -122,6 +122,8 @@ class BlackJack:
         self.is_over = False
 
     def get_state(self) -> VisibleState:
+        if self.is_over:
+            return None
         total, usable_ace = self.player.state
         return VisibleState(
             dealer_card=self.dealer.first_card,
@@ -273,14 +275,14 @@ class BlackJackLearnedModel(BlackJackModel):
         self._rewards = defaultdict(float)
 
     def get_transitions(self, state: VisibleState, action: Action) -> List[BlackJackTransition]:
-        return list(self.outcomes(state, action))
+        return list(self._outcomes(state, action))
 
     def add(self, state, action, new_state, reward):
         self._rewards[(state, action, new_state)] = reward
         self._transitions[(state, action)][new_state] += 1
         self._total_transitions[(state, action)] += 1
 
-    def outcomes(self, state, action):
+    def _outcomes(self, state, action):
         total_transitions = self._total_transitions[(state, action)]
         for new_state, count in self._transitions[(state, action)].items():
             yield BlackJackTransition(
@@ -290,7 +292,7 @@ class BlackJackLearnedModel(BlackJackModel):
 
     @classmethod
     def learn_from_env(cls, game: BlackJack, iteration_nb: int):
-        model = BlackJackLearnedModel()
+        model = cls()
         for _ in range(iteration_nb):
             game.reset()
             state = game.get_state()
@@ -300,6 +302,24 @@ class BlackJackLearnedModel(BlackJackModel):
             new_state = game.get_state()
             model.add(state, action, new_state, reward)
         return model
+
+    @classmethod
+    def learn_from_env_balanced(cls, game: BlackJack, iteration_nb: int):
+        model = cls()
+        states = VisibleState.all()
+        for i in range(iteration_nb):
+            state = states[i % len(states)]
+            player_hand = Hand(cards=[state.current_total] if not state.has_usable_ace else [state.current_total - 11, 1])
+            dealer_hand = Hand(cards=[state.dealer_card])
+            dealer_hand.pick_card()
+            game.reset(player=player_hand, dealer=dealer_hand)
+            actions = game.get_actions()
+            action = np.random.choice(actions)
+            reward = game.play(action)
+            new_state = game.get_state()
+            model.add(state, action, new_state, reward)
+        return model
+
 
 
 # TODO - tests
