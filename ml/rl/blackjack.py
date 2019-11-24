@@ -24,6 +24,10 @@ class Action(enum.Enum):
     def all():
         return [Action.HIT, Action.STICK]
 
+    @staticmethod
+    def sample(size=None):
+        return np.random.choice(Action.all(), size=size)
+
 
 @dataclass(frozen=True)
 class VisibleState:
@@ -158,7 +162,7 @@ class BlackJack:
 
 
 """
-Model of a BlackJack game (stochastic model)
+Model of a BlackJack game
 """
 
 
@@ -177,6 +181,11 @@ class BlackJackModel(abc.ABC):
     @abc.abstractmethod
     def get_transitions(self, state: VisibleState, action: Action) -> List[BlackJackTransition]:
         pass
+
+
+"""
+Stochastic model implementation
+"""
 
 
 class BlackJackExactModel(BlackJackModel):
@@ -249,3 +258,48 @@ class BlackJackExactModel(BlackJackModel):
             all_transitions.extend(t.scale_prob(prob) for t in transitions)
         return all_transitions
 
+
+"""
+Stochastic model implementation based on experience (learned model)
+- Attempt at modeling the probability (new_state, reward | state, action)
+- Learned from experience from a sample model (the environment)
+"""
+
+
+class BlackJackLearnedModel(BlackJackModel):
+    def __init__(self):
+        self._transitions = defaultdict(lambda: defaultdict(int))
+        self._total_transitions = defaultdict(int)
+        self._rewards = defaultdict(float)
+
+    def get_transitions(self, state: VisibleState, action: Action) -> List[BlackJackTransition]:
+        return list(self.outcomes(state, action))
+
+    def add(self, state, action, new_state, reward):
+        self._rewards[(state, action, new_state)] = reward
+        self._transitions[(state, action)][new_state] += 1
+        self._total_transitions[(state, action)] += 1
+
+    def outcomes(self, state, action):
+        total_transitions = self._total_transitions[(state, action)]
+        for new_state, count in self._transitions[(state, action)].items():
+            yield BlackJackTransition(
+                probability=count / total_transitions,
+                reward=self._rewards[(state, action, new_state)],
+                state=new_state)
+
+    @classmethod
+    def learn_from_env(cls, game: BlackJack, iteration_nb: int):
+        model = BlackJackLearnedModel()
+        for _ in range(iteration_nb):
+            game.reset()
+            state = game.get_state()
+            actions = game.get_actions()
+            action = np.random.choice(actions)
+            reward = game.play(action)
+            new_state = game.get_state()
+            model.add(state, action, new_state, reward)
+        return model
+
+
+# TODO - tests
