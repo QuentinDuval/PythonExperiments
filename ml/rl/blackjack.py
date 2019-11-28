@@ -110,6 +110,9 @@ class Hand:
 
 
 class BlackJack:
+    # TODO - you do not need a HAND for the dealer, not until the very last moment...
+    # TODO - you do not need a HAND for the player either, just a total + usable ace...
+
     def __init__(self):
         self.dealer: Hand = None
         self.player: Hand = None
