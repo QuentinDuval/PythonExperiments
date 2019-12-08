@@ -16,6 +16,8 @@ FORCE_FIELD_RADIUS = 400
 MAX_TURN_DEG = 18
 MAX_TURN_RAD = MAX_TURN_DEG / 360 * 2 * math.pi
 
+BOOST_STRENGTH = 700
+
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
 
@@ -166,8 +168,8 @@ class MinimaxAgent:
             self.previous_opponent = opponent
 
         thrust = self.search_action(player, opponent)
-        if self.boost_available and thrust == 100 and player.next_checkpoint_dist > 3000:
-            thrust = "BOOST"  # TODO - the boost should only be done if angle is perfect
+        if thrust > 100:
+            thrust = "BOOST"
             self.boost_available = False
         else:
             thrust = str(thrust)
@@ -182,9 +184,11 @@ class MinimaxAgent:
         vehicle = get_vehicle(self.previous_player, player)
         self.report_bad_prediction(vehicle)
 
+        possible_thrusts = [BOOST_STRENGTH, 100, 0] if self.boost_available else [100, 0]
+
         min_dist = float('inf')
         best_thrust = 0
-        for thrust in [100, 0]:
+        for thrust in possible_thrusts:
             d = self.best_move(vehicle, player.checkpoint, thrust, depth=6)
             # debug("possible move:", thrust, d)
             if d < min_dist:
@@ -216,7 +220,7 @@ class MinimaxAgent:
             return dist
 
         if dist < CHECKPOINT_RADIUS ** 2:
-            return dist
+            return - depth # TODO - to force to use the shortest depth
 
         return min(self.best_move(vehicle, next_checkpoint, thrust, depth - 1) for thrust in [100, 0])
 
