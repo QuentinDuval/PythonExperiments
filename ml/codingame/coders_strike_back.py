@@ -94,7 +94,7 @@ Model:
 def get_vehicle(prev: PlayerInput, curr: PlayerInput) -> Vehicle:
     prev_position = prev.position
     curr_position = curr.position
-    speed = norm(curr_position - prev_position)
+    speed = curr_position - prev_position
 
     checkpoint_direction = player.checkpoint - player.position
     next_checkpoint_angle_rad = curr.next_checkpoint_angle / 180 * math.pi
@@ -109,16 +109,8 @@ def get_vehicle(prev: PlayerInput, curr: PlayerInput) -> Vehicle:
     return Vehicle(position=curr_position, speed=speed, direction=player_angle)
 
 
-# TODO - something in the model is wrong:
-# * the angles are wrong? recall the coordinate from top-left! plus rad vs degree
-# * MORE IMPORTANTLY: the direction of car is NOT direction of speed (wrong computations)
-
 def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int) -> Vehicle:
-    speed_norm = vehicle.speed
-    speed = np.array([
-        speed_norm * math.cos(vehicle.direction),
-        speed_norm * math.sin(vehicle.direction)
-    ])
+    speed = vehicle.speed
 
     to_next_checkpoint = next_checkpoint - vehicle.position
     to_next_angle = get_angle(to_next_checkpoint)
@@ -129,12 +121,12 @@ def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int) -> Veh
         new_direction = max(vehicle.direction - MAX_TURN_RAD, to_next_angle)
 
     dv_dt = np.array([
-        thrust * math.cos(new_direction),
-        thrust * math.sin(new_direction)
+        thrust * math.cos(new_direction) - 0.15 * speed[0],
+        thrust * math.sin(new_direction) - 0.15 * speed[1]
     ])
 
     new_speed = speed + dv_dt  # the time step is one
-    return Vehicle(position=vehicle.position + new_speed, speed=norm(new_speed), direction=new_direction)
+    return Vehicle(position=vehicle.position + new_speed, speed=new_speed, direction=new_direction)
 
 
 """
