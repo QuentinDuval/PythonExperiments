@@ -13,6 +13,9 @@ HEIGHT = 9000
 CHECKPOINT_RADIUS = 600
 FORCE_FIELD_RADIUS = 400
 
+MAX_TURN_DEG = 18
+MAX_TURN_RAD = MAX_TURN_DEG / 360 * 2 * math.pi
+
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
 
@@ -32,14 +35,17 @@ def debug(*args):
 Inputs
 """
 
-Vector = namedtuple('Position', ['x', 'y'])
+Vector = np.ndarray
 
 Vehicle = namedtuple('Vehicle', ['position', 'speed', 'direction'])
 
+Checkpoint = namedtuple('Checkpoint', ['position'])
+
 PlayerInput = namedtuple('PlayerInput', [
-    'x', 'y',
-    'next_checkpoint_x', 'next_checkpoint_y',
-    'next_checkpoint_dist', 'next_checkpoint_angle'
+    'position',
+    'checkpoint',
+    'next_checkpoint_dist',
+    'next_checkpoint_angle'
 ])
 
 Opponent = namedtuple('Opponent', ['x', 'y'])
@@ -52,37 +58,30 @@ Vector arithmetic
 """
 
 
-def get_angle(vector: Vector):
-    # Get angle from a vector (x, y)
-    if vector.x > 0:
-        return np.arctan(vector.y / vector.x)
-    if vector.x < 0:
-        return math.pi - np.arctan(- vector.y / vector.x)
-    return math.pi / 2 if vector.y >= 0 else -math.pi / 2
+def get_angle(v):
+    # Get angle from a vector (x, y) in radian
+    x, y = v
+    if x > 0:
+        return np.arctan(y / x)
+    if x < 0:
+        return math.pi - np.arctan(- y / x)
+    return math.pi / 2 if y >= 0 else -math.pi / 2
 
 
-def add_vector(v1: Vector, v2: Vector):
-    return Vector(x=v1.x + v2.x, y=v1.y + v2.y)
-
-
-def sub_vector(v1: Vector, v2: Vector):
-    return Vector(x=v1.x - v2.x, y=v1.y - v2.y)
-
-
-def norm2(v: Vector):
-    return v.x ** 2 + v.y ** 2
+def norm2(v):
+    return np.dot(v, v)
 
 
 def norm(vector):
     return math.sqrt(norm2(vector))
 
 
-def distance2(x, y):
-    return norm2(sub_vector(x, y))
+def distance2(from_, to_):
+    return norm2(to_ - from_)
 
 
-def distance(x, y):
-    return norm(sub_vector(x, y))
+def distance(from_, to_):
+    return norm(to_ - from_)
 
 
 """
@@ -92,49 +91,50 @@ Model:
 """
 
 
-def position_vector(player: PlayerInput) -> Vector:
-    return Vector(x=player.x, y=player.y)
-
-
-def checkpoint_vector(player: PlayerInput) -> Vector:
-    return Vector(x=player.next_checkpoint_x, y=player.next_checkpoint_y)
-
-
-def direction_vector(player: PlayerInput) -> Vector:
-    return Vector(x=player.next_checkpoint_x - player.x, y=player.next_checkpoint_y - player.y)
-
-
 def get_vehicle(prev: PlayerInput, curr: PlayerInput) -> Vehicle:
-    prev_position = position_vector(prev)
-    position = position_vector(curr)
-    speed = norm(sub_vector(position, prev_position))
+    prev_position = prev.position
+    curr_position = curr.position
+    speed = norm(curr_position - prev_position)
 
-    checkpoint_direction = direction_vector(curr)
+    checkpoint_direction = player.checkpoint - player.position
+    next_checkpoint_angle_rad = curr.next_checkpoint_angle / 180 * math.pi
     direction_angle = get_angle(checkpoint_direction)
-    player_angle = direction_angle - curr.next_checkpoint_angle
-    return Vehicle(position=position, speed=speed, direction=player_angle)
+    player_angle = direction_angle - next_checkpoint_angle_rad
 
+    debug("checkpoint dir:", checkpoint_direction)
+    debug("direction angle:", direction_angle)
+    debug("next_cp angle:", next_checkpoint_angle_rad)
+    debug("player angle:", player_angle)
+
+    return Vehicle(position=curr_position, speed=speed, direction=player_angle)
+
+
+# TODO - something in the model is wrong:
+# * the angles are wrong? recall the coordinate from top-left! plus rad vs degree
+# * MORE IMPORTANTLY: the direction of car is NOT direction of speed (wrong computations)
 
 def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int) -> Vehicle:
     speed_norm = vehicle.speed
-    speed = Vector(
-        x=speed_norm * math.cos(vehicle.direction),
-        y=speed_norm * math.sin(vehicle.direction))
+    speed = np.array([
+        speed_norm * math.cos(vehicle.direction),
+        speed_norm * math.sin(vehicle.direction)
+    ])
 
-    to_next_checkpoint = sub_vector(vehicle.position, next_checkpoint)
+    to_next_checkpoint = next_checkpoint - vehicle.position
     to_next_angle = get_angle(to_next_checkpoint)
 
     if to_next_angle > vehicle.direction:
-        new_direction = min(vehicle.direction + 18, to_next_angle)
+        new_direction = min(vehicle.direction + MAX_TURN_RAD, to_next_angle)
     else:
-        new_direction = max(vehicle.direction - 18, to_next_angle)
+        new_direction = max(vehicle.direction - MAX_TURN_RAD, to_next_angle)
 
-    dv_dt = Vector(
-        x=thrust * math.cos(new_direction),
-        y=thrust * math.sin(new_direction))
+    dv_dt = np.array([
+        thrust * math.cos(new_direction),
+        thrust * math.sin(new_direction)
+    ])
 
-    new_speed = add_vector(speed, dv_dt)  # the time step is one
-    return Vehicle(position=add_vector(vehicle.position, new_speed), speed=norm(new_speed), direction=new_direction)
+    new_speed = speed + dv_dt  # the time step is one
+    return Vehicle(position=vehicle.position + new_speed, speed=norm(new_speed), direction=new_direction)
 
 
 """
@@ -149,7 +149,7 @@ TODO:
 # TODO - because we cannot see the future checkpoints, this AI that sees in the future is not great...
 
 
-class TryAgent:
+class MinimaxAgent:
     def __init__(self):
         self.boost_available = True
         self.previous_player: PlayerInput = None
@@ -157,58 +157,36 @@ class TryAgent:
 
     def get_action(self, player: PlayerInput, opponent: Vector):
         self.previous_player = self.previous_player or player
-        self.previous_opponent = self.previous_opponent or opponent
+        if self.previous_opponent is None:
+            self.previous_opponent or opponent
 
-        if -18 < player.next_checkpoint_angle < 18 and player.next_checkpoint_dist > 1000:
-            thrust = 100
-        elif player.next_checkpoint_dist > 3000 and -90 < player.next_checkpoint_angle < 90:
-            thrust = 100
-        elif self.opponent_in_front(player, opponent):
-            thrust = 100
-        else:
-            thrust = self.search_action(player, opponent)
-
+        thrust = self.search_action(player, opponent)
         if self.boost_available and thrust == 100 and player.next_checkpoint_dist > 3000:
-            thrust = "BOOST"
+            thrust = "BOOST"  # TODO - the boost should only be done if angle is perfect
             self.boost_available = False
         else:
             thrust = str(thrust)
+
         self.previous_player = player
         self.previous_opponent = opponent
-        return str(player.next_checkpoint_x) + " " + str(player.next_checkpoint_y) + " " + thrust
 
-    def opponent_in_front(self, player: PlayerInput, opponent: Vector) -> bool:
-        # TODO - find a better way to hit the opponent
-        vehicle = get_vehicle(self.previous_player, player)
-        next_checkpoint = checkpoint_vector(player)
-        d1 = distance2(vehicle.position, next_checkpoint)
-        d2 = distance2(opponent, next_checkpoint)
-        if d1 > d2:
-            return False
-
-        diff_opp = sub_vector(opponent, self.previous_opponent)
-        next_opp = add_vector(opponent, diff_opp)
-        vehicle = next_position(vehicle, next_checkpoint, 100)
-
-        to_opponent = distance2(vehicle.position, next_opp)
-        if to_opponent < FORCE_FIELD_RADIUS ** 2:
-            return True
-        return False
+        next_checkpoint_x, next_checkpoint_y = player.checkpoint
+        return str(next_checkpoint_x) + " " + str(next_checkpoint_y) + " " + thrust
 
     def search_action(self, player: PlayerInput, opponent: Vector) -> str:
-        # TODO - it does not see very far in the future and tend to be too careful when near a checkpoint or past a checkpoint
-
         vehicle = get_vehicle(self.previous_player, player)
-        next_checkpoint = checkpoint_vector(player)
+        next_checkpoint = player.checkpoint
 
         min_dist = float('inf')
         best_thrust = 0
         for thrust in [100, 40]:
             d = self.best_move(vehicle, next_checkpoint, thrust, depth=6)
-            debug(d, thrust)
             if d < min_dist:
                 min_dist = d
                 best_thrust = thrust
+
+        debug(vehicle)
+        debug(next_position(vehicle, next_checkpoint, thrust))
         return best_thrust
 
     def best_move(self, vehicle: Vehicle, next_checkpoint: Vector, thrust: int, depth: int) -> float:
@@ -226,37 +204,57 @@ class TryAgent:
 class IfAgent:
     def __init__(self):
         self.boost_available = True
-        # self.traces = []
+        self.previous_player: PlayerInput = None
+        self.previous_opponent: Vector = None
 
     def get_action(self, player: PlayerInput, opponent: Vector):
+        self.previous_player = self.previous_player or player
+        if self.previous_opponent is None:
+            self.previous_opponent or opponent
+
         thrust = 0
         if -18 < player.next_checkpoint_angle < 18:
             thrust = 100
-        elif -45 < player.next_checkpoint_angle < 45:
-            thrust = 70
         elif -90 < player.next_checkpoint_angle < 90:
-            if player.next_checkpoint_dist >= 200:
+            if player.next_checkpoint_dist >= 300:
                 thrust = 100
+            elif player.next_checkpoint_dist >= 100:
+                thrust = 30
             else:
-                thrust = 20
+                thrust = 10
 
         if self.boost_available and thrust == 100:
             thrust = "BOOST"
             self.boost_available = False
         else:
             thrust = str(thrust)
-        return str(player.next_checkpoint_x) + " " + str(player.next_checkpoint_y) + " " + thrust
+
+        self.previous_player = player
+        self.previous_opponent = opponent
+        next_checkpoint_x, next_checkpoint_y = player.checkpoint
+        return str(next_checkpoint_x) + " " + str(next_checkpoint_y) + " " + thrust
 
 
 """
 Game loop
 """
 
-agent = TryAgent()
+agent = MinimaxAgent()
 while True:
-    player = PlayerInput(*[int(i) for i in input().split()])
-    opponent = Vector(*[int(i) for i in input().split()])
+    x, y, next_checkpoint_x, next_checkpoint_y, next_checkpoint_dist, next_checkpoint_angle = [int(i) for i in
+                                                                                               input().split()]
+    opponent_x, opponent_y = [int(i) for i in input().split()]
+
+    player = PlayerInput(
+        position=np.array([x, y]),
+        checkpoint=np.array([next_checkpoint_x, next_checkpoint_y]),
+        next_checkpoint_dist=next_checkpoint_dist,
+        next_checkpoint_angle=next_checkpoint_angle
+    )
+    opponent = np.array([opponent_x, opponent_y])
+
     debug(player)
+    debug("opponent:", opponent)
     action = agent.get_action(player, opponent)
     print(action)
 
