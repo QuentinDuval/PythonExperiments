@@ -202,7 +202,7 @@ class MinimaxAgent:
             return
 
         isBad = distance(self.prediction.position, vehicle.position) > 5
-        isBad = distance(self.prediction.speed, vehicle.speed) > 5
+        isBad |= distance(self.prediction.speed, vehicle.speed) > 5
         isBad |= abs(mod_angle(self.prediction.direction) - mod_angle(vehicle.direction)) > 0.1
         if isBad:
             debug("BAD PREDICTION")
