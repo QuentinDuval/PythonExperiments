@@ -84,6 +84,14 @@ def distance(from_, to_):
     return norm(to_ - from_)
 
 
+def mod_angle(angle):
+    if angle > 2 * math.pi:
+        return angle - 2 * math.pi
+    if angle < 0:
+        return angle + 2 * math.pi
+    return angle
+
+
 """
 Model:
 * when going in straight line: dv_dt = thrust - 0.15 * v
@@ -101,17 +109,15 @@ def get_vehicle(prev: PlayerInput, curr: PlayerInput) -> Vehicle:
     direction_angle = get_angle(checkpoint_direction)
     player_angle = direction_angle - next_checkpoint_angle_rad
 
-    debug("checkpoint dir:", checkpoint_direction)
-    debug("direction angle:", direction_angle)
+    debug("direction angle:", direction_angle, checkpoint_direction)
     debug("next_cp angle:", next_checkpoint_angle_rad)
     debug("player angle:", player_angle)
 
+    # player_angle = mod_angle(player_angle)
     return Vehicle(position=curr_position, speed=speed, direction=player_angle)
 
 
-def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int) -> Vehicle:
-    speed = vehicle.speed
-
+def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int, dt: float = 1.0) -> Vehicle:
     to_next_checkpoint = next_checkpoint - vehicle.position
     to_next_angle = get_angle(to_next_checkpoint)
 
@@ -119,14 +125,19 @@ def next_position(vehicle: Vehicle, next_checkpoint: Vector, thrust: int) -> Veh
         new_direction = min(vehicle.direction + MAX_TURN_RAD, to_next_angle)
     else:
         new_direction = max(vehicle.direction - MAX_TURN_RAD, to_next_angle)
+    # new_direction = mod_angle(new_direction)
 
     dv_dt = np.array([
-        thrust * math.cos(new_direction) - 0.15 * speed[0],
-        thrust * math.sin(new_direction) - 0.15 * speed[1]
+        thrust * math.cos(new_direction),
+        thrust * math.sin(new_direction)
     ])
 
-    new_speed = speed + dv_dt  # the time step is one
-    return Vehicle(position=vehicle.position + new_speed, speed=new_speed, direction=new_direction)
+    new_speed = vehicle.speed * 0.85 + dv_dt  # the time step is one
+    new_position = np.round(vehicle.position + new_speed * dt)
+    return Vehicle(
+        position=new_position,
+        speed=np.trunc(new_speed),
+        direction=new_direction)
 
 
 """
@@ -146,11 +157,13 @@ class MinimaxAgent:
         self.boost_available = True
         self.previous_player: PlayerInput = None
         self.previous_opponent: Vector = None
+        self.prediction: Vehicle = None
 
     def get_action(self, player: PlayerInput, opponent: Vector):
-        self.previous_player = self.previous_player or player
+        if self.previous_player is None:
+            self.previous_player = player
         if self.previous_opponent is None:
-            self.previous_opponent or opponent
+            self.previous_opponent = opponent
 
         thrust = self.search_action(player, opponent)
         if self.boost_available and thrust == 100 and player.next_checkpoint_dist > 3000:
@@ -167,19 +180,34 @@ class MinimaxAgent:
 
     def search_action(self, player: PlayerInput, opponent: Vector) -> str:
         vehicle = get_vehicle(self.previous_player, player)
-        next_checkpoint = player.checkpoint
+        self.report_bad_prediction(vehicle)
 
         min_dist = float('inf')
         best_thrust = 0
-        for thrust in [100, 40]:
-            d = self.best_move(vehicle, next_checkpoint, thrust, depth=6)
+        for thrust in [100, 0]:
+            d = self.best_move(vehicle, player.checkpoint, thrust, depth=6)
+            # debug("possible move:", thrust, d)
             if d < min_dist:
                 min_dist = d
                 best_thrust = thrust
 
-        debug(vehicle)
-        debug(next_position(vehicle, next_checkpoint, thrust))
+        self.prediction = next_position(vehicle, player.checkpoint, best_thrust)
+        debug("current:", vehicle)
+        debug("prediction:", self.prediction)
+        debug("move:", best_thrust, "for distance", min_dist)
         return best_thrust
+
+    def report_bad_prediction(self, vehicle):
+        if self.prediction is None:
+            return
+
+        isBad = distance(self.prediction.position, vehicle.position) > 5
+        isBad = distance(self.prediction.speed, vehicle.speed) > 5
+        isBad |= abs(mod_angle(self.prediction.direction) - mod_angle(vehicle.direction)) > 0.1
+        if isBad:
+            debug("BAD PREDICTION")
+            debug("predicted:", self.prediction)
+            debug("got:", vehicle)
 
     def best_move(self, vehicle: Vehicle, next_checkpoint: Vector, thrust: int, depth: int) -> float:
         vehicle = next_position(vehicle, next_checkpoint, thrust)
@@ -190,7 +218,7 @@ class MinimaxAgent:
         if dist < CHECKPOINT_RADIUS ** 2:
             return dist
 
-        return min(self.best_move(vehicle, next_checkpoint, thrust, depth - 1) for thrust in [100, 40])
+        return min(self.best_move(vehicle, next_checkpoint, thrust, depth - 1) for thrust in [100, 0])
 
 
 class IfAgent:
@@ -202,7 +230,7 @@ class IfAgent:
     def get_action(self, player: PlayerInput, opponent: Vector):
         self.previous_player = self.previous_player or player
         if self.previous_opponent is None:
-            self.previous_opponent or opponent
+            self.previous_opponent = opponent
 
         thrust = 0
         if -18 < player.next_checkpoint_angle < 18:
@@ -246,7 +274,7 @@ while True:
     opponent = np.array([opponent_x, opponent_y])
 
     debug(player)
-    debug("opponent:", opponent)
+    # debug("opponent:", opponent)
     action = agent.get_action(player, opponent)
     print(action)
 
