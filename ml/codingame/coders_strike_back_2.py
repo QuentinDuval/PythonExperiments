@@ -105,7 +105,7 @@ class Track:
             self.distances[i] = self.distances[i + 1] + distance2(self.total_checkpoints[i],
                                                                   self.total_checkpoints[i + 1])
 
-    # TODO - replace 'thrust' by 'action" (boost and shield), or consider that 0 is shield
+    # TODO - replace 'thrust' by 'action" (boost and shield), or consider that -1 is shield
 
     def __len__(self):
         return len(self.checkpoints)
@@ -118,8 +118,8 @@ class Track:
         checkpoint_id = vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
         return self.total_checkpoints[checkpoint_id]
 
-    def next_position(self, vehicle: Vehicle, thrust: int, dt: float = 1.0) -> Vehicle:
-        new_direction = self._next_direction(vehicle)
+    def next_position(self, vehicle: Vehicle, thrust: int, diff_angle: float, dt: float = 1.0) -> Vehicle:
+        new_direction = self._next_direction(vehicle, diff_angle)
         dv_dt = np.array([thrust * math.cos(new_direction), thrust * math.sin(new_direction)])
         new_speed = vehicle.speed + dv_dt  # the time step is one
         new_position = np.round(vehicle.position + new_speed * dt)
@@ -143,7 +143,15 @@ class Track:
                 new_current_lap += 1
         return new_next_checkpoint_id, new_current_lap
 
-    def _next_direction(self, vehicle: Vehicle) -> float:
+    def _next_direction(self, vehicle: Vehicle, diff_angle: float) -> float:
+        if diff_angle > 0:
+            diff_angle = min(MAX_TURN_RAD, diff_angle)
+        elif diff_angle < 0:
+            diff_angle = max(-MAX_TURN_RAD, diff_angle)
+        return mod_angle(vehicle.direction + diff_angle)
+
+    def diff_angle_for_checkpoint(self, vehicle: Vehicle) -> float:
+        # TODO - use the angle for the next checkpoint (good default when far from target)
         to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
         to_next_angle = get_angle(to_next_checkpoint)
 
@@ -154,14 +162,7 @@ class Track:
         elif diff_angle < -math.pi:
             diff_angle = diff_angle + 2 * math.pi
 
-        # Limit the angle of turn
-        if diff_angle > 0:
-            diff_angle = min(MAX_TURN_RAD, diff_angle)
-        elif diff_angle < 0:
-            diff_angle = max(-MAX_TURN_RAD, diff_angle)
-
-        # Return the new angle
-        return mod_angle(vehicle.direction + diff_angle)
+        return self._next_direction(vehicle, diff_angle)
 
 
 """
@@ -232,7 +233,7 @@ class ShortestPathAgent:
         min_score = float('inf')
         best_next_vehicle = None
         for thrust in self._thursts(vehicle):
-            next_vehicle = self.track.next_position(vehicle, thrust, dt=1.0)
+            next_vehicle = self.track.next_position(vehicle, thrust, self.track.diff_angle_for_checkpoint(vehicle))
             score = self._explore_move(next_vehicle, depth=6)
 
             debug("action:", thrust)
@@ -259,7 +260,9 @@ class ShortestPathAgent:
     def _explore_move(self, vehicle: Vehicle, depth: int) -> float:
         if depth == 0:
             return self.track.remaining_distance2(vehicle)
-        return min(self._explore_move(self.track.next_position(vehicle, thrust, dt=1.0), depth - 1)
+
+        diff_angle = self.track.diff_angle_for_checkpoint(vehicle)
+        return min(self._explore_move(self.track.next_position(vehicle, thrust, diff_angle, dt=1.0), depth - 1)
                    for thrust in self._thursts(vehicle))
 
     def _thursts(self, vehicle: Vehicle):
