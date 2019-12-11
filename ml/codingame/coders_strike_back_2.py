@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 import numpy as np
 
+
 """
 Constants
 """
@@ -25,6 +26,7 @@ RESPONSE_TIME = 75
 
 TOP_LEFT = (0, 0)
 BOT_RIGHT = (WIDTH - 1, HEIGHT - 1)
+
 
 """
 Utils
@@ -86,6 +88,7 @@ Vehicle = namedtuple('Vehicle', [
     'boost_available'])
 
 Checkpoint = np.ndarray
+
 
 """
 Movement
@@ -166,26 +169,38 @@ Game state
 """
 
 
-class GameState:
+class PlayerState:
+    # TODO - you should track also the timer to next checkpoint... for you and the opponent
+
     def __init__(self):
-        self.previous_checkpoint = np.array([0, 0])
-        self.player_laps = np.array([0, 0])
+        self.prev_checkpoints = np.array([1, 1])
+        self.laps = np.array([0, 0])
         self.boost_available = np.array([True, True])
 
-    def track_lap(self, player: List[Vehicle], opponent: List[Vehicle]):
+    def track_lap(self, player: List[Vehicle]):
         for i, vehicle in enumerate(player):
-            if vehicle.next_checkpoint_id == 0 and self.previous_checkpoint[i] > 0:
-                self.player_laps[i] += 1
-            self.previous_checkpoint[i] = vehicle.next_checkpoint_id
+            if vehicle.next_checkpoint_id == 0 and self.prev_checkpoints[i] > 0:
+                self.laps[i] += 1
+            self.prev_checkpoints[i] = vehicle.next_checkpoint_id
 
-    def boost_used(self, vehicle_id: int):
+    def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
 
-    def enrich(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
+    def complete_vehicle(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
         return vehicle._replace(
-            current_lap=self.player_laps[vehicle_id],
+            current_lap=self.laps[vehicle_id],
             boost_available=self.boost_available[vehicle_id]
         )
+
+
+class GameState:
+    def __init__(self):
+        self.player = PlayerState()
+        self.opponent = PlayerState()
+
+    def track_lap(self, player: List[Vehicle], opponent: List[Vehicle]):
+        self.player.track_lap(player)
+        self.opponent.track_lap(opponent)
 
 
 """
@@ -198,12 +213,14 @@ class ShortestPathAgent:
         self.track = track
         self.game_state = GameState()
         self.predictions: List[Vehicle] = [None, None]
+        self.thursts = np.array([BOOST_STRENGTH, 100, 20])
+        # TODO - there is a problem: if you put thrust=0, then the IA stay stuck in front of checkpoint sometimes
 
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.game_state.track_lap(player, opponent)
         actions = []
         for vehicle_id, vehicle in enumerate(player):
-            vehicle = self.game_state.enrich(vehicle, vehicle_id)
+            vehicle = self.game_state.player.complete_vehicle(vehicle, vehicle_id)
             self._report_bad_prediction(vehicle, vehicle_id)
             action, next_vehicle = self._get_action(vehicle, vehicle_id)
             self.predictions[vehicle_id] = next_vehicle
@@ -232,7 +249,7 @@ class ShortestPathAgent:
 
         if best_thrust > 100:
             best_thrust = "BOOST"
-            self.game_state.boost_used(vehicle_id)
+            self.game_state.player.notify_boost_used(vehicle_id)
         else:
             best_thrust = str(best_thrust)
 
@@ -246,12 +263,15 @@ class ShortestPathAgent:
                    for thrust in self._thursts(vehicle))
 
     def _thursts(self, vehicle: Vehicle):
-        return [BOOST_STRENGTH, 100, 0] if vehicle.boost_available else [100, 0]
+        if vehicle.boost_available:
+            return self.thursts
+        return self.thursts[1:]
 
     def _report_bad_prediction(self, vehicle: Vehicle, vehicle_id: int):
         prediction = self.predictions[vehicle_id]
         if prediction is None:
             return
+
         isBad = distance(prediction.position, vehicle.position) > 5
         isBad |= distance(prediction.speed, vehicle.speed) > 5
         isBad |= abs(mod_angle(prediction.direction) - mod_angle(vehicle.direction)) > 0.1
