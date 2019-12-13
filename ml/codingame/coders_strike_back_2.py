@@ -192,8 +192,11 @@ class PlayerState:
         self.prev_checkpoints = np.array([1, 1])
         self.laps = np.array([0, 0])
         self.boost_available = np.array([True, True])
+        self.shield_timeout = np.array([0, 0])
 
     def track_lap(self, player: List[Vehicle]):
+        for i in range(len(self.shield_timeout)):
+            self.shield_timeout[i] = max(0, self.shield_timeout[i] - 1)
         for i, vehicle in enumerate(player):
             if vehicle.next_checkpoint_id == 0 and self.prev_checkpoints[i] > 0:
                 self.laps[i] += 1
@@ -201,6 +204,9 @@ class PlayerState:
 
     def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
+
+    def notify_shield_used(self, vehicle_id: int):
+        self.shield_timeout[vehicle_id] = 3
 
     def complete_vehicles(self, vehicles: List[Vehicle]):
         for vehicle_id in range(len(vehicles)):
@@ -295,9 +301,15 @@ class ShortestPathAgent:
 
         for opponent_id, opponent in enumerate(opponents):
             if self._is_runner(opponents, opponent_id):
-                # TODO - should take into account the distance as well
-                # TODO - should activate the shield if the target is very close
-                return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
+                # TODO - should take into account the distance as well (to select the most advanced opponent)
+                if distance2(vehicle.position + vehicle.speed, opponent.position + opponent.speed) < (2 * FORCE_FIELD_RADIUS) ** 2:
+                    debug("SHIELD")
+                    self.game_state.player.notify_shield_used(vehicle_id)
+                    next_x, next_y = opponent.position + opponent.speed
+                    action = str(int(next_x)) + " " + str(int(next_y)) + " " + "SHIELD"
+                    return action, vehicle
+                else:
+                    return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
 
     def _shortest_path_action(self, vehicle: Vehicle, vehicle_id: int, metric) -> Tuple[str, Vehicle]:
         best_thrust = Thrust()
@@ -396,6 +408,7 @@ Game loop
 
 
 # TODO - add the SHIELD state + use (but first add the collisions)
+# TODO - do not anticipate for the last checkpoint (just rush)
 
 
 def with_first_turn_orientation(track: Track, vehicle: Vehicle) -> Vehicle:
