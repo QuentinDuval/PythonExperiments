@@ -295,6 +295,8 @@ class ShortestPathAgent:
 
         for opponent_id, opponent in enumerate(opponents):
             if self._is_runner(opponents, opponent_id):
+                # TODO - should take into account the distance as well
+                # TODO - should activate the shield if the target is very close
                 return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
 
     def _shortest_path_action(self, vehicle: Vehicle, vehicle_id: int, metric) -> Tuple[str, Vehicle]:
