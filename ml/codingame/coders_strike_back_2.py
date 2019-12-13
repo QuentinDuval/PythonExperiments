@@ -246,7 +246,7 @@ class ShortestPathAgent:
         best_next_vehicle = None
         for thrust, angle in self._possible_moves(vehicle):
             next_vehicle = self.track.next_position(vehicle, thrust, angle)
-            score = self._explore_move(next_vehicle, depth=3)
+            score = self._explore_move(next_vehicle, depth=4)
             if score < min_score:
                 min_score = score
                 best_thrust = thrust
@@ -271,7 +271,7 @@ class ShortestPathAgent:
         return str(int(next_x)) + " " + str(int(next_y)) + " " + best_thrust
 
     def _explore_move(self, vehicle: Vehicle, depth: int) -> float:
-        if depth <= 0:
+        if depth <= 1:
             return self.track.remaining_distance2(vehicle)
 
         min_score = float('inf')
