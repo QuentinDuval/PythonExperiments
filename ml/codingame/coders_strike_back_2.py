@@ -150,19 +150,25 @@ class Track:
             diff_angle = max(-MAX_TURN_RAD, diff_angle)
         return mod_angle(vehicle.direction + diff_angle)
 
-    def diff_angle_for_checkpoint(self, vehicle: Vehicle) -> float:
-        # TODO - use the angle for the next checkpoint (good default when far from target)
+    def angle_next_checkpoint(self, vehicle: Vehicle) -> float:
         to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
-        to_next_angle = get_angle(to_next_checkpoint)
+        return get_angle(to_next_checkpoint)
 
+    def diff_angle_for_checkpoint(self, vehicle: Vehicle) -> float:
         # Find the minimum angle between target and orientation
+        to_next_angle = self.angle_next_checkpoint(vehicle)
         diff_angle = to_next_angle - vehicle.direction
         if diff_angle > math.pi:
             diff_angle = diff_angle - 2 * math.pi
         elif diff_angle < -math.pi:
             diff_angle = diff_angle + 2 * math.pi
-
         return self._next_direction(vehicle, diff_angle)
+
+    def target_point(self, vehicle: Vehicle, diff_angle: float) -> Vector:
+        target_distance = 5000
+        next_angle = self._next_direction(vehicle, diff_angle)
+        return np.array([target_distance * math.cos(next_angle),
+                         target_distance * math.sin(next_angle)]) + vehicle.position
 
 
 """
@@ -214,7 +220,14 @@ class ShortestPathAgent:
         self.track = track
         self.game_state = GameState()
         self.predictions: List[Vehicle] = [None, None]
-        self.thursts = np.array([BOOST_STRENGTH, 100, 20])
+        self.moves = np.array([
+            (BOOST_STRENGTH, 0),
+            (100, 0),
+            (100, -MAX_TURN_RAD),
+            (100, +MAX_TURN_RAD),
+            (20, -MAX_TURN_RAD),
+            (20, +MAX_TURN_RAD)
+        ])
         # TODO - there is a problem: if you put thrust=0, then the IA stay stuck in front of checkpoint sometimes
 
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
@@ -230,45 +243,48 @@ class ShortestPathAgent:
 
     def _get_action(self, vehicle: Vehicle, vehicle_id: int) -> Tuple[str, Vehicle]:
         best_thrust = 0
+        best_angle = 0
         min_score = float('inf')
         best_next_vehicle = None
-        for thrust in self._thursts(vehicle):
-            next_vehicle = self.track.next_position(vehicle, thrust, self.track.diff_angle_for_checkpoint(vehicle))
-            score = self._explore_move(next_vehicle, depth=6)
+        for thrust, angle in self._possible_moves(vehicle):
+            next_vehicle = self.track.next_position(vehicle, thrust, angle)
+            score = self._explore_move(next_vehicle, depth=3)
 
-            debug("action:", thrust)
+            debug("action:", thrust, "with angle", angle)
             debug("score:", score)
 
             if score < min_score:
                 min_score = score
                 best_thrust = thrust
+                best_angle = angle
                 best_next_vehicle = next_vehicle
 
+        debug("------------------------")
         debug("current:", vehicle)
-        debug("best action:", best_thrust)
+        debug("best action:", best_thrust, "with angle", best_angle)
         debug("prediction:", best_next_vehicle)
+        debug("------------------------")
 
         if best_thrust > 100:
             best_thrust = "BOOST"
             self.game_state.player.notify_boost_used(vehicle_id)
         else:
-            best_thrust = str(best_thrust)
+            best_thrust = str(int(best_thrust))
 
-        cp_x, cp_y = self.track.next_checkpoint(vehicle)
-        return str(cp_x) + " " + str(cp_y) + " " + best_thrust, best_next_vehicle
+        next_x, next_y = self.track.target_point(vehicle, best_angle)
+        return str(int(next_x)) + " " + str(int(next_y)) + " " + best_thrust, best_next_vehicle
 
     def _explore_move(self, vehicle: Vehicle, depth: int) -> float:
         if depth == 0:
             return self.track.remaining_distance2(vehicle)
 
-        diff_angle = self.track.diff_angle_for_checkpoint(vehicle)
-        return min(self._explore_move(self.track.next_position(vehicle, thrust, diff_angle, dt=1.0), depth - 1)
-                   for thrust in self._thursts(vehicle))
+        return min(self._explore_move(self.track.next_position(vehicle, thrust, angle, dt=1.0), depth - 1)
+                   for thrust, angle in self._possible_moves(vehicle))
 
-    def _thursts(self, vehicle: Vehicle):
+    def _possible_moves(self, vehicle: Vehicle):
         if vehicle.boost_available:
-            return self.thursts
-        return self.thursts[1:]
+            return self.moves
+        return self.moves[1:]
 
     def _report_bad_prediction(self, vehicle: Vehicle, vehicle_id: int):
         prediction = self.predictions[vehicle_id]
