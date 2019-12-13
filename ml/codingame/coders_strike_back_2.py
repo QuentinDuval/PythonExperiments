@@ -87,6 +87,7 @@ Data structures
 
 Checkpoint = np.ndarray
 CheckpointId = int
+Thrust = int
 
 
 class Vehicle(NamedTuple):
@@ -118,11 +119,10 @@ Track
 
 class Track:
     def __init__(self, checkpoints: List[Checkpoint], total_laps: int):
-        # Compute the distance to the end: you cannot just compute to next else IA will refuse to cross a checkpoint
         self.checkpoints = checkpoints
         self.total_checkpoints = checkpoints * (total_laps + 1)  # TODO - Hack - due to starting to CP 1!
         self.distances = np.zeros(len(self.total_checkpoints))
-        self._precompute_distances_to_end()
+        self._pre_compute_distances_to_end()
 
     # TODO - replace 'thrust' by 'action" (boost and shield), or consider that -1 is shield
 
@@ -137,10 +137,10 @@ class Track:
         checkpoint_id = vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
         return self.total_checkpoints[checkpoint_id]
 
-    def next_position(self, vehicle: Vehicle, thrust: int, diff_angle: Angle, dt: float = 1.0) -> Vehicle:
+    def next_position(self, vehicle: Vehicle, thrust: Thrust, diff_angle: Angle, dt: float = 1.0) -> Vehicle:
         new_direction = vehicle.next_direction(diff_angle)
         dv_dt = np.array([thrust * math.cos(new_direction), thrust * math.sin(new_direction)])
-        new_speed = vehicle.speed + dv_dt  # the time step is one
+        new_speed = vehicle.speed + dv_dt * dt
         new_position = np.round(vehicle.position + new_speed * dt)
         new_next_checkpoint_id, new_current_lap = self._new_next_checkpoint(vehicle, new_position)
         return Vehicle(
@@ -162,7 +162,8 @@ class Track:
                 new_current_lap += 1
         return new_next_checkpoint_id, new_current_lap
 
-    def _precompute_distances_to_end(self):
+    def _pre_compute_distances_to_end(self):
+        # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             distance_to_next = distance2(self.total_checkpoints[i], self.total_checkpoints[i + 1])
             self.distances[i] = self.distances[i + 1] + distance_to_next
@@ -239,8 +240,8 @@ class ShortestPathAgent:
         return actions
 
     def _find_best_action(self, vehicle: Vehicle, vehicle_id: int) -> Tuple[str, Vehicle]:
-        best_thrust = 0
-        best_angle = 0
+        best_thrust = Thrust()
+        best_angle = Angle()
         min_score = float('inf')
         best_next_vehicle = None
         for thrust, angle in self._possible_moves(vehicle):
@@ -260,7 +261,7 @@ class ShortestPathAgent:
 
         return self._select_action(vehicle_id, vehicle, best_thrust, best_angle), best_next_vehicle
 
-    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: int, best_angle: Angle):
+    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle):
         if best_thrust > 100:
             best_thrust = "BOOST"
             self.game_state.player.notify_boost_used(vehicle_id)
