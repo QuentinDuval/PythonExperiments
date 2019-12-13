@@ -99,8 +99,8 @@ class Track:
     def __init__(self, checkpoints: List[Checkpoint], total_laps: int):
         # Compute the distance to the end: you cannot just compute to next else IA will refuse to cross a checkpoint
         self.checkpoints = checkpoints
-        self.total_checkpoints = checkpoints * total_laps
-        self.distances = np.array([0] * len(self.total_checkpoints))
+        self.total_checkpoints = checkpoints * (total_laps + 1)  # TODO - Hack - due to starting to CP 1!
+        self.distances = np.zeros(len(self.total_checkpoints))
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             self.distances[i] = self.distances[i + 1] + distance2(self.total_checkpoints[i],
                                                                   self.total_checkpoints[i + 1])
@@ -275,11 +275,15 @@ class ShortestPathAgent:
         return str(int(next_x)) + " " + str(int(next_y)) + " " + best_thrust, best_next_vehicle
 
     def _explore_move(self, vehicle: Vehicle, depth: int) -> float:
-        if depth == 0:
+        if depth <= 0:
             return self.track.remaining_distance2(vehicle)
 
-        return min(self._explore_move(self.track.next_position(vehicle, thrust, angle, dt=1.0), depth - 1)
-                   for thrust, angle in self._possible_moves(vehicle))
+        min_score = float('inf')
+        for thrust, angle in self._possible_moves(vehicle):
+            next_vehicle = self.track.next_position(vehicle, thrust, angle, dt=1.0)
+            score = self._explore_move(next_vehicle, depth - 1)
+            min_score = min(min_score, score)
+        return min_score
 
     def _possible_moves(self, vehicle: Vehicle):
         if vehicle.boost_available:
