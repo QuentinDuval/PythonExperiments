@@ -1,9 +1,13 @@
 import math
 import sys
-from collections import namedtuple
+import itertools
 from typing import List, NamedTuple, Tuple
+import time
 
 import numpy as np
+
+
+# import concurrent.futures
 
 
 """
@@ -129,13 +133,20 @@ class Track:
     def __len__(self):
         return len(self.checkpoints)
 
+    def progress(self, vehicle: Vehicle) -> int:
+        return vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
+
     def remaining_distance2(self, vehicle: Vehicle) -> float:
-        checkpoint_id = vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
+        checkpoint_id = self.progress(vehicle)
         return distance2(vehicle.position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
 
     def next_checkpoint(self, vehicle: Vehicle) -> Checkpoint:
-        checkpoint_id = vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
+        checkpoint_id = self.progress(vehicle)
         return self.total_checkpoints[checkpoint_id]
+
+    def angle_next_checkpoint(self, vehicle: Vehicle) -> float:
+        to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
+        return get_angle(to_next_checkpoint)
 
     def next_position(self, vehicle: Vehicle, thrust: Thrust, diff_angle: Angle, dt: float = 1.0) -> Vehicle:
         new_direction = vehicle.next_direction(diff_angle)
@@ -177,7 +188,7 @@ Game state
 class PlayerState:
     # TODO - you should track also the timer to next checkpoint... for you and the opponent
 
-    def __init__(self):
+    def __init__(self, nb_checkpoints: int):
         self.prev_checkpoints = np.array([1, 1])
         self.laps = np.array([0, 0])
         self.boost_available = np.array([True, True])
@@ -191,7 +202,11 @@ class PlayerState:
     def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
 
-    def complete_vehicle(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
+    def complete_vehicles(self, vehicles: List[Vehicle]):
+        for vehicle_id in range(len(vehicles)):
+            vehicles[vehicle_id] = self._complete_vehicle(vehicles[vehicle_id], vehicle_id)
+
+    def _complete_vehicle(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
         return vehicle._replace(
             current_lap=self.laps[vehicle_id],
             boost_available=self.boost_available[vehicle_id]
@@ -199,13 +214,28 @@ class PlayerState:
 
 
 class GameState:
-    def __init__(self):
-        self.player = PlayerState()
-        self.opponent = PlayerState()
+    def __init__(self, nb_checkpoints: int):
+        self.player = PlayerState(nb_checkpoints)
+        self.opponent = PlayerState(nb_checkpoints)
 
     def track_lap(self, player: List[Vehicle], opponent: List[Vehicle]):
         self.player.track_lap(player)
         self.opponent.track_lap(opponent)
+
+
+class Chronometer:
+    def __init__(self):
+        self.start_time = 0
+
+    def start(self):
+        self.start_time = time.time_ns()
+
+    def spent(self):
+        current = time.time_ns()
+        return self._to_ms(current - self.start_time)
+
+    def _to_ms(self, delay):
+        return delay / 1_000_000
 
 
 """
@@ -216,7 +246,7 @@ Agent that just tries to minimize the distance, not taking into account collisio
 class ShortestPathAgent:
     def __init__(self, track: Track):
         self.track = track
-        self.game_state = GameState()
+        self.game_state = GameState(nb_checkpoints=len(self.track))
         self.predictions: List[Vehicle] = [None, None]
         self.moves = np.array([
             (BOOST_STRENGTH, 0),
@@ -226,27 +256,60 @@ class ShortestPathAgent:
             (20, -MAX_TURN_RAD),
             (20, +MAX_TURN_RAD)
         ])
+        self.chronometer = Chronometer()
         # TODO - there is a problem: if you put thrust=0, then the IA stay stuck in front of checkpoint sometimes
 
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
+        self.chronometer.start()
+        self._complete_vehicles(player, opponent)
+        return self._find_best_actions(player, opponent)
+
+    def _complete_vehicles(self, player: List[Vehicle], opponent: List[Vehicle]):
         self.game_state.track_lap(player, opponent)
+        self.game_state.player.complete_vehicles(player)
+        self.game_state.opponent.complete_vehicles(opponent)
+
+    def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         actions = []
         for vehicle_id, vehicle in enumerate(player):
-            vehicle = self.game_state.player.complete_vehicle(vehicle, vehicle_id)
             self._report_bad_prediction(vehicle, vehicle_id)
-            action, next_vehicle = self._find_best_action(vehicle, vehicle_id)
+            if self._is_runner(player, vehicle_id):
+                debug("runner:", vehicle)
+                action, next_vehicle = self._shortest_path_action(vehicle, vehicle_id, metric=self.track.remaining_distance2)
+            else:
+                debug("follower:", vehicle)
+                action, next_vehicle = self._intercept(vehicle, vehicle_id, opponent)
             self.predictions[vehicle_id] = next_vehicle
             actions.append(action)
         return actions
 
-    def _find_best_action(self, vehicle: Vehicle, vehicle_id: int) -> Tuple[str, Vehicle]:
+    def _is_runner(self, vehicles: List[Vehicle], vehicle_id: int):
+        other_id = 1 - vehicle_id
+        return self.track.progress(vehicles[vehicle_id]) >= self.track.progress(vehicles[other_id])
+
+    def _intercept(self, vehicle: Vehicle, vehicle_id: int, opponents: List[Vehicle]) -> Tuple[str, Vehicle]:
+        def intercept_metric(v: Vehicle):
+            dist_to_opponent = distance2(v.position, opponent.position + 4 * opponent.speed)
+            dist_to_opponent_dst = distance2(v.position, self.track.next_checkpoint(opponent))
+            return (dist_to_opponent + dist_to_opponent_dst) / 2
+
+        for opponent_id, opponent in enumerate(opponents):
+            if self._is_runner(opponents, opponent_id):
+                return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
+
+    def _shortest_path_action(self, vehicle: Vehicle, vehicle_id: int, metric) -> Tuple[str, Vehicle]:
         best_thrust = Thrust()
         best_angle = Angle()
         min_score = float('inf')
         best_next_vehicle = None
         for thrust, angle in self._possible_moves(vehicle):
+            if self.chronometer.spent() > 90:
+                debug("TIMEOUT: Skipping action", thrust, "with angle", angle)
+                break
+
             next_vehicle = self.track.next_position(vehicle, thrust, angle)
-            score = self._explore_move(next_vehicle, depth=4)
+            depth = 3 if next_vehicle.boost_available else 4
+            score = self._explore_move(next_vehicle, metric, depth=depth)
             if score < min_score:
                 min_score = score
                 best_thrust = thrust
@@ -270,14 +333,14 @@ class ShortestPathAgent:
         next_x, next_y = vehicle.target_point(best_angle)
         return str(int(next_x)) + " " + str(int(next_y)) + " " + best_thrust
 
-    def _explore_move(self, vehicle: Vehicle, depth: int) -> float:
+    def _explore_move(self, vehicle: Vehicle, metric, depth: int) -> float:
         if depth <= 1:
-            return self.track.remaining_distance2(vehicle)
+            return metric(vehicle)
 
         min_score = float('inf')
         for thrust, angle in self._possible_moves(vehicle):
             next_vehicle = self.track.next_position(vehicle, thrust, angle, dt=1.0)
-            score = self._explore_move(next_vehicle, depth - 1)
+            score = self._explore_move(next_vehicle, metric, depth - 1)
             min_score = min(min_score, score)
         return min_score
 
@@ -330,8 +393,12 @@ Game loop
 """
 
 
-# TODO - for the first turn, a pod can go in any direction
 # TODO - add the SHIELD state + use (but first add the collisions)
+
+
+def with_first_turn_orientation(track: Track, vehicle: Vehicle) -> Vehicle:
+    # For the first turn, a pod can go in any direction, here we turn it toward the goal (forbids some moves though)
+    return vehicle._replace(direction=track.angle_next_checkpoint(vehicle))
 
 
 def game_loop():
@@ -343,9 +410,13 @@ def game_loop():
     debug("laps", total_laps)
     debug("checkpoints:", checkpoints)
 
-    while True:
+    for turn_nb in itertools.count(start=0, step=1):
         player_vehicles = [read_vehicle() for _ in range(2)]
         opponent_vehicles = [read_vehicle() for _ in range(2)]
+        if turn_nb == 0:
+            player_vehicles = [with_first_turn_orientation(track, v) for v in player_vehicles]
+            opponent_vehicles = [with_first_turn_orientation(track, v) for v in opponent_vehicles]
+
         actions = agent.get_action(player_vehicles, opponent_vehicles)
         for action in actions:
             print(action)
