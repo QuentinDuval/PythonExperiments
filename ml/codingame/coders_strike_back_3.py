@@ -42,6 +42,21 @@ def debug(*args):
     print(*args, file=sys.stderr)
 
 
+class Chronometer:
+    def __init__(self):
+        self.start_time = 0
+
+    def start(self):
+        self.start_time = time.time_ns()
+
+    def spent(self):
+        current = time.time_ns()
+        return self._to_ms(current - self.start_time)
+
+    def _to_ms(self, delay):
+        return delay / 1_000_000
+
+
 """
 Vector arithmetic
 """
@@ -187,6 +202,26 @@ class Track:
         to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
         return get_angle(to_next_checkpoint)
 
+    def is_runner(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
+        other_id = 1 - vehicle_id
+        return self.remaining_distance2(vehicles[vehicle_id]) <= self.remaining_distance2(vehicles[other_id])
+
+    def _pre_compute_distances_to_end(self):
+        # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
+        for i in reversed(range(len(self.total_checkpoints) - 1)):
+            distance_to_next = distance2(self.total_checkpoints[i], self.total_checkpoints[i + 1])
+            self.distances[i] = self.distances[i + 1] + distance_to_next
+
+
+"""
+Game mechanics (movement and collisions)
+"""
+
+
+class GameEngine:
+    def __init__(self, track: Track):
+        self.track = track
+
     def next_position(self, vehicle: Vehicle, thrust: Thrust, diff_angle: Angle, dt: float = 1.0) -> Vehicle:
         new_direction = vehicle.next_direction(diff_angle)
         dv_dt = np.array([thrust * math.cos(new_direction), thrust * math.sin(new_direction)])
@@ -204,19 +239,15 @@ class Track:
     def _new_next_checkpoint(self, vehicle: Vehicle, new_position: Vector):
         new_current_lap = vehicle.current_lap
         new_next_checkpoint_id = vehicle.next_checkpoint_id
-        distance_to_checkpoint = distance2(new_position, self.total_checkpoints[vehicle.next_checkpoint_id])
+        next_checkpoint = self.track.next_checkpoint(vehicle)
+        distance_to_checkpoint = distance2(new_position, next_checkpoint)
         if distance_to_checkpoint < CHECKPOINT_RADIUS ** 2:
             new_next_checkpoint_id += 1
-            if new_next_checkpoint_id >= len(self.checkpoints):
+            if new_next_checkpoint_id >= len(self.track):
                 new_next_checkpoint_id = 0
                 new_current_lap += 1
         return new_next_checkpoint_id, new_current_lap
 
-    def _pre_compute_distances_to_end(self):
-        # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
-        for i in reversed(range(len(self.total_checkpoints) - 1)):
-            distance_to_next = distance2(self.total_checkpoints[i], self.total_checkpoints[i + 1])
-            self.distances[i] = self.distances[i + 1] + distance_to_next
 
 
 """
@@ -268,21 +299,6 @@ class GameState:
         self.opponent.track_lap(opponent)
 
 
-class Chronometer:
-    def __init__(self):
-        self.start_time = 0
-
-    def start(self):
-        self.start_time = time.time_ns()
-
-    def spent(self):
-        current = time.time_ns()
-        return self._to_ms(current - self.start_time)
-
-    def _to_ms(self, delay):
-        return delay / 1_000_000
-
-
 """
 Agent that just tries to minimize the distance, not taking into account collisions
 """
@@ -292,6 +308,7 @@ class ShortestPathAgent:
     def __init__(self, track: Track):
         self.track = track
         self.game_state = GameState(nb_checkpoints=len(self.track))
+        self.game_engine = GameEngine(track=track)
         self.predictions: List[Vehicle] = [None, None]
         self.moves = np.array([
             (BOOST_STRENGTH, 0),
@@ -317,9 +334,9 @@ class ShortestPathAgent:
         actions = []
         for vehicle_id, vehicle in enumerate(player):
             self._report_bad_prediction(vehicle, vehicle_id)
-            if self._is_runner(player, vehicle_id):
+            if self.track.is_runner(player, vehicle_id):
                 debug("runner:", vehicle)
-                action, next_vehicle = self._shortest_path_action(vehicle, vehicle_id, metric=self.track.remaining_distance2)
+                action, next_vehicle = self._shortest_path(vehicle, vehicle_id)
             else:
                 debug("follower:", vehicle)
                 action, next_vehicle = self._intercept(vehicle, vehicle_id, opponent)
@@ -327,13 +344,8 @@ class ShortestPathAgent:
             actions.append(action)
         return actions
 
-    def _is_runner(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
-        other_id = 1 - vehicle_id
-        return self.track.progress_index(vehicles[vehicle_id]) >= self.track.progress_index(vehicles[other_id])
-
-    def _is_first(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
-        other_id = 1 - vehicle_id
-        return self.track.remaining_distance2(vehicles[vehicle_id]) <= self.track.remaining_distance2(vehicles[other_id])
+    def _shortest_path(self, vehicle: Vehicle, vehicle_id: int):
+        return self._shortest_path_action(vehicle, vehicle_id, metric=self.track.remaining_distance2)
 
     def _intercept(self, vehicle: Vehicle, vehicle_id: int, opponents: List[Vehicle]) -> Tuple[str, Vehicle]:
         def intercept_metric(v: Vehicle):
@@ -342,7 +354,7 @@ class ShortestPathAgent:
             return (dist_to_opponent + dist_to_opponent_dst) / 2
 
         for opponent_id, opponent in enumerate(opponents):
-            if self._is_first(opponents, opponent_id):
+            if self.track.is_runner(opponents, opponent_id):
                 threshold = (2 * FORCE_FIELD_RADIUS) ** 2
                 collision = distance2(vehicle.position, opponent.position) <= threshold
                 collision |= distance2(vehicle.position + vehicle.speed, opponent.position + opponent.speed) <= threshold
@@ -363,7 +375,7 @@ class ShortestPathAgent:
                 debug("TIMEOUT: Skipping action", thrust, "with angle", angle)
                 break
 
-            next_vehicle = self.track.next_position(vehicle, thrust, angle)
+            next_vehicle = self.game_engine.next_position(vehicle, thrust, angle)
             depth = 3 if next_vehicle.boost_available else 4
             score = self._explore_move(next_vehicle, metric, depth=depth)
             if score < min_score:
@@ -392,7 +404,7 @@ class ShortestPathAgent:
 
         min_score = float('inf')
         for thrust, angle in self._possible_moves(vehicle):
-            next_vehicle = self.track.next_position(vehicle, thrust, angle, dt=1.0)
+            next_vehicle = self.game_engine.next_position(vehicle, thrust, angle, dt=1.0)
             score = self._explore_move(next_vehicle, metric, depth - 1)
             min_score = min(min_score, score)
         return min_score
