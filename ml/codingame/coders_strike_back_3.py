@@ -122,7 +122,7 @@ Action performed by the POD
 """
 
 
-class Action(NamedTuple):
+class OutputAction(NamedTuple):
     target: Vector
     thrust: Thrust
 
@@ -143,6 +143,20 @@ class Action(NamedTuple):
         return str(int(x)) + " " + str(int(y)) + " " + thrust
 
 
+class Action(NamedTuple):
+    angle: Angle
+    thrust: Thrust
+
+    def is_shield(self):
+        return self.thrust < 0
+
+    def is_boost(self):
+        return self.thrust > THRUST_STRENGTH
+
+    def to_output(self, vehicle: Vehicle):
+        return OutputAction(target=vehicle.target_point(self.angle), thrust=self.thrust)
+
+
 """
 Track
 """
@@ -155,20 +169,18 @@ class Track:
         self.distances = np.zeros(len(self.total_checkpoints))
         self._pre_compute_distances_to_end()
 
-    # TODO - replace 'thrust' by 'action" (boost and shield), or consider that -1 is shield
-
     def __len__(self):
         return len(self.checkpoints)
 
-    def progress(self, vehicle: Vehicle) -> int:
+    def progress_index(self, vehicle: Vehicle) -> int:
         return vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
 
     def remaining_distance2(self, vehicle: Vehicle) -> float:
-        checkpoint_id = self.progress(vehicle)
+        checkpoint_id = self.progress_index(vehicle)
         return distance2(vehicle.position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
 
     def next_checkpoint(self, vehicle: Vehicle) -> Checkpoint:
-        checkpoint_id = self.progress(vehicle)
+        checkpoint_id = self.progress_index(vehicle)
         return self.total_checkpoints[checkpoint_id]
 
     def angle_next_checkpoint(self, vehicle: Vehicle) -> float:
@@ -317,7 +329,7 @@ class ShortestPathAgent:
 
     def _is_runner(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
         other_id = 1 - vehicle_id
-        return self.track.progress(vehicles[vehicle_id]) >= self.track.progress(vehicles[other_id])
+        return self.track.progress_index(vehicles[vehicle_id]) >= self.track.progress_index(vehicles[other_id])
 
     def _is_first(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
         other_id = 1 - vehicle_id
@@ -336,7 +348,7 @@ class ShortestPathAgent:
                 collision |= distance2(vehicle.position + vehicle.speed, opponent.position + opponent.speed) <= threshold
                 if collision:
                     self.game_state.player.notify_shield_used(vehicle_id)
-                    action = Action(target=opponent.position + opponent.speed, thrust=-1)
+                    action = OutputAction(target=opponent.position + opponent.speed, thrust=-1)
                     return str(action), vehicle
                 else:
                     return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
@@ -369,10 +381,10 @@ class ShortestPathAgent:
         return self._select_action(vehicle_id, vehicle, best_thrust, best_angle), best_next_vehicle
 
     def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
-        action = Action(target=vehicle.target_point(best_angle), thrust=best_thrust)
+        action = Action(angle=best_angle, thrust=best_thrust)
         if action.is_boost():
             self.game_state.player.notify_boost_used(vehicle_id)
-        return str(action)
+        return str(action.to_output(vehicle))
 
     def _explore_move(self, vehicle: Vehicle, metric, depth: int) -> float:
         if depth <= 1:
