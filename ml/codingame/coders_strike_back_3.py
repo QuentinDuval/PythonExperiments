@@ -249,7 +249,6 @@ class GameEngine:
         return new_next_checkpoint_id, new_current_lap
 
 
-
 """
 Game state
 """
@@ -305,6 +304,9 @@ Agent that just tries to minimize the distance, not taking into account collisio
 
 
 class ShortestPathAgent:
+    # TODO - take into account the number of checkpoints?
+    # TODO - move the follower pod direction to second checkpoint?
+
     def __init__(self, track: Track):
         self.track = track
         self.game_state = GameState(nb_checkpoints=len(self.track))
