@@ -40,8 +40,8 @@ class World:
         self.moves = [
             Move.create("LEFT", -1, 0),
             Move.create("RIGHT", 1, 0),
-            Move.create("UP", 0, 1),
-            Move.create("DOWN", 0, -1)]
+            Move.create("UP", 0, -1),
+            Move.create("DOWN", 0, 1)]
 
     def remove_player(self, player_id: int):
         debug("REMOVE PLAYER:", player_id)
@@ -52,7 +52,6 @@ class World:
         for move in self.moves:
             x, y = move.apply(position)
             if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                debug(self.grid[(x, y)])
                 if self.grid[(x, y)] == EMPTY:
                     moves.append(move)
         return moves
@@ -100,6 +99,8 @@ Game loop
 world = World()
 
 prev_inputs = None
+prediction = None
+
 while True:
     inputs = Inputs.read()
     if prev_inputs:
@@ -111,13 +112,16 @@ while True:
                 world.acquire(player_id, inputs.curr_pos[player_id])
 
     debug(inputs)
-    debug(world.grid)
 
     player_pos = inputs.curr_pos[inputs.player_index]
+    if prediction is not None and not np.array_equal(prediction, player_pos):
+        debug("BAD PREDICTION:", prediction, "vs actual", player_pos)
+
     valid_moves = world.valid_moves(player_pos)
     debug(valid_moves)
 
     for move in valid_moves:
         print(move.name)
+        prediction = move.apply(player_pos)
         break
     prev_inputs = inputs
