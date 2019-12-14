@@ -306,6 +306,7 @@ Agent that just tries to minimize the distance, not taking into account collisio
 class ShortestPathAgent:
     # TODO - take into account the number of checkpoints?
     # TODO - move the follower pod direction to second checkpoint?
+    # TODO - activate shield for the runner when someone is about the hit it too fast?
 
     def __init__(self, track: Track):
         self.track = track
