@@ -118,6 +118,32 @@ class Vehicle(NamedTuple):
 
 
 """
+Action performed by the POD
+"""
+
+
+class Action(NamedTuple):
+    target: Vector
+    thrust: Thrust
+
+    def is_shield(self):
+        return self.thrust < 0
+
+    def is_boost(self):
+        return self.thrust > THRUST_STRENGTH
+
+    def __repr__(self):
+        x, y = self.target
+        if self.is_shield():
+            thrust = "SHIELD"
+        elif self.is_boost():
+            thrust = "BOOST"
+        else:
+            thrust = str(int(self.thrust))
+        return str(int(x)) + " " + str(int(y)) + " " + thrust
+
+
+"""
 Track
 """
 
@@ -264,7 +290,6 @@ class ShortestPathAgent:
             (0.2 * THRUST_STRENGTH, +MAX_TURN_RAD)
         ])
         self.chronometer = Chronometer()
-        # TODO - there is a problem: if you put thrust=0, then the IA stay stuck in front of checkpoint sometimes
 
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.chronometer.start()
@@ -290,9 +315,13 @@ class ShortestPathAgent:
             actions.append(action)
         return actions
 
-    def _is_runner(self, vehicles: List[Vehicle], vehicle_id: int):
+    def _is_runner(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
         other_id = 1 - vehicle_id
         return self.track.progress(vehicles[vehicle_id]) >= self.track.progress(vehicles[other_id])
+
+    def _is_first(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
+        other_id = 1 - vehicle_id
+        return self.track.remaining_distance2(vehicles[vehicle_id]) <= self.track.remaining_distance2(vehicles[other_id])
 
     def _intercept(self, vehicle: Vehicle, vehicle_id: int, opponents: List[Vehicle]) -> Tuple[str, Vehicle]:
         def intercept_metric(v: Vehicle):
@@ -301,14 +330,14 @@ class ShortestPathAgent:
             return (dist_to_opponent + dist_to_opponent_dst) / 2
 
         for opponent_id, opponent in enumerate(opponents):
-            if self._is_runner(opponents, opponent_id):
-                # TODO - should take into account the distance as well (to select the most advanced opponent)
-                if distance2(vehicle.position + vehicle.speed, opponent.position + opponent.speed) < (2 * FORCE_FIELD_RADIUS) ** 2:
-                    debug("SHIELD")
+            if self._is_first(opponents, opponent_id):
+                threshold = (2 * FORCE_FIELD_RADIUS) ** 2
+                collision = distance2(vehicle.position, opponent.position) <= threshold
+                collision |= distance2(vehicle.position + vehicle.speed, opponent.position + opponent.speed) <= threshold
+                if collision:
                     self.game_state.player.notify_shield_used(vehicle_id)
-                    next_x, next_y = opponent.position + opponent.speed
-                    action = str(int(next_x)) + " " + str(int(next_y)) + " " + "SHIELD"
-                    return action, vehicle
+                    action = Action(target=opponent.position + opponent.speed, thrust=-1)
+                    return str(action), vehicle
                 else:
                     return self._shortest_path_action(vehicle, vehicle_id, metric=intercept_metric)
 
@@ -339,14 +368,11 @@ class ShortestPathAgent:
 
         return self._select_action(vehicle_id, vehicle, best_thrust, best_angle), best_next_vehicle
 
-    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle):
-        if best_thrust > 100:
-            best_thrust = "BOOST"
+    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
+        action = Action(target=vehicle.target_point(best_angle), thrust=best_thrust)
+        if action.is_boost():
             self.game_state.player.notify_boost_used(vehicle_id)
-        else:
-            best_thrust = str(int(best_thrust))
-        next_x, next_y = vehicle.target_point(best_angle)
-        return str(int(next_x)) + " " + str(int(next_y)) + " " + best_thrust
+        return str(action)
 
     def _explore_move(self, vehicle: Vehicle, metric, depth: int) -> float:
         if depth <= 1:
