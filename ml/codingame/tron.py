@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from typing import List, NamedTuple, Tuple
 
+
 """
 Utils
 """
@@ -12,12 +13,9 @@ def debug(*args):
 
 
 """
-World grid
+Move
 """
 
-WIDTH = 30
-HEIGHT = 20
-EMPTY = -1
 
 Vector = np.ndarray
 
@@ -34,14 +32,26 @@ class Move(NamedTuple):
         return position + self.direction
 
 
+ALL_MOVES = [
+    Move.create("LEFT", -1, 0),
+    Move.create("RIGHT", 1, 0),
+    Move.create("UP", 0, -1),
+    Move.create("DOWN", 0, 1)]
+
+
+"""
+World grid
+"""
+
+
+WIDTH = 30
+HEIGHT = 20
+EMPTY = -1
+
+
 class World:
     def __init__(self):
         self.grid = np.full(shape=(WIDTH, HEIGHT), fill_value=EMPTY, dtype=np.int)
-        self.moves = [
-            Move.create("LEFT", -1, 0),
-            Move.create("RIGHT", 1, 0),
-            Move.create("UP", 0, -1),
-            Move.create("DOWN", 0, 1)]
 
     def remove_player(self, player_id: int):
         debug("REMOVE PLAYER:", player_id)
@@ -49,7 +59,7 @@ class World:
 
     def valid_moves(self, position: Vector) -> List[Move]:
         moves = []
-        for move in self.moves:
+        for move in ALL_MOVES:
             x, y = move.apply(position)
             if 0 <= x < WIDTH and 0 <= y < HEIGHT:
                 if self.grid[(x, y)] == EMPTY:
@@ -63,6 +73,29 @@ class World:
     def play(self, player_id: int, position: Vector, move: Move):
         x, y = move.apply(position)
         self.grid[(x, y)] = player_id
+
+
+"""
+Agent
+"""
+
+
+class Agent:
+    def __init__(self, world: World):
+        self.world = world
+        self.prediction = None
+
+    def get_action(self, positions: List[Vector], player_index: int) -> Move:
+        player_pos = positions[player_index]
+        self._check_prediction(player_pos)
+        valid_moves = world.valid_moves(player_pos)
+        for move in valid_moves:
+            self.prediction = move.apply(player_pos)
+            return move
+
+    def _check_prediction(self, player_pos: Vector):
+        if self.prediction is not None and not np.array_equal(self.prediction, player_pos):
+            debug("BAD PREDICTION:", prediction, "vs actual", player_pos)
 
 
 """
@@ -96,7 +129,9 @@ class Inputs(NamedTuple):
 Game loop
 """
 
+
 world = World()
+agent = Agent(world)
 
 prev_inputs = None
 prediction = None
@@ -112,16 +147,6 @@ while True:
                 world.acquire(player_id, inputs.curr_pos[player_id])
 
     debug(inputs)
-
-    player_pos = inputs.curr_pos[inputs.player_index]
-    if prediction is not None and not np.array_equal(prediction, player_pos):
-        debug("BAD PREDICTION:", prediction, "vs actual", player_pos)
-
-    valid_moves = world.valid_moves(player_pos)
-    debug(valid_moves)
-
-    for move in valid_moves:
-        print(move.name)
-        prediction = move.apply(player_pos)
-        break
+    action = agent.get_action(inputs.curr_pos, inputs.player_index)
+    print(action.name)
     prev_inputs = inputs
