@@ -83,7 +83,7 @@ class World:
         self.grid[(x, y)] = player_id
 
     def flood_fill(self, positions: List[Vector]) -> List[int]:
-        scores = [0] * len(positions)
+        scores = [0] * len(positions)   # TODO - use numpy array
         filled = np.copy(self.grid)
         to_visit = deque([(x, y) for x, y in positions if filled[(x, y)] != EMPTY])
         while to_visit:
@@ -116,22 +116,38 @@ class Agent:
         debug(self.world.flood_fill(positions))
         player_pos = positions[player_id]
         self._check_prediction(player_pos)
-        valid_moves = self.world.valid_moves(player_pos)
+        score, move = self._minimax(self.world.clone(), positions, player_id, player_id, depth=3)
+        return move
+
+    def _minimax(self, world: World, positions: List[Vector], player_id: int, current_player_id: int, depth: int) -> Tuple[int, Move]:
+        # TODO - flood fill will not allow you to detect you crossed an articulation point
+        # TODO - flood fill will clearly not help in the end-game (all directions are the same)
+
+        if depth == 0:
+            # TODO - flood fill from the next player, else it is optimistic
+            scores = world.flood_fill(positions)
+            return scores[player_id], None
 
         best_move = None
-        max_score = 0
+        best_score = float('inf') if player_id != current_player_id else float('-inf')
+        player_pos = positions[current_player_id]
+        valid_moves = self.world.valid_moves(player_pos)
         for move in valid_moves:
-            world = self.world.clone()
             next_positions = list(positions)
-            next_positions[player_id] = move.apply(player_pos)
-            world.acquire(player_id, next_positions[player_id])
-            scores = world.flood_fill(next_positions)
-            debug(move, scores)
-            if scores[player_id] > max_score:
-                max_score = scores[player_id]
-                best_move = move
-        self.prediction = best_move.apply(player_pos)
-        return best_move
+            next_positions[current_player_id] = move.apply(player_pos)
+            world.acquire(current_player_id, next_positions[current_player_id])
+            next_player_id = (current_player_id + 1) % len(positions)
+            score, _ = self._minimax(world, next_positions, player_id, next_player_id, depth-1)
+            world.acquire(EMPTY, next_positions[current_player_id])
+            if current_player_id == player_id:
+                if score > best_score:
+                    best_move = move
+                    best_score = score
+            else:
+                if score < best_score:
+                    best_move = move
+                    best_score = score
+        return best_score, best_move
 
     def _check_prediction(self, player_pos: Vector):
         if self.prediction is not None and not np.array_equal(self.prediction, player_pos):
@@ -170,7 +186,7 @@ Game loop
 """
 
 
-# TODO - high level AI: beginning of game, loosing game, end of game, etc.
+# TODO - high level AI: beginning of game, loosing game, end of game (each player has own connected component), etc.
 # TODO - minimax
 # TODO - beware of suicidal tendencies of minimax
 # TODO - better evaluation that choosing your best score: you need to penalize the opponent as well (pick the higher)
