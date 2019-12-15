@@ -132,6 +132,7 @@ class Agent:
         best_score = float('inf') if player_id != current_player_id else float('-inf')
         player_pos = positions[current_player_id]
         valid_moves = self.world.valid_moves(player_pos)
+        # TODO - if there are no valid moves, this will lead to bad behavior: the bot will avoid killing an opponent...
         for move in valid_moves:
             next_positions = list(positions)
             next_positions[current_player_id] = move.apply(player_pos)
