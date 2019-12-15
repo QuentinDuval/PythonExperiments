@@ -1,8 +1,8 @@
 import sys
 import math
 import numpy as np
+from functools import lru_cache
 from typing import List, NamedTuple, Tuple
-
 
 """
 Utils
@@ -16,7 +16,6 @@ def debug(*args):
 """
 Game
 """
-
 
 Move = Tuple[int, int]
 
@@ -60,7 +59,7 @@ class Board:
         position = 2 * (x * 3 + y) + (player_id - 1)
         return Board(fields=self.fields | (1 << position))
 
-    def is_winner(self, player_id: int):
+    def is_winner(self, player_id: int) -> bool:
         for combi in COMBINATIONS:
             count = 0
             for x, y in combi:
@@ -97,15 +96,41 @@ class PerfectAgent:
     def __init__(self):
         pass
 
+    # TODO - this code does not work: select a move that will win or at least not lead to certain loss
+
     def get_action(self, board: Board) -> Move:
         for move in board.available_moves():
             new_board = board.play(move, PLAYER)
-            if new_board.is_winner(PLAYER):
+            if self.will_win(new_board, PLAYER):
+                return move
+
+        for move in board.available_moves():
+            new_board = board.play(move, PLAYER)
+            if not self.will_lose(new_board, PLAYER):
                 return move
         return move
 
-    def _minimax(self, board: Board, player_id: int, depth: int) -> bool:
-        pass
+    @lru_cache(maxsize=None)
+    def will_lose(self, board: Board, player_id: int) -> bool:
+        if board.is_winner(player_id):
+            return False
+
+        for move in board.available_moves():
+            new_board = board.play(move, next_player(player_id))
+            if not self.will_win(new_board, next_player(player_id)):
+                return False
+        return True
+
+    @lru_cache(maxsize=None)
+    def will_win(self, board: Board, player_id: int) -> bool:
+        if board.is_winner(player_id):
+            return True
+
+        for move in board.available_moves():
+            new_board = board.play(move, next_player(player_id))
+            if not self.will_lose(new_board, next_player(player_id)):
+                return False
+        return True
 
 
 """
@@ -131,10 +156,8 @@ def print_move(move):
 Game loop
 """
 
-
 board = Board.empty()
 agent = PerfectAgent()
-
 
 while True:
     opponent_move = read_coord()
