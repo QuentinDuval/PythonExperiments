@@ -2,6 +2,7 @@ import sys
 import numpy as np
 from collections import deque
 from typing import List, NamedTuple, Tuple
+import time
 
 
 """
@@ -11,6 +12,21 @@ Utils
 
 def debug(*args):
     print(*args, file=sys.stderr)
+
+
+class Chronometer:
+    def __init__(self):
+        self.start_time = 0
+
+    def start(self):
+        self.start_time = time.time_ns()
+
+    def spent(self):
+        current = time.time_ns()
+        return self._to_ms(current - self.start_time)
+
+    def _to_ms(self, delay):
+        return delay / 1_000_000
 
 
 """
@@ -40,7 +56,7 @@ ALL_MOVES = [
     Move.create("DOWN", 0, 1)]
 
 
-ALL_DIRECTIONS = [(move.direction[0], move.direction[1]) for move in ALL_MOVES]
+ALL_DIRECTIONS = [move.direction for move in ALL_MOVES]
 
 
 """
@@ -66,7 +82,7 @@ class World:
         return World(grid)
 
     def clone(self):
-        return World(np.copy(self.grid))
+        return World(grid=np.copy(self.grid))
 
     def remove_player(self, player_id: int):
         debug("REMOVE PLAYER:", player_id)
@@ -75,11 +91,14 @@ class World:
     def valid_moves(self, position: Vector) -> List[Move]:
         moves = []
         for move in ALL_MOVES:
-            x, y = move.apply(position)
-            if 0 <= x < WIDTH and 0 <= y < HEIGHT:
-                if self.grid[(x, y)] == EMPTY:
-                    moves.append(move)
+            next_position = move.apply(position)
+            if self.is_free(next_position):
+                moves.append(move)
         return moves
+
+    def is_free(self, position: Vector) -> bool:
+        x, y = position
+        return 0 <= x < WIDTH and 0 <= y < HEIGHT and self.grid[(x, y)] == EMPTY
 
     def acquire(self, player_id: int, position: Vector):
         x, y = position
@@ -91,19 +110,20 @@ class World:
         if from_player > 0:
             positions = positions[from_player:] + positions[:from_player]
 
-        to_visit = deque([(x, y) for x, y in positions if filled[(x, y)] != EMPTY])
+        to_visit = deque([(x, y) for x, y in positions if (x, y) != (-1, -1)])
         while to_visit:
             x, y = to_visit.popleft()
             owner = filled[(x, y)]
+            scores[owner] += 1
             if owner == -1:
                 continue
 
-            for dx, dy in ALL_DIRECTIONS:
-                next_pos = x + dx, y + dy
+            for direction in ALL_DIRECTIONS:
+                next_pos = x + direction[0], y + direction[1]
                 if 0 <= next_pos[0] < WIDTH and 0 <= next_pos[1] < HEIGHT:
                     if filled[next_pos] == EMPTY:
                         filled[next_pos] = owner
-                        scores[owner] += 1
+                        scores[owner] += 1  # count a cell more if it has neighbors, it is better to control
                         to_visit.append(next_pos)
         return scores
 
@@ -119,38 +139,85 @@ class Agent:
         self.prediction = None
 
     def get_action(self, positions: List[Vector], player_id: int) -> Move:
-        player_pos = positions[player_id]
-        self._check_prediction(player_pos)
-        score, move = self._minimax(self.world.clone(), positions, player_id, player_id, depth=3)
-        return move
+        if self._is_player_isolated(self.world, positions, player_id):
+            debug("STRATEGY: Wall hugging")
+            return self._wall_hugging(self.world, positions, player_id)
+        else:
+            debug("STRATEGY: Flood filling")
+            score, move = self._minimax(self.world, positions, player_id, player_id, depth=2)
+            return move
 
-    def _minimax(self, world: World, positions: List[Vector], player_id: int, current_player_id: int, depth: int) -> Tuple[int, Move]:
+    @classmethod
+    def _wall_hugging(cls, world: World, positions: List[Vector], player_id: int) -> Move:
+        # TODO - choose the move that removes the least number of edges of the graph (most wall)
+        # TODO - but! avoid cutting articulation points, and if you have to, choose the biggest remaining component
+
+        best_move = ALL_MOVES[0]
+        best_score = (-1, 0)
+        curr_pos = positions[player_id]
+        for move in world.valid_moves(positions[player_id]):
+            next_pos = move.apply(curr_pos)
+            world.acquire(player_id, next_pos)
+            flood_fill = world.flood_fill([next_pos], from_player=0)[0]
+            wall_count = len(ALL_MOVES) - len(world.valid_moves(next_pos))
+            score = (flood_fill, wall_count)
+            if score > best_score:
+                best_score = score
+                best_move = move
+            world.acquire(EMPTY, next_pos)
+        return best_move
+
+    @classmethod
+    def _is_player_isolated(cls, world: World, positions: List[Vector], player_id: int) -> bool:
+        world = world.clone()
+        to_visit = [positions[player_id]]
+        while to_visit:
+            position = to_visit.pop()
+            for move in ALL_MOVES:
+                next_position = move.apply(position)
+                if world.is_free(next_position):
+                    world.acquire(player_id, next_position)
+                    to_visit.append(next_position)
+                else:
+                    for i in range(len(positions)):
+                        if i != player_id and np.array_equal(positions[i], next_position):
+                            return False
+        return True
+
+    @classmethod
+    def _minimax(cls,
+                 world: World, positions: List[Vector], player_id: int,
+                 current_player_id: int, depth: int) -> Tuple[int, Move]:
+
+        # TODO - UNDERSTAND WHY IT FAILS COMPARED TO HASKELL SOLUTION WHICH IS SUPPOSED TO BE IDENTICAL
         # TODO - flood fill will not allow you to detect you crossed an articulation point
         # TODO - flood fill will clearly not help in the end-game (all directions are the same)
 
         if depth == 0:
             scores = world.flood_fill(positions, from_player=current_player_id)
+            debug("scores:", scores)
             return scores[player_id], None
 
         curr_position = positions[current_player_id]
-        valid_moves = self.world.valid_moves(curr_position)
+        valid_moves = world.valid_moves(curr_position)
 
         # If there are no valid moves: otherwise the bot will avoid killing opponents
         if not valid_moves:
-            debug("EXPLORATION REMOVE PLAYER:", current_player_id, "at", curr_position)
+            # debug("EXPLORATION REMOVE PLAYER:", current_player_id, "at", curr_position)
             new_word = world.clone()
             new_word.remove_player(current_player_id)
-            next_player_id = self._next_player(current_player_id, positions)
-            return self._minimax(new_word, positions, player_id, next_player_id, depth - 1)
+            next_player_id = cls._next_player(current_player_id, positions)
+            return cls._minimax(new_word, positions, player_id, next_player_id, depth - 1)
 
         best_move = None
         best_score = float('inf') if player_id != current_player_id else float('-inf')
         for move in valid_moves:
+            debug("move of", current_player_id, "at", curr_position, "try", move.name)
             next_position = move.apply(curr_position)
             positions[current_player_id] = next_position
             world.acquire(current_player_id, next_position)
-            next_player_id = self._next_player(current_player_id, positions)
-            score, _ = self._minimax(world, positions, player_id, next_player_id, depth-1)
+            next_player_id = cls._next_player(current_player_id, positions)
+            score, _ = cls._minimax(world, positions, player_id, next_player_id, depth-1)
             world.acquire(EMPTY, next_position)
             positions[current_player_id] = curr_position
             if current_player_id == player_id:
@@ -163,15 +230,12 @@ class Agent:
                     best_score = score
         return best_score, best_move
 
-    def _next_player(self, current_player_id: int, positions: List[Vector]) -> int:
+    @classmethod
+    def _next_player(cls, current_player_id: int, positions: List[Vector]) -> int:
         next_player_id = current_player_id + 1
         if next_player_id >= len(positions):
             next_player_id -= len(positions)
         return next_player_id
-
-    def _check_prediction(self, player_pos: Vector):
-        if self.prediction is not None and not np.array_equal(self.prediction, player_pos):
-            debug("BAD PREDICTION:", prediction, "vs actual", player_pos)
 
 
 """
