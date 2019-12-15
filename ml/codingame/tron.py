@@ -53,6 +53,9 @@ HEIGHT = 20
 EMPTY = -1
 
 
+ScoresByPlayer = np.ndarray
+
+
 class World:
     def __init__(self, grid):
         self.grid = grid
@@ -82,9 +85,12 @@ class World:
         x, y = position
         self.grid[(x, y)] = player_id
 
-    def flood_fill(self, positions: List[Vector]) -> List[int]:
-        scores = [0] * len(positions)   # TODO - use numpy array
+    def flood_fill(self, positions: List[Vector], from_player: int) -> ScoresByPlayer:
+        scores = np.zeros(shape=len(positions))
         filled = np.copy(self.grid)
+        if from_player > 0:
+            positions = positions[from_player:] + positions[:from_player]
+
         to_visit = deque([(x, y) for x, y in positions if filled[(x, y)] != EMPTY])
         while to_visit:
             x, y = to_visit.popleft()
@@ -113,7 +119,6 @@ class Agent:
         self.prediction = None
 
     def get_action(self, positions: List[Vector], player_id: int) -> Move:
-        debug(self.world.flood_fill(positions))
         player_pos = positions[player_id]
         self._check_prediction(player_pos)
         score, move = self._minimax(self.world.clone(), positions, player_id, player_id, depth=3)
@@ -124,15 +129,19 @@ class Agent:
         # TODO - flood fill will clearly not help in the end-game (all directions are the same)
 
         if depth == 0:
-            # TODO - flood fill from the next player, else it is optimistic
-            scores = world.flood_fill(positions)
+            scores = world.flood_fill(positions, from_player=current_player_id)
             return scores[player_id], None
 
         best_move = None
         best_score = float('inf') if player_id != current_player_id else float('-inf')
         player_pos = positions[current_player_id]
         valid_moves = self.world.valid_moves(player_pos)
-        # TODO - if there are no valid moves, this will lead to bad behavior: the bot will avoid killing an opponent...
+
+        # If there are no valid moves: otherwise the bot will avoid killing opponents
+        if not valid_moves:
+            next_player_id = (current_player_id + 1) % len(positions)
+            return self._minimax(world, positions, player_id, next_player_id, depth - 1)
+
         for move in valid_moves:
             next_positions = list(positions)
             next_positions[current_player_id] = move.apply(player_pos)
@@ -188,7 +197,6 @@ Game loop
 
 
 # TODO - high level AI: beginning of game, loosing game, end of game (each player has own connected component), etc.
-# TODO - minimax
 # TODO - beware of suicidal tendencies of minimax
 # TODO - better evaluation that choosing your best score: you need to penalize the opponent as well (pick the higher)
 
