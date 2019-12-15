@@ -132,23 +132,27 @@ class Agent:
             scores = world.flood_fill(positions, from_player=current_player_id)
             return scores[player_id], None
 
-        best_move = None
-        best_score = float('inf') if player_id != current_player_id else float('-inf')
-        player_pos = positions[current_player_id]
-        valid_moves = self.world.valid_moves(player_pos)
+        curr_position = positions[current_player_id]
+        valid_moves = self.world.valid_moves(curr_position)
 
         # If there are no valid moves: otherwise the bot will avoid killing opponents
         if not valid_moves:
-            next_player_id = (current_player_id + 1) % len(positions)
-            return self._minimax(world, positions, player_id, next_player_id, depth - 1)
+            debug("EXPLORATION REMOVE PLAYER:", current_player_id, "at", curr_position)
+            new_word = world.clone()
+            new_word.remove_player(current_player_id)
+            next_player_id = self._next_player(current_player_id, positions)
+            return self._minimax(new_word, positions, player_id, next_player_id, depth - 1)
 
+        best_move = None
+        best_score = float('inf') if player_id != current_player_id else float('-inf')
         for move in valid_moves:
-            next_positions = list(positions)
-            next_positions[current_player_id] = move.apply(player_pos)
-            world.acquire(current_player_id, next_positions[current_player_id])
-            next_player_id = (current_player_id + 1) % len(positions)
-            score, _ = self._minimax(world, next_positions, player_id, next_player_id, depth-1)
-            world.acquire(EMPTY, next_positions[current_player_id])
+            next_position = move.apply(curr_position)
+            positions[current_player_id] = next_position
+            world.acquire(current_player_id, next_position)
+            next_player_id = self._next_player(current_player_id, positions)
+            score, _ = self._minimax(world, positions, player_id, next_player_id, depth-1)
+            world.acquire(EMPTY, next_position)
+            positions[current_player_id] = curr_position
             if current_player_id == player_id:
                 if score > best_score:
                     best_move = move
@@ -158,6 +162,12 @@ class Agent:
                     best_move = move
                     best_score = score
         return best_score, best_move
+
+    def _next_player(self, current_player_id: int, positions: List[Vector]) -> int:
+        next_player_id = current_player_id + 1
+        if next_player_id >= len(positions):
+            next_player_id -= len(positions)
+        return next_player_id
 
     def _check_prediction(self, player_pos: Vector):
         if self.prediction is not None and not np.array_equal(self.prediction, player_pos):
