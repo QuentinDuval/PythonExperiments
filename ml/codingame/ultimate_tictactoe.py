@@ -18,26 +18,94 @@ Game
 """
 
 
+Move = Tuple[int, int]
+
 NO_MOVE = (-1, -1)
 EMPTY = 0
 PLAYER = 1
 OPPONENT = 2
 
 
+def next_player(player_id: int) -> int:
+    return 3 - player_id
+
+
+COMBINATIONS = [
+    # diagonals
+    {(0, 0), (1, 1), (2, 2)},
+    {(2, 0), (1, 1), (0, 2)},
+    # rows
+    {(0, 0), (0, 1), (0, 2)},
+    {(1, 0), (1, 1), (1, 2)},
+    {(2, 0), (2, 1), (2, 2)},
+    # cols
+    {(0, 0), (1, 0), (2, 0)},
+    {(0, 1), (1, 1), (2, 1)},
+    {(0, 2), (1, 2), (2, 2)}
+]
+
+
 class Board:
-    def __init__(self, grid):
-        self.grid = grid
+    __slots__ = ['fields']
+
+    def __init__(self, fields: int):
+        self.fields = fields
 
     @classmethod
     def empty(cls):
-        return cls(grid=np.zeros(shape=(3, 3)))
+        return cls(fields=0)
 
-    def play(self, coord: Tuple[int, int], player_id: int):
-        self.grid[coord] = player_id
+    def play(self, coord: Move, player_id: int):
+        x, y = coord
+        position = 2 * (x * 3 + y) + (player_id - 1)
+        return Board(fields=self.fields | (1 << position))
+
+    def is_winner(self, player_id: int):
+        for combi in COMBINATIONS:
+            count = 0
+            for x, y in combi:
+                position = 2 * (x * 3 + y) + (player_id - 1)
+                if self.fields & (1 << position):
+                    count += 1
+            if count == 3:
+                return True
+        return False
 
     def available_moves(self):
-        xs, ys = np.where(self.grid == 0)
-        return list(zip(xs, ys))
+        for x in range(3):
+            for y in range(3):
+                position = 2 * (x * 3 + y)
+                if not 1 << position & self.fields and not 1 << (position + 1) & self.fields:
+                    yield x, y
+
+    def __eq__(self, other):
+        return self.fields == other.fields
+
+    def __hash__(self):
+        return hash(self.fields)
+
+
+"""
+Agent
+"""
+
+
+# TODO - use Dynamic Programming to compute all combinations (3 ^ 9)
+
+
+class PerfectAgent:
+    def __init__(self):
+        pass
+
+    def get_action(self, board: Board) -> Move:
+        for move in board.available_moves():
+            new_board = board.play(move, PLAYER)
+            if new_board.is_winner(PLAYER):
+                return move
+        return move
+
+    def _minimax(self, board: Board, player_id: int, depth: int) -> bool:
+        pass
 
 
 """
@@ -47,7 +115,7 @@ Inputs acquisition
 
 def read_coord():
     row, col = [int(i) for i in input().split()]
-    return (row, col)
+    return row, col
 
 
 def read_valid():
@@ -63,17 +131,20 @@ def print_move(move):
 Game loop
 """
 
+
 board = Board.empty()
+agent = PerfectAgent()
+
 
 while True:
     opponent_move = read_coord()
-    if opponent_move != NO_MOVE:
-        board.play(opponent_move, OPPONENT)
-
     valid_moves = read_valid()
-    debug(valid_moves)
-    debug(board.available_moves())
+    if opponent_move != NO_MOVE:
+        board = board.play(opponent_move, OPPONENT)
 
-    move = valid_moves[0]
-    board.play(move, PLAYER)
+    debug(valid_moves)
+    debug(list(board.available_moves()))
+
+    move = agent.get_action(board)
+    board = board.play(move, PLAYER)
     print_move(move)
