@@ -70,18 +70,34 @@ class Board:
                 return True
         return False
 
-    def available_moves(self):
+    def available_moves(self) -> List[Move]:
+        moves = []
         for x in range(3):
             for y in range(3):
                 position = 2 * (x * 3 + y)
                 if not 1 << position & self.fields and not 1 << (position + 1) & self.fields:
-                    yield x, y
+                    moves.append((x, y))
+        return moves
 
     def __eq__(self, other):
         return self.fields == other.fields
 
     def __hash__(self):
         return hash(self.fields)
+
+    def __repr__(self):
+        r = ""
+        for x in range(3):
+            for y in range(3):
+                position = 2 * (x * 3 + y)
+                if 1 << position & self.fields:
+                    r += "x"
+                elif 1 << (position + 1) & self.fields:
+                    r += "o"
+                else:
+                    r += "."
+            r += "\n"
+        return r
 
 
 """
@@ -96,41 +112,41 @@ class PerfectAgent:
     def __init__(self):
         pass
 
-    # TODO - this code does not work: select a move that will win or at least not lead to certain loss
-
     def get_action(self, board: Board) -> Move:
-        for move in board.available_moves():
-            new_board = board.play(move, PLAYER)
-            if self.will_win(new_board, PLAYER):
-                return move
-
-        for move in board.available_moves():
-            new_board = board.play(move, PLAYER)
-            if not self.will_lose(new_board, PLAYER):
-                return move
-        return move
+        best_score, best_move = self._minimax(board, PLAYER)
+        debug("best move:", best_move, "with", best_score)
+        return best_move
 
     @lru_cache(maxsize=None)
-    def will_lose(self, board: Board, player_id: int) -> bool:
-        if board.is_winner(player_id):
-            return False
+    def _minimax(self, board: Board, player_id: int) -> Tuple[int, Move]:
+        available_moves = board.available_moves()
+        if not available_moves:
+            return 0, None
 
-        for move in board.available_moves():
-            new_board = board.play(move, next_player(player_id))
-            if not self.will_win(new_board, next_player(player_id)):
-                return False
-        return True
+        best_move = None
+        best_score = float('-inf') if player_id == PLAYER else float('inf')
+        for move in available_moves:
+            new_board = board.play(move, player_id)
+            if new_board.is_winner(player_id):
+                best_score = self._win_score(player_id)
+                best_move = move
+                break
 
-    @lru_cache(maxsize=None)
-    def will_win(self, board: Board, player_id: int) -> bool:
-        if board.is_winner(player_id):
-            return True
+            score, _ = self._minimax(new_board, next_player(player_id))
+            if player_id == PLAYER:
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+            elif player_id == OPPONENT:
+                if score < best_score:
+                    best_score = score
+                    best_move = move
 
-        for move in board.available_moves():
-            new_board = board.play(move, next_player(player_id))
-            if not self.will_lose(new_board, next_player(player_id)):
-                return False
-        return True
+        # debug(board, player_id, "=>", best_score, best_move)
+        return best_score, best_move
+
+    def _win_score(self, player_id: int) -> int:
+        return 1 if player_id == PLAYER else -1
 
 
 """
@@ -156,18 +172,49 @@ def print_move(move):
 Game loop
 """
 
-board = Board.empty()
-agent = PerfectAgent()
 
-while True:
-    opponent_move = read_coord()
-    valid_moves = read_valid()
-    if opponent_move != NO_MOVE:
-        board = board.play(opponent_move, OPPONENT)
+def game_loop():
+    board = Board.empty()
+    agent = PerfectAgent()
 
-    debug(valid_moves)
-    debug(list(board.available_moves()))
+    while True:
+        opponent_move = read_coord()
+        valid_moves = read_valid()
+        if opponent_move != NO_MOVE:
+            board = board.play(opponent_move, OPPONENT)
 
-    move = agent.get_action(board)
-    board = board.play(move, PLAYER)
-    print_move(move)
+        debug(board)
+
+        # debug(valid_moves)
+        # debug(list(board.available_moves()))
+
+        move = agent.get_action(board)
+        board = board.play(move, PLAYER)
+        print_move(move)
+
+
+game_loop()
+
+
+"""
+Tests
+"""
+
+
+'''
+def test_1():
+    board = Board.empty()
+    agent = PerfectAgent()
+
+    board = board.play((0, 0), OPPONENT)
+    print(board)
+    board = board.play(agent.get_action(board), PLAYER)
+    print(board)
+    board = board.play((0, 1), OPPONENT)
+    print(board)
+    board = board.play(agent.get_action(board), PLAYER)
+    print(board)
+
+
+test_1()
+'''
