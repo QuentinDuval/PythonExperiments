@@ -225,17 +225,28 @@ class MinimaxAgent:
         self.min_score = -200
         self.max_score = 200
         # TODO - order the moves to improve the A/B pruning - how?
-        # TODO - improve the evaluation function (right now it does not help in many situations) - Machine Learning?
+        # TODO - improve the evaluation function (right now, useless in many situations) => Machine Learning?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
         pass
 
     def get_action(self, board: Board) -> Move:
         depth = 2 if board.next_quadrant == NO_MOVE else 3
-        best_score, best_move = self._minimax(board, PLAYER, alpha=self.min_score, beta=self.max_score, depth=depth)
+        best_score, best_move = self._mini_max(board, PLAYER, alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
 
     # TODO - @lru_cache(maxsize=10_000)
-    def _minimax(self, board: Board, player_id: int, alpha: int, beta: int, depth: int) -> Tuple[int, Move]:
+    def _mini_max(self, board: Board, player_id: int, alpha: int, beta: int, depth: int) -> Tuple[int, Move]:
+        """
+        Search for the best move to perform, stopping the search at a given depth to use the evaluation function
+        :param player_id: the current playing player
+        :param alpha:
+            The best score we can achieve already (the lower bound of our search)
+            => We can cut on opponent turn, if one sub-move leads to lower value than alpha
+        :param beta:
+            The best score we could ever achieve (the upper limit of our search) - or the best score the opponent can do
+            => We can cut on our turn, if one move leads to more than this, the opponent will never allow us to go there
+        """
+
         if depth <= 0:
             # debug("eval:", self._eval_board(board))
             return self._eval_board(board), NO_MOVE
@@ -252,7 +263,7 @@ class MinimaxAgent:
             if new_board.is_winner(player_id):
                 return self._win_score(player_id), move
 
-            score, _ = self._minimax(new_board, next_player(player_id), alpha, beta, depth=depth-1)
+            score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth - 1)
             if player_id == PLAYER:
                 if score > best_score:
                     best_score = score
