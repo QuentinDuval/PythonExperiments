@@ -225,7 +225,7 @@ class MinimaxAgent:
         self.min_score = -200
         self.max_score = 200
         # TODO - order the moves to improve the A/B pruning - how?
-        # TODO - improve the evaluation function (right now it does not help in many situations)
+        # TODO - improve the evaluation function (right now it does not help in many situations) - Machine Learning?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
         pass
 
