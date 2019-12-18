@@ -1,7 +1,8 @@
 import numpy as np
 import sys
 import random
-from typing import *
+from functools import lru_cache
+from typing import List, Tuple
 
 
 """
@@ -88,7 +89,7 @@ class Board:
             next_quadrant=NO_MOVE
         )
 
-    def winner(self, player_id: PlayerId) -> bool:
+    def is_winner(self, player_id: PlayerId) -> bool:
         for combi in COMBINATIONS:
             count = 0
             for pos in combi:
@@ -165,7 +166,8 @@ class Board:
                 r[x][y] = self._sub_repr(sub_board)
         return r
 
-    def _sub_repr(self, sub_board: int) -> str:
+    @staticmethod
+    def _sub_repr(sub_board: int) -> str:
         r = ""
         for x in range(3):
             for y in range(3):
@@ -181,7 +183,7 @@ class Board:
 
 
 """
-Agent
+Agent : random agent
 """
 
 
@@ -192,6 +194,60 @@ class RandomAgent:
     def get_action(self, board: Board) -> Move:
         moves = board.available_moves()
         return self.chooser(moves)
+
+
+"""
+Agent : minimax agent
+"""
+
+
+class MinimaxAgent:
+    def __init__(self):
+        # TODO - use the previous minimax to improve to direct the search (MTD methods + A/B pruning)
+        pass
+
+    def get_action(self, board: Board) -> Move:
+        depth = 1 if board.next_quadrant == NO_MOVE else 2
+        best_score, best_move = self._minimax(board, PLAYER, depth=depth)
+        return best_move
+
+    # TODO - @lru_cache(maxsize=10_000)
+    def _minimax(self, board: Board, player_id: int, depth: int) -> Tuple[int, Move]:
+        if depth <= 0:
+            # debug("eval:", self._eval_board(board))
+            return self._eval_board(board), NO_MOVE
+
+        available_moves = board.available_moves()
+        if not available_moves:
+            return 0, NO_MOVE
+
+        best_move = None
+        best_score = float('-inf') if player_id == PLAYER else float('inf')
+        for move in available_moves:
+            # debug("try move:", move)
+            new_board = board.play(player_id, move)
+            if new_board.is_winner(player_id):
+                return self._win_score(player_id), move
+
+            score, _ = self._minimax(new_board, next_player(player_id), depth-1)
+            if player_id == PLAYER:
+                if score > best_score:
+                    best_score = score
+                    best_move = move
+            elif player_id == OPPONENT:
+                if score < best_score:
+                    best_score = score
+                    best_move = move
+
+        return best_score, best_move
+
+    @staticmethod
+    def _eval_board(board: Board) -> int:
+        return np.count_nonzero(board.sub_winners == PLAYER) - np.count_nonzero(board.sub_winners == OPPONENT)
+
+    @staticmethod
+    def _win_score(player_id: int) -> int:
+        return 100 if player_id == PLAYER else -100
 
 
 """
@@ -231,7 +287,7 @@ def check_available_moves(expected: List[Move], board: Board):
 
 def game_loop():
     board = Board.empty()
-    agent = RandomAgent()
+    agent = MinimaxAgent()
 
     while True:
         opponent_move = read_coord()
@@ -252,11 +308,29 @@ game_loop()
 
 
 """
-Tests
+Tests IA
 """
 
 
-def tests():
+def test_ia():
+    agent = MinimaxAgent()
+    board = Board.empty()
+    board = board.play(PLAYER, (0, 0))
+    board = board.play(OPPONENT, (2, 2))
+    board = board.play(PLAYER, (6, 6))
+    board = board.play(OPPONENT, (0, 2))
+    print(agent.get_action(board))
+
+
+# test_ia()
+
+
+"""
+Test game
+"""
+
+
+def tests_game():
     board = Board.empty()
     available_moves = board.available_moves()
     print(available_moves)
@@ -276,4 +350,4 @@ def tests():
     assert board.sub_winners[(0, 0)]
 
 
-# tests()
+# tests_game()
