@@ -3,6 +3,7 @@ import sys
 import random
 from functools import lru_cache
 from typing import List, Tuple
+import time
 
 
 """
@@ -12,6 +13,24 @@ Utils
 
 def debug(*args):
     print(*args, file=sys.stderr)
+
+
+MAX_TURN_TIME = 100
+
+
+class Chronometer:
+    def __init__(self):
+        self.start_time = 0
+
+    def start(self):
+        self.start_time = time.time_ns()
+
+    def spent(self):
+        current = time.time_ns()
+        return self._to_ms(current - self.start_time)
+
+    def _to_ms(self, delay):
+        return delay / 1_000_000
 
 
 """
@@ -203,16 +222,20 @@ Agent : minimax agent
 
 class MinimaxAgent:
     def __init__(self):
-        # TODO - use the previous minimax to improve to direct the search (MTD methods + A/B pruning)
+        self.min_score = -200
+        self.max_score = 200
+        # TODO - order the moves to improve the A/B pruning - how?
+        # TODO - improve the evaluation function (right now it does not help in many situations)
+        # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
         pass
 
     def get_action(self, board: Board) -> Move:
-        depth = 1 if board.next_quadrant == NO_MOVE else 2
-        best_score, best_move = self._minimax(board, PLAYER, depth=depth)
+        depth = 2 if board.next_quadrant == NO_MOVE else 3
+        best_score, best_move = self._minimax(board, PLAYER, alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
 
     # TODO - @lru_cache(maxsize=10_000)
-    def _minimax(self, board: Board, player_id: int, depth: int) -> Tuple[int, Move]:
+    def _minimax(self, board: Board, player_id: int, alpha: int, beta: int, depth: int) -> Tuple[int, Move]:
         if depth <= 0:
             # debug("eval:", self._eval_board(board))
             return self._eval_board(board), NO_MOVE
@@ -222,22 +245,28 @@ class MinimaxAgent:
             return 0, NO_MOVE
 
         best_move = None
-        best_score = float('-inf') if player_id == PLAYER else float('inf')
+        best_score = self.min_score if player_id == PLAYER else self.max_score
         for move in available_moves:
             # debug("try move:", move)
             new_board = board.play(player_id, move)
             if new_board.is_winner(player_id):
                 return self._win_score(player_id), move
 
-            score, _ = self._minimax(new_board, next_player(player_id), depth-1)
+            score, _ = self._minimax(new_board, next_player(player_id), alpha, beta, depth=depth-1)
             if player_id == PLAYER:
                 if score > best_score:
                     best_score = score
                     best_move = move
+                    alpha = max(alpha, score)
+                    if alpha >= beta:
+                        break
             elif player_id == OPPONENT:
                 if score < best_score:
                     best_score = score
                     best_move = move
+                    beta = min(beta, score)
+                    if alpha >= beta:
+                        break
 
         return best_score, best_move
 
