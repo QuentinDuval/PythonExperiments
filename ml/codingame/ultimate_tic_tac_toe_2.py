@@ -107,6 +107,9 @@ class Board:
             next_quadrant=NO_MOVE
         )
 
+    def is_game_over(self):
+        return not self.available_moves()
+
     def is_winner(self, player_id: PlayerId) -> bool:
         for combi in COMBINATIONS:
             count = 0
@@ -322,7 +325,7 @@ class GameTree:
         for move, node in self.children.items():
             if node is not None:
                 moves.append(move)
-                weights.append(node.total / node.played)
+                weights.append(200 + node.total / node.played)
         move = random.choices(moves, weights)[0]
         return move, self.children[move]
 
@@ -333,8 +336,8 @@ class GameTree:
             if node is None:
                 return move, node
             moves.append(move)
-            weights.append(self._weight(node, exploration_factor))
-        move = random.choices(moves, weights)[0]
+            weights.append(200 + self._weight(node, exploration_factor))
+        move = random.choices(moves, weights, k=1)[0]
         return move, self.children[move]
 
     def _weight(self, node, exploration_factor) -> float:
@@ -382,7 +385,7 @@ class MCTSAgent:
         node = self.game_tree
         move = None
         nodes = []
-        while node is not None and not node.board.is_winner(player_id):
+        while node is not None and not node.board.is_game_over():
             nodes.append(node)
             move, node = node.select(self.exploration_factor)
             player_id = next_player(player_id)
@@ -396,12 +399,8 @@ class MCTSAgent:
 
         # Play-out (random action until the end)
         board = node.board
-        while not board.is_winner(player_id):
+        while not board.is_game_over():
             moves = board.available_moves()
-            if not moves:
-                debug(board)
-                break
-
             board = board.play(player_id, random.choice(moves))
             player_id = next_player(player_id)
 
@@ -473,15 +472,12 @@ Tests IA
 """
 
 
-def test_ia():
-    agent1 = MinimaxAgent(player=PLAYER, max_depth=3)
-    agent2 = MinimaxAgent(player=OPPONENT, max_depth=3)
-
+def test_ia(agent1, agent2):
     chrono = Chronometer()
     chrono.start()
     move_count = 0
     board = Board.empty()
-    while board.available_moves():
+    while not board.is_game_over():
         move = agent1.get_action(board)
         board = board.play(PLAYER, move)
         move_count += 1
@@ -499,7 +495,8 @@ def test_ia():
     print(board)
 
 
-test_ia()
+# test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2), agent2=MinimaxAgent(player=OPPONENT, max_depth=4))
+# test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 
 
 """
