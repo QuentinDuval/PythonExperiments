@@ -1,10 +1,12 @@
+import itertools
 import numpy as np
 import sys
 import random
+import math
+from collections import OrderedDict
 from functools import lru_cache
 from typing import List, Tuple
 import time
-
 
 """
 Utils
@@ -37,7 +39,6 @@ class Chronometer:
 Move
 """
 
-
 Move = Tuple[int, int]
 
 NO_MOVE = (-1, -1)
@@ -62,7 +63,6 @@ def decompose_move(move: Move) -> Tuple[Move, Move]:
 Player
 """
 
-
 PlayerId = int
 
 EMPTY = 0
@@ -77,7 +77,6 @@ def next_player(player_id: PlayerId) -> PlayerId:
 """
 Game
 """
-
 
 COMBINATIONS = [
     # diagonals
@@ -116,6 +115,10 @@ class Board:
                     count += 1
             if count == 3:
                 return True
+
+        # TODO - is_winner gives wrong result...
+        # TODO - np.count_nonzero(board.sub_winners == PLAYER) - np.count_nonzero(board.sub_winners == OPPONENT)
+
         return False
 
     def play(self, player_id: PlayerId, move: Move) -> 'new board':
@@ -187,7 +190,7 @@ class Board:
 
     @staticmethod
     def _sub_repr(sub_board: int) -> str:
-        r = ""
+        r = "|"
         for x in range(3):
             for y in range(3):
                 position = 2 * (x * 3 + y)
@@ -197,7 +200,7 @@ class Board:
                     r += "O"
                 else:
                     r += "-"
-            r += "\n"
+            r += "|"
         return r
 
 
@@ -210,6 +213,9 @@ class RandomAgent:
     def __init__(self):
         self.chooser = random.choice
 
+    def opponent_action(self, move: Move):
+        pass
+
     def get_action(self, board: Board) -> Move:
         moves = board.available_moves()
         return self.chooser(moves)
@@ -221,17 +227,23 @@ Agent : minimax agent
 
 
 class MinimaxAgent:
-    def __init__(self):
+    def __init__(self, player: PlayerId, max_depth: int):
         self.min_score = -200
         self.max_score = 200
+        self.player = player
+        self.opponent = next_player(self.player)
+        self.max_depth = max_depth
         # TODO - order the moves to improve the A/B pruning - how?
         # TODO - improve the evaluation function (right now, useless in many situations) => Machine Learning?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
         pass
 
+    def opponent_action(self, move: Move):
+        pass
+
     def get_action(self, board: Board) -> Move:
-        depth = 2 if board.next_quadrant == NO_MOVE else 3
-        best_score, best_move = self._mini_max(board, PLAYER, alpha=self.min_score, beta=self.max_score, depth=depth)
+        depth = self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth
+        best_score, best_move = self._mini_max(board, self.player, alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
 
     # TODO - @lru_cache(maxsize=10_000)
@@ -256,7 +268,7 @@ class MinimaxAgent:
             return 0, NO_MOVE
 
         best_move = None
-        best_score = self.min_score if player_id == PLAYER else self.max_score
+        best_score = self.min_score if player_id == self.player else self.max_score
         for move in available_moves:
             # debug("try move:", move)
             new_board = board.play(player_id, move)
@@ -264,14 +276,14 @@ class MinimaxAgent:
                 return self._win_score(player_id), move
 
             score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth - 1)
-            if player_id == PLAYER:
+            if player_id == self.player:
                 if score > best_score:
                     best_score = score
                     best_move = move
                     alpha = max(alpha, score)
                     if alpha >= beta:
                         break
-            elif player_id == OPPONENT:
+            else:
                 if score < best_score:
                     best_score = score
                     best_move = move
@@ -281,13 +293,122 @@ class MinimaxAgent:
 
         return best_score, best_move
 
-    @staticmethod
-    def _eval_board(board: Board) -> int:
-        return np.count_nonzero(board.sub_winners == PLAYER) - np.count_nonzero(board.sub_winners == OPPONENT)
+    def _eval_board(self, board: Board) -> int:
+        return np.count_nonzero(board.sub_winners == self.player) - np.count_nonzero(board.sub_winners == self.opponent)
 
-    @staticmethod
-    def _win_score(player_id: int) -> int:
-        return 100 if player_id == PLAYER else -100
+    def _win_score(self, player_id: int) -> int:
+        return 100 if player_id == self.player else -100
+
+
+"""
+Monte Carlo Tree Search (MCTS) agent
+"""
+
+
+class GameTree:
+    def __init__(self, board: Board):
+        self.board = board
+        self.total: int = 0
+        self.played: int = 0
+        self.children = {move: None for move in board.available_moves()}
+
+    def add_experience(self, score: int):
+        self.total += score
+        self.played += 1
+
+    def best(self) -> Move:
+        moves = []
+        weights = []
+        for move, node in self.children.items():
+            if node is not None:
+                moves.append(move)
+                weights.append(node.total / node.played)
+        move = random.choices(moves, weights)[0]
+        return move, self.children[move]
+
+    def select(self, exploration_factor: float = 0.) -> Tuple[Move, 'child']:
+        moves = []
+        weights = []
+        for move, node in self.children.items():
+            if node is None:
+                return move, node
+            moves.append(move)
+            weights.append(self._weight(node, exploration_factor))
+        move = random.choices(moves, weights)[0]
+        return move, self.children[move]
+
+    def _weight(self, node, exploration_factor) -> float:
+        return node.total / node.played + exploration_factor * math.sqrt(math.log(self.played) / node.played)
+
+    def __repr__(self) -> str:
+        return repr({
+            'total': self.total,
+            'played': self.played,
+            'board': self.board
+        })
+
+
+class MCTSAgent:
+    def __init__(self, player: PlayerId, exploration_factor: float):
+        self.player = player
+        self.opponent = next_player(self.player)
+        self.exploration_factor = exploration_factor
+        self.game_tree: GameTree = None
+
+    def opponent_action(self, move: Move):
+        self.game_tree = self.game_tree.children.get(move, None)
+
+    def get_action(self, board: Board) -> Move:
+        if self.game_tree is None:
+            self.game_tree = GameTree(board)
+
+        chrono = Chronometer()
+        chrono.start()
+        for count in itertools.count():
+            if chrono.spent() > 0.9 * MAX_TURN_TIME:
+                debug("scenarios:", count)
+                debug("spent:", chrono.spent())
+                break
+            self._monte_carlo_tree_search()
+
+        move, child = self.game_tree.best()
+        self.game_tree = child
+        return move
+
+    def _monte_carlo_tree_search(self):
+
+        # Selection (of a node to be expanded)
+        player_id = self.player
+        node = self.game_tree
+        move = None
+        nodes = []
+        while node is not None and not node.board.is_winner(player_id):
+            nodes.append(node)
+            move, node = node.select(self.exploration_factor)
+            player_id = next_player(player_id)
+
+        # Expansion (of a node without statistics)
+        if node is None:
+            new_board = nodes[-1].board.play(player_id, move)
+            node = GameTree(new_board)
+            nodes[-1].children[move] = node
+            nodes.append(node)
+
+        # Play-out (random action until the end)
+        board = node.board
+        while not board.is_winner(player_id):
+            moves = board.available_moves()
+            if not moves:
+                debug(board)
+                break
+
+            board = board.play(player_id, random.choice(moves))
+            player_id = next_player(player_id)
+
+        # Back-propagation (of the score across the tree)
+        score = 100 if board.is_winner(self.player) else -100
+        for node in nodes:
+            node.add_experience(score)
 
 
 """
@@ -325,16 +446,15 @@ def check_available_moves(expected: List[Move], board: Board):
         debug(board)
 
 
-def game_loop():
+def game_loop(agent):
     board = Board.empty()
-    agent = MinimaxAgent()
-
     while True:
         opponent_move = read_coord()
         if opponent_move != NO_MOVE:
-            debug("opponent move:", opponent_move)
-            debug("decompose to:", decompose_move(opponent_move))
+            # debug("opponent move:", opponent_move)
+            # debug("decompose to:", decompose_move(opponent_move))
             board = board.play(OPPONENT, opponent_move)
+            agent.opponent_action(opponent_move)
 
         valid_moves = read_valid()
         check_available_moves(valid_moves, board)
@@ -344,7 +464,8 @@ def game_loop():
         print_move(move)
 
 
-game_loop()
+# game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3))
+# game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))
 
 
 """
@@ -353,16 +474,32 @@ Tests IA
 
 
 def test_ia():
-    agent = MinimaxAgent()
+    agent1 = MinimaxAgent(player=PLAYER, max_depth=3)
+    agent2 = MinimaxAgent(player=OPPONENT, max_depth=3)
+
+    chrono = Chronometer()
+    chrono.start()
+    move_count = 0
     board = Board.empty()
-    board = board.play(PLAYER, (0, 0))
-    board = board.play(OPPONENT, (2, 2))
-    board = board.play(PLAYER, (6, 6))
-    board = board.play(OPPONENT, (0, 2))
-    print(agent.get_action(board))
+    while board.available_moves():
+        move = agent1.get_action(board)
+        board = board.play(PLAYER, move)
+        move_count += 1
+        if board.available_moves():
+            move = agent2.get_action(board)
+            board = board.play(OPPONENT, move)
+            move_count += 1
+    time_spent = chrono.spent()
+
+    print("time spent:", time_spent)
+    print("move count:", move_count)
+    print("time per move:", time_spent / move_count)
+    print(board.is_winner(PLAYER))
+    print(board.is_winner(OPPONENT))
+    print(board)
 
 
-# test_ia()
+test_ia()
 
 
 """
@@ -388,6 +525,5 @@ def tests_game():
     board.sub_boards[(0, 0)] = sub_board
     board = board.play(PLAYER, (2, 2))
     assert board.sub_winners[(0, 0)]
-
 
 # tests_game()
