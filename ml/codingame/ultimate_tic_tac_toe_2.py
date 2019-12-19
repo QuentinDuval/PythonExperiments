@@ -5,7 +5,7 @@ import random
 import math
 from collections import OrderedDict
 from functools import lru_cache
-from typing import List, Tuple
+from typing import *
 import time
 
 """
@@ -108,6 +108,7 @@ class Board:
         )
 
     def is_game_over(self):
+        # TODO - is game over does not even work... there might be more available moves after... limits MCTS!
         return not self.available_moves()
 
     def is_winner(self, player_id: PlayerId) -> bool:
@@ -309,6 +310,8 @@ Monte Carlo Tree Search (MCTS) agent
 
 
 class GameTree:
+    __slots__ = ['board', 'total', 'played', 'children']
+
     def __init__(self, board: Board):
         self.board = board
         self.total: int = 0
@@ -325,18 +328,22 @@ class GameTree:
         for move, node in self.children.items():
             if node is not None:
                 moves.append(move)
-                weights.append(200 + node.total / node.played)
+                weights.append(110 + node.total / node.played)
         move = random.choices(moves, weights)[0]
         return move, self.children[move]
 
-    def select(self, exploration_factor: float = 0.) -> Tuple[Move, 'child']:
+    def select(self, maximizing: bool, exploration_factor: float = 0.) -> Tuple[Move, 'child']:
+        # TODO - opponent should choose the other path...
         moves = []
         weights = []
         for move, node in self.children.items():
             if node is None:
                 return move, node
             moves.append(move)
-            weights.append(200 + self._weight(node, exploration_factor))
+            if maximizing:
+                weights.append(110 + self._weight(node, exploration_factor))
+            else:
+                weights.append(110 - self._weight(node, exploration_factor))
         move = random.choices(moves, weights, k=1)[0]
         return move, self.children[move]
 
@@ -365,14 +372,15 @@ class MCTSAgent:
         if self.game_tree is None:
             self.game_tree = GameTree(board)
 
+        scenario_count = 0
         chrono = Chronometer()
         chrono.start()
-        for count in itertools.count():
-            if chrono.spent() > 0.9 * MAX_TURN_TIME:
-                debug("scenarios:", count)
-                debug("spent:", chrono.spent())
-                break
+        while chrono.spent() <= 0.9 * MAX_TURN_TIME:
             self._monte_carlo_tree_search()
+            scenario_count += 1
+
+        debug("scenarios:", scenario_count)
+        debug("spent:", chrono.spent())
 
         move, child = self.game_tree.best()
         self.game_tree = child
@@ -387,7 +395,7 @@ class MCTSAgent:
         nodes = []
         while node is not None and not node.board.is_game_over():
             nodes.append(node)
-            move, node = node.select(self.exploration_factor)
+            move, node = node.select(self.player == player_id, self.exploration_factor)
             player_id = next_player(player_id)
 
         # Expansion (of a node without statistics)
@@ -477,6 +485,7 @@ def test_ia(agent1, agent2):
     chrono.start()
     move_count = 0
     board = Board.empty()
+
     while not board.is_game_over():
         move = agent1.get_action(board)
         board = board.play(PLAYER, move)
@@ -496,7 +505,7 @@ def test_ia(agent1, agent2):
 
 
 # test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2), agent2=MinimaxAgent(player=OPPONENT, max_depth=4))
-# test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
+test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 
 
 """
