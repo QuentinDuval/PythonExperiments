@@ -68,6 +68,7 @@ PlayerId = int
 EMPTY = 0
 PLAYER = 1
 OPPONENT = 2
+DRAW = 3
 
 
 def next_player(player_id: PlayerId) -> PlayerId:
@@ -77,6 +78,8 @@ def next_player(player_id: PlayerId) -> PlayerId:
 """
 Game
 """
+
+SUB_COORDINATES = [(x, y) for x in range(3) for y in range(3)]
 
 COMBINATIONS = [
     # diagonals
@@ -108,7 +111,6 @@ class Board:
         )
 
     def is_game_over(self):
-        # TODO - is game over does not even work... there might be more available moves after... limits MCTS!
         return not self.available_moves()
 
     def is_winner(self, player_id: PlayerId) -> bool:
@@ -122,7 +124,6 @@ class Board:
 
         # TODO - is_winner gives wrong result...
         # TODO - np.count_nonzero(board.sub_winners == PLAYER) - np.count_nonzero(board.sub_winners == OPPONENT)
-
         return False
 
     def play(self, player_id: PlayerId, move: Move) -> 'new board':
@@ -130,20 +131,27 @@ class Board:
         sub_boards = self.sub_boards.copy()
         sub_winners = self.sub_winners.copy()
         sub_boards[main_move] = self._sub_play(sub_boards[main_move], player_id, sub_move)
-        sub_winners[main_move] = player_id if self._sub_winner(sub_boards[main_move], player_id) else EMPTY
-        next_quadrant = sub_move if sub_winners[sub_move] == EMPTY else NO_MOVE
-        return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=next_quadrant)
+        if self._sub_winner(sub_boards[main_move], player_id):
+            sub_winners[main_move] = player_id
+        elif self._filled(sub_boards[main_move]):
+            sub_winners[main_move] = DRAW
+        return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=self._next_quadrant(sub_move))
+
+    def _next_quadrant(self, sub_move):
+        if self.sub_winners[sub_move] != EMPTY:
+            return NO_MOVE
+        if not self._sub_available_moves(sub_move, self.sub_boards[sub_move]):
+            return NO_MOVE
+        return sub_move
 
     def available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
             return self._sub_available_moves(self.next_quadrant, self.sub_boards[self.next_quadrant])
         else:
             moves = []
-            for x in range(3):
-                for y in range(3):
-                    move = (x, y)
-                    if self.sub_winners[move] == EMPTY:
-                        moves.extend(self._sub_available_moves(move, self.sub_boards[move]))
+            for move in SUB_COORDINATES:
+                if self.sub_winners[move] == EMPTY:
+                    moves.extend(self._sub_available_moves(move, self.sub_boards[move]))
             return moves
 
     @staticmethod
@@ -165,16 +173,23 @@ class Board:
         return False
 
     @staticmethod
+    def _filled(sub_board: int) -> bool:
+        for x, y in SUB_COORDINATES:
+            position = 2 * (x * 3 + y)
+            if not 1 << position & sub_board and not 1 << (position + 1) & sub_board:
+                return False
+        return True
+
+    @staticmethod
     def _sub_available_moves(move: Move, sub_board: int) -> List[Move]:
         shift_x, shift_y = move
         shift_x *= 3
         shift_y *= 3
         moves = []
-        for x in range(3):
-            for y in range(3):
-                position = 2 * (x * 3 + y)
-                if not 1 << position & sub_board and not 1 << (position + 1) & sub_board:
-                    moves.append((shift_x + x, shift_y + y))
+        for x, y in SUB_COORDINATES:
+            position = 2 * (x * 3 + y)
+            if not 1 << position & sub_board and not 1 << (position + 1) & sub_board:
+                moves.append((shift_x + x, shift_y + y))
         return moves
 
     def __repr__(self):
@@ -186,10 +201,9 @@ class Board:
 
     def _board_repr(self):
         r = [[""] * 3 for _ in range(3)]
-        for x in range(3):
-            for y in range(3):
-                sub_board = self.sub_boards[(x, y)]
-                r[x][y] = self._sub_repr(sub_board)
+        for x, y in SUB_COORDINATES:
+            sub_board = self.sub_boards[(x, y)]
+            r[x][y] = self._sub_repr(sub_board)
         return r
 
     @staticmethod
@@ -473,63 +487,3 @@ def game_loop(agent):
 
 # game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3))
 # game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))
-
-
-"""
-Tests IA
-"""
-
-
-def test_ia(agent1, agent2):
-    chrono = Chronometer()
-    chrono.start()
-    move_count = 0
-    board = Board.empty()
-
-    while not board.is_game_over():
-        move = agent1.get_action(board)
-        board = board.play(PLAYER, move)
-        move_count += 1
-        if board.available_moves():
-            move = agent2.get_action(board)
-            board = board.play(OPPONENT, move)
-            move_count += 1
-    time_spent = chrono.spent()
-
-    print("time spent:", time_spent)
-    print("move count:", move_count)
-    print("time per move:", time_spent / move_count)
-    print(board.is_winner(PLAYER))
-    print(board.is_winner(OPPONENT))
-    print(board)
-
-
-# test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2), agent2=MinimaxAgent(player=OPPONENT, max_depth=4))
-test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
-
-
-"""
-Test game
-"""
-
-
-def tests_game():
-    board = Board.empty()
-    available_moves = board.available_moves()
-    print(available_moves)
-
-    sub_board = 0
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 1))
-    sub_board = Board._sub_play(sub_board, PLAYER, (2, 2))
-    assert Board._sub_winner(sub_board, PLAYER)
-
-    sub_board = 0
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 1))
-    board = Board.empty()
-    board.sub_boards[(0, 0)] = sub_board
-    board = board.play(PLAYER, (2, 2))
-    assert board.sub_winners[(0, 0)]
-
-# tests_game()
