@@ -8,7 +8,7 @@ Test game
 
 def test_initial_moves():
     board = Board.empty()
-    available_moves = board.available_moves()
+    available_moves = board.available_moves
     assert len(available_moves) == 9 * 9
 
 
@@ -80,7 +80,7 @@ def test_ia(agent1, agent2):
     print("time spent:", time_spent)
     print("move count:", move_count)
     print("time per move:", time_spent / move_count)
-    print(board.get_winner())
+    print(board.winner)
     print(board)
 
 

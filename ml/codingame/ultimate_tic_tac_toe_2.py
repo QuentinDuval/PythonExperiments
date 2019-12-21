@@ -8,6 +8,7 @@ from functools import lru_cache
 from typing import *
 import time
 
+
 """
 Utils
 """
@@ -33,6 +34,20 @@ class Chronometer:
 
     def _to_ms(self, delay):
         return delay / 1_000_000
+
+
+class CachedProperty(object):
+    """
+    Descriptor (non-data) for building an attribute on-demand on first use.
+    """
+    def __init__(self, wrapped):
+        self._attr_name = wrapped.__name__
+        self._factory = wrapped
+
+    def __get__(self, instance, owner):
+        attr = self._factory(instance)              # Compute the attribute
+        setattr(instance, self._attr_name, attr)    # Cache the value; hide ourselves.
+        return attr
 
 
 """
@@ -79,7 +94,11 @@ def next_player(player_id: PlayerId) -> PlayerId:
 Game
 """
 
-SUB_COORDINATES = [(x, y) for x in range(3) for y in range(3)]
+SUB_COORDINATES = [
+    (1, 1),                             # Middle first
+    (0, 0), (2, 0), (0, 2), (2, 2),     # Corners
+    (1, 0), (0, 1), (1, 2), (2, 1)      # The rest
+]
 
 COMBINATIONS = [
     # diagonals
@@ -111,9 +130,10 @@ class Board:
         )
 
     def is_game_over(self):
-        return self.get_winner() != EMPTY
+        return self.winner != EMPTY
 
-    def get_winner(self) -> PlayerId:
+    @CachedProperty
+    def winner(self) -> PlayerId:
         for combi in COMBINATIONS:
             player_count = 0
             opponent_count = 0
@@ -127,12 +147,15 @@ class Board:
             elif opponent_count == 3:
                 return OPPONENT
 
+        player_count = 0
+        opponent_count = 0
         for move in SUB_COORDINATES:
             if self.sub_winners[move] == EMPTY:
                 return EMPTY
-
-        player_count = np.count_nonzero(self.sub_winners == PLAYER)
-        opponent_count = np.count_nonzero(self.sub_winners == OPPONENT)
+            elif self.sub_winners[move] == PLAYER:
+                player_count += 1
+            elif self.sub_winners[move] == OPPONENT:
+                opponent_count += 1
         if player_count > opponent_count:
             return PLAYER
         elif opponent_count > player_count:
@@ -149,17 +172,15 @@ class Board:
             sub_winners[main_move] = player_id
         elif self._filled(sub_boards[main_move]):
             sub_winners[main_move] = DRAW
-        next_quadrant = self._next_quadrant(sub_boards, sub_winners, sub_move)
+        if sub_winners[sub_move] != EMPTY:
+            next_quadrant = NO_MOVE
+        elif not Board._sub_available_moves(sub_move, sub_boards[sub_move]):
+            next_quadrant = NO_MOVE
+        else:
+            next_quadrant = sub_move
         return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=next_quadrant)
 
-    @staticmethod
-    def _next_quadrant(sub_boards, sub_winners, sub_move):
-        if sub_winners[sub_move] != EMPTY:
-            return NO_MOVE
-        if not Board._sub_available_moves(sub_move, sub_boards[sub_move]):
-            return NO_MOVE
-        return sub_move
-
+    @CachedProperty
     def available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
             return self._sub_available_moves(self.next_quadrant, self.sub_boards[self.next_quadrant])
@@ -307,10 +328,10 @@ class MinimaxAgent:
 
         best_move = None
         best_score = self.min_score if player_id == self.player else self.max_score
-        for move in board.available_moves():
+        for move in board.available_moves:
             # debug("try move:", move)
             new_board = board.play(player_id, move)
-            winner = new_board.get_winner()
+            winner = new_board.winner
             if winner != EMPTY:
                 return self._win_score(winner), move
 
@@ -479,7 +500,7 @@ Game loop
 
 
 def check_available_moves(expected: List[Move], board: Board):
-    computed = board.available_moves()
+    computed = board.available_moves
     expected.sort()
     computed.sort()
     if expected != computed:
