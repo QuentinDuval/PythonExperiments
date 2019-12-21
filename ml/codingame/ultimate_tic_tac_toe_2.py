@@ -212,7 +212,9 @@ class Board:
         for x in range(3):
             for y in range(3):
                 position = 2 * (x * 3 + y)
-                if 1 << position & sub_board:
+                if 1 << position & sub_board and 1 << (position + 1) & sub_board:
+                    r += "!"
+                elif 1 << position & sub_board:
                     r += "X"
                 elif 1 << (position + 1) & sub_board:
                     r += "O"
