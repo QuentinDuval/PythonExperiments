@@ -111,20 +111,34 @@ class Board:
         )
 
     def is_game_over(self):
-        return not self.available_moves()
+        return self.get_winner() != EMPTY
 
-    def is_winner(self, player_id: PlayerId) -> bool:
+    def get_winner(self) -> PlayerId:
         for combi in COMBINATIONS:
-            count = 0
+            player_count = 0
+            opponent_count = 0
             for pos in combi:
-                if self.sub_winners[pos] == player_id:
-                    count += 1
-            if count == 3:
-                return True
+                if self.sub_winners[pos] == PLAYER:
+                    player_count += 1
+                elif self.sub_winners[pos] == OPPONENT:
+                    opponent_count += 1
+            if player_count == 3:
+                return PLAYER
+            elif opponent_count == 3:
+                return OPPONENT
 
-        # TODO - is_winner gives wrong result...
-        # TODO - np.count_nonzero(board.sub_winners == PLAYER) - np.count_nonzero(board.sub_winners == OPPONENT)
-        return False
+        for move in SUB_COORDINATES:
+            if self.sub_winners[move] == EMPTY:
+                return EMPTY
+
+        player_count = np.count_nonzero(self.sub_winners == PLAYER)
+        opponent_count = np.count_nonzero(self.sub_winners == OPPONENT)
+        if player_count > opponent_count:
+            return PLAYER
+        elif opponent_count > player_count:
+            return OPPONENT
+        else:
+            return DRAW
 
     def play(self, player_id: PlayerId, move: Move) -> 'new board':
         main_move, sub_move = decompose_move(move)
@@ -291,17 +305,14 @@ class MinimaxAgent:
             # debug("eval:", self._eval_board(board))
             return self.eval_fct(board, self.player), NO_MOVE
 
-        available_moves = board.available_moves()
-        if not available_moves:
-            return 0, NO_MOVE
-
         best_move = None
         best_score = self.min_score if player_id == self.player else self.max_score
-        for move in available_moves:
+        for move in board.available_moves():
             # debug("try move:", move)
             new_board = board.play(player_id, move)
-            if new_board.is_winner(player_id):
-                return self._win_score(player_id), move
+            winner = new_board.get_winner()
+            if winner != EMPTY:
+                return self._win_score(winner), move
 
             score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth - 1)
             if player_id == self.player:
@@ -322,7 +333,11 @@ class MinimaxAgent:
         return best_score, best_move
 
     def _win_score(self, player_id: int) -> int:
-        return 100 if player_id == self.player else -100
+        if player_id == self.player:
+            return 100
+        elif player_id == self.opponent:
+            return -100
+        return 0
 
 
 """

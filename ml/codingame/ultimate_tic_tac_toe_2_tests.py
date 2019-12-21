@@ -71,7 +71,7 @@ def test_ia(agent1, agent2):
         move = agent1.get_action(board)
         board = board.play(PLAYER, move)
         move_count += 1
-        if board.available_moves():
+        if not board.is_game_over():
             move = agent2.get_action(board)
             board = board.play(OPPONENT, move)
             move_count += 1
@@ -80,12 +80,11 @@ def test_ia(agent1, agent2):
     print("time spent:", time_spent)
     print("move count:", move_count)
     print("time per move:", time_spent / move_count)
-    print(board.is_winner(PLAYER))
-    print(board.is_winner(OPPONENT))
+    print(board.get_winner())
     print(board)
 
 
 test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=OPPONENT, max_depth=4, eval_fct=CountOwnedEvaluation()))
+        agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=CountOwnedEvaluation()))
 # test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 
