@@ -85,6 +85,7 @@ def test_ia(agent1, agent2):
     print(board)
 
 
-test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2), agent2=MinimaxAgent(player=OPPONENT, max_depth=3))
+test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=OPPONENT, max_depth=4, eval_fct=CountOwnedEvaluation()))
 # test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 

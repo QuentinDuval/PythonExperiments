@@ -135,12 +135,14 @@ class Board:
             sub_winners[main_move] = player_id
         elif self._filled(sub_boards[main_move]):
             sub_winners[main_move] = DRAW
-        return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=self._next_quadrant(sub_move))
+        next_quadrant = self._next_quadrant(sub_boards, sub_winners, sub_move)
+        return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=next_quadrant)
 
-    def _next_quadrant(self, sub_move):
-        if self.sub_winners[sub_move] != EMPTY:
+    @staticmethod
+    def _next_quadrant(sub_boards, sub_winners, sub_move):
+        if sub_winners[sub_move] != EMPTY:
             return NO_MOVE
-        if not self._sub_available_moves(sub_move, self.sub_boards[sub_move]):
+        if not Board._sub_available_moves(sub_move, sub_boards[sub_move]):
             return NO_MOVE
         return sub_move
 
@@ -246,13 +248,20 @@ Agent : minimax agent
 """
 
 
+class CountOwnedEvaluation:
+    def __call__(self, board: Board, player_id: PlayerId) -> float:
+        opponent_id = next_player(player_id)
+        return np.count_nonzero(board.sub_winners == player_id) - np.count_nonzero(board.sub_winners == opponent_id)
+
+
 class MinimaxAgent:
-    def __init__(self, player: PlayerId, max_depth: int):
+    def __init__(self, player: PlayerId, max_depth: int, eval_fct):
         self.min_score = -200
         self.max_score = 200
         self.player = player
         self.opponent = next_player(self.player)
         self.max_depth = max_depth
+        self.eval_fct = eval_fct
         # TODO - order the moves to improve the A/B pruning - how?
         # TODO - improve the evaluation function (right now, useless in many situations) => Machine Learning?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
@@ -278,10 +287,9 @@ class MinimaxAgent:
             The best score we could ever achieve (the upper limit of our search) - or the best score the opponent can do
             => We can cut on our turn, if one move leads to more than this, the opponent will never allow us to go there
         """
-
         if depth <= 0:
             # debug("eval:", self._eval_board(board))
-            return self._eval_board(board), NO_MOVE
+            return self.eval_fct(board, self.player), NO_MOVE
 
         available_moves = board.available_moves()
         if not available_moves:
@@ -312,9 +320,6 @@ class MinimaxAgent:
                         break
 
         return best_score, best_move
-
-    def _eval_board(self, board: Board) -> int:
-        return np.count_nonzero(board.sub_winners == self.player) - np.count_nonzero(board.sub_winners == self.opponent)
 
     def _win_score(self, player_id: int) -> int:
         return 100 if player_id == self.player else -100
@@ -478,14 +483,17 @@ def game_loop(agent):
             # debug("decompose to:", decompose_move(opponent_move))
             board = board.play(OPPONENT, opponent_move)
             agent.opponent_action(opponent_move)
+            # debug(board)
 
         valid_moves = read_valid()
         check_available_moves(valid_moves, board)
 
         move = agent.get_action(board)
         board = board.play(PLAYER, move)
+        # debug(board)
         print_move(move)
 
 
-# game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3))
-# game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))
+if __name__ == '__main__':
+    game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()))
+    # game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))
