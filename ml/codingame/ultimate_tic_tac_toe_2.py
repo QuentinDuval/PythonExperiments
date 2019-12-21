@@ -229,6 +229,18 @@ class Board:
                 moves.append((shift_x + x, shift_y + y))
         return moves
 
+    def as_board_matrix(self):
+        m = np.zeros(shape=(9, 9))
+        for mx, my in SUB_COORDINATES:
+            sub_board = self.sub_boards[(mx, my)]
+            for x, y in SUB_COORDINATES:
+                position = 2 * (x * 3 + y)
+                if 1 << position & sub_board:
+                    m[(x, y)] = 1
+                elif 1 << (position + 1) & sub_board:
+                    m[(x, y)] = -1
+        return m
+
     def __repr__(self):
         return repr({
             'sub_boards': self._board_repr(),
@@ -262,6 +274,22 @@ class Board:
 
 
 """
+Agent : first available move agent
+"""
+
+
+class FirstMoveAgent:
+    def __init__(self):
+        pass
+
+    def opponent_action(self, move: Move):
+        pass
+
+    def get_action(self, board: Board) -> Move:
+        return board.available_moves[0]
+
+
+"""
 Agent : random agent
 """
 
@@ -274,7 +302,7 @@ class RandomAgent:
         pass
 
     def get_action(self, board: Board) -> Move:
-        moves = board.available_moves()
+        moves = board.available_moves
         return self.chooser(moves)
 
 
