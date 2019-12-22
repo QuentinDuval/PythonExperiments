@@ -1,3 +1,4 @@
+import abc
 import itertools
 import numpy as np
 import sys
@@ -280,14 +281,14 @@ Agent : minimax agent
 """
 
 
-class CountOwnedEvaluation:
+class EvaluationFct(abc.ABC):
+    @abc.abstractmethod
     def __call__(self, board: Board, player_id: PlayerId) -> float:
-        opponent_id = next_player(player_id)
-        return np.count_nonzero(board.sub_winners == player_id) - np.count_nonzero(board.sub_winners == opponent_id)
+        pass
 
 
 class MinimaxAgent:
-    def __init__(self, player: PlayerId, max_depth: int, eval_fct):
+    def __init__(self, player: PlayerId, max_depth: int, eval_fct: EvaluationFct):
         self.min_score = -200
         self.max_score = 200
         self.player = player
@@ -357,6 +358,45 @@ class MinimaxAgent:
         elif player_id == self.opponent:
             return -100
         return 0
+
+
+"""
+Minimax: evaluation functions
+"""
+
+
+class CountOwnedEvaluation(EvaluationFct):
+    def __call__(self, board: Board, player_id: PlayerId) -> float:
+        opponent_id = next_player(player_id)
+        return np.count_nonzero(board.sub_winners == player_id) - np.count_nonzero(board.sub_winners == opponent_id)
+
+
+class PriceMapEvaluation(EvaluationFct):
+    def __init__(self):
+        self.sub_weights = np.array([
+            [3, 2, 3],
+            [2, 4, 3],
+            [3, 2, 3]
+        ], dtype=np.float32)
+        self.weights = np.zeros(shape=(9, 9))
+        for x, y in SUB_COORDINATES:
+            self.weights[x*3:(x+1)*3, y*3:(y+1)*3] = self.sub_weights * self.sub_weights[(x, y)]
+        self.weights /= np.sum(self.weights)
+        self.sub_weights /= np.sum(self.sub_weights)
+
+    def __call__(self, board: Board, player_id: PlayerId) -> float:
+        winnings = np.where(board.sub_winners != 2, board.sub_winners, 0)
+        if player_id == OPPONENT:
+            winnings *= -1
+        return (board.as_board_matrix() * self.weights).sum() + (winnings * self.sub_weights).sum()
+
+
+class CombinedEvaluation(EvaluationFct):
+    def __init__(self, *evals):
+        self.evals = list(evals)
+
+    def __call__(self, board: Board, player_id: PlayerId) -> float:
+        return sum(val(board, player_id) for val in self.evals)
 
 
 """
@@ -529,5 +569,7 @@ def game_loop(agent):
 
 
 if __name__ == '__main__':
-    game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()))
+    # game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()))
+    game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=PriceMapEvaluation()))
+    # TODO - try a "kind of" MCTS but with evaluation function: expand the most promising move?
     # game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))

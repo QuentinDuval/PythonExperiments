@@ -50,6 +50,19 @@ tests_game()
 
 
 """
+Test evaluation functions
+"""
+
+
+def test_price_map():
+    eval = PriceMapEvaluation()
+    print(eval.weights)
+
+
+test_price_map()
+
+
+"""
 Test AI
 """
 
@@ -73,11 +86,15 @@ def test_ia(agent1, agent2):
     print("time spent:", time_spent)
     print("move count:", move_count)
     print("time per move:", time_spent / move_count)
-    print(board.winner)
-    print(board)
+    print("winner:", board.winner)
+    # print(board)
 
 
-test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=2, eval_fct=CountOwnedEvaluation()),
+test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=PriceMapEvaluation()),
         agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=PriceMapEvaluation()))
+
 # test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 
