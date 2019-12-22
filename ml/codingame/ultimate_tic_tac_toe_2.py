@@ -336,6 +336,7 @@ class MinimaxAgent:
         pass
 
     def get_action(self, board: Board) -> Move:
+        # TODO - minimax at depth 1 should be possible, correct this:
         depth = self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth
         best_score, best_move = self._mini_max(board, self.player, alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
