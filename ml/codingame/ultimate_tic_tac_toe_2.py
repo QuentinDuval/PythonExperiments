@@ -229,6 +229,8 @@ class Board:
                 moves.append((shift_x + x, shift_y + y))
         return moves
 
+    # TODO - try to use this as a representation, directly
+
     def as_board_matrix(self):
         m = np.zeros(shape=(9, 9))
         for mx, my in SUB_COORDINATES:
