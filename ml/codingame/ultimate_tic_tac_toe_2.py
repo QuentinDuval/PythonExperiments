@@ -304,8 +304,7 @@ class MinimaxAgent:
         pass
 
     def get_action(self, board: Board) -> Move:
-        # TODO - minimax at depth 1 should be possible, correct this:
-        depth = self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth
+        depth = max(1, self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth)
         best_score, best_move = self._mini_max(board, self.player, alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
 
@@ -375,7 +374,7 @@ class PriceMapEvaluation(EvaluationFct):
     def __init__(self):
         self.sub_weights = np.array([
             [3, 2, 3],
-            [2, 4, 3],
+            [2, 4, 2],
             [3, 2, 3]
         ], dtype=np.float32)
         self.weights = np.zeros(shape=(9, 9))
