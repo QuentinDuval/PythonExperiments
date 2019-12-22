@@ -82,12 +82,15 @@ PlayerId = int
 
 EMPTY = 0
 PLAYER = 1
-OPPONENT = 2
-DRAW = 3
+OPPONENT = -1
+DRAW = 2
 
 
 def next_player(player_id: PlayerId) -> PlayerId:
-    return 3 - player_id
+    if player_id == PLAYER:
+        return OPPONENT
+    else:
+        return PLAYER
 
 
 """
@@ -99,6 +102,11 @@ SUB_COORDINATES = [
     (0, 0), (2, 0), (0, 2), (2, 2),     # Corners
     (1, 0), (0, 1), (1, 2), (2, 1)      # The rest
 ]
+
+ALL_COORDINATES = [
+    (shift_x * 3 + x, shift_y * 3 + y)
+    for x, y in SUB_COORDINATES
+    for shift_x, shift_y in SUB_COORDINATES]
 
 COMBINATIONS = [
     # diagonals
@@ -124,7 +132,7 @@ class Board:
     @classmethod
     def empty(cls):
         return Board(
-            sub_boards=np.zeros(shape=(3, 3), dtype=np.int32),
+            sub_boards=np.zeros(shape=(9, 9), dtype=np.int32),
             sub_winners=np.zeros(shape=(3, 3), dtype=np.int32),
             next_quadrant=NO_MOVE
         )
@@ -167,112 +175,71 @@ class Board:
         main_move, sub_move = decompose_move(move)
         sub_boards = self.sub_boards.copy()
         sub_winners = self.sub_winners.copy()
-        sub_boards[main_move] = self._sub_play(sub_boards[main_move], player_id, sub_move)
-        if self._sub_winner(sub_boards[main_move], player_id):
-            sub_winners[main_move] = player_id
-        elif self._filled(sub_boards[main_move]):
-            sub_winners[main_move] = DRAW
-        if sub_winners[sub_move] != EMPTY:
-            next_quadrant = NO_MOVE
-        elif not Board._sub_available_moves(sub_move, sub_boards[sub_move]):
-            next_quadrant = NO_MOVE
-        else:
-            next_quadrant = sub_move
+        sub_boards[move] = player_id
+        sub_winners[main_move] = self._sub_winner(sub_boards, main_move)
+        next_quadrant = NO_MOVE if sub_winners[sub_move] != EMPTY else sub_move
         return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=next_quadrant)
 
     @CachedProperty
     def available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
-            return self._sub_available_moves(self.next_quadrant, self.sub_boards[self.next_quadrant])
+            return self._sub_available_moves(self.sub_boards, self.next_quadrant)
         else:
             moves = []
-            for move in SUB_COORDINATES:
-                if self.sub_winners[move] == EMPTY:
-                    moves.extend(self._sub_available_moves(move, self.sub_boards[move]))
+            for quadrant in SUB_COORDINATES:
+                if self.sub_winners[quadrant] == EMPTY:
+                    moves.extend(self._sub_available_moves(self.sub_boards, quadrant))
             return moves
 
     @staticmethod
-    def _sub_play(sub_board: int, player_id: PlayerId, sub_move: Move) -> int:
-        x, y = sub_move
-        position = 2 * (x * 3 + y) + (player_id - 1)
-        return sub_board | (1 << position)
-
-    @staticmethod
-    def _sub_winner(sub_board: int, player_id: PlayerId) -> bool:
+    def _sub_winner(sub_boards: np.ndarray, quadrant: Move) -> PlayerId:
+        shift_x, shift_y = quadrant
+        shift_x *= 3
+        shift_y *= 3
         for combi in COMBINATIONS:
-            count = 0
+            player_count = 0
+            opponent_count = 0
             for x, y in combi:
-                position = 2 * (x * 3 + y) + (player_id - 1)
-                if sub_board & (1 << position):
-                    count += 1
-            if count == 3:
-                return True
-        return False
+                position = shift_x + x, shift_y + y
+                if sub_boards[position] == PLAYER:
+                    player_count += 1
+                elif sub_boards[position] == OPPONENT:
+                    opponent_count += 1
+            if player_count == 3:
+                return PLAYER
+            elif opponent_count == 3:
+                return OPPONENT
+        if Board._filled(sub_boards, quadrant):
+            return DRAW
+        return EMPTY
 
     @staticmethod
-    def _filled(sub_board: int) -> bool:
-        for x, y in SUB_COORDINATES:
-            position = 2 * (x * 3 + y)
-            if not 1 << position & sub_board and not 1 << (position + 1) & sub_board:
+    def _filled(sub_boards: np.ndarray, quadrant: Move) -> bool:
+        for position in Board._quadrant_coords(quadrant):
+            if sub_boards[position] == EMPTY:
                 return False
         return True
 
     @staticmethod
-    def _sub_available_moves(move: Move, sub_board: int) -> List[Move]:
-        shift_x, shift_y = move
-        shift_x *= 3
-        shift_y *= 3
+    def _sub_available_moves(sub_boards: np.ndarray, quadrant: Move) -> List[Move]:
         moves = []
-        for x, y in SUB_COORDINATES:
-            position = 2 * (x * 3 + y)
-            if not 1 << position & sub_board and not 1 << (position + 1) & sub_board:
-                moves.append((shift_x + x, shift_y + y))
+        for position in Board._quadrant_coords(quadrant):
+            if sub_boards[position] == EMPTY:
+                moves.append(position)
         return moves
 
-    # TODO - try to use this as a representation, directly
+    @staticmethod
+    def _quadrant_coords(quadrant: Move):
+        shift_x = 3 * quadrant[0]
+        shift_y = 3 * quadrant[1]
+        for x, y in SUB_COORDINATES:
+            yield shift_x + x, shift_y + y
 
     def as_board_matrix(self):
-        m = np.zeros(shape=(9, 9))
-        for mx, my in SUB_COORDINATES:
-            sub_board = self.sub_boards[(mx, my)]
-            for x, y in SUB_COORDINATES:
-                position = 2 * (x * 3 + y)
-                if 1 << position & sub_board:
-                    m[(x, y)] = 1
-                elif 1 << (position + 1) & sub_board:
-                    m[(x, y)] = -1
-        return m
+        return self.sub_boards
 
     def __repr__(self):
-        return repr({
-            'sub_boards': self._board_repr(),
-            'sub_winners': self.sub_winners,
-            'next_quadrant': self.next_quadrant
-        })
-
-    def _board_repr(self):
-        r = [[""] * 3 for _ in range(3)]
-        for x, y in SUB_COORDINATES:
-            sub_board = self.sub_boards[(x, y)]
-            r[x][y] = self._sub_repr(sub_board)
-        return r
-
-    @staticmethod
-    def _sub_repr(sub_board: int) -> str:
-        r = "|"
-        for x in range(3):
-            for y in range(3):
-                position = 2 * (x * 3 + y)
-                if 1 << position & sub_board and 1 << (position + 1) & sub_board:
-                    r += "!"
-                elif 1 << position & sub_board:
-                    r += "X"
-                elif 1 << (position + 1) & sub_board:
-                    r += "O"
-                else:
-                    r += "-"
-            r += "|"
-        return r
+        return "Board:\n" + repr(self.sub_boards) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
 
 
 """

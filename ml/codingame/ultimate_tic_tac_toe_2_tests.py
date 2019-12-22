@@ -13,17 +13,15 @@ def test_initial_moves():
 
 
 def test_row():
-    sub_board = 0
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 1))
-    sub_board = Board._sub_play(sub_board, PLAYER, (2, 2))
-    assert Board._sub_winner(sub_board, PLAYER)
+    sub_boards = np.zeros(shape=(9, 9))
+    sub_boards[(0, 0)] = PLAYER
+    sub_boards[(1, 1)] = PLAYER
+    sub_boards[(2, 2)] = PLAYER
+    assert PLAYER == Board._sub_winner(sub_boards, (0, 0))
 
-    sub_board = 0
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 1))
     board = Board.empty()
-    board.sub_boards[(0, 0)] = sub_board
+    board = board.play(PLAYER, (0, 0))
+    board = board.play(PLAYER, (1, 1))
     board = board.play(PLAYER, (2, 2))
     assert PLAYER == board.sub_winners[(0, 0)]
 
@@ -34,17 +32,12 @@ def test_game_over():
     x o x
     o x o
     """
-    sub_board = 0
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (0, 2))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 0))
-    sub_board = Board._sub_play(sub_board, PLAYER, (1, 2))
-    sub_board = Board._sub_play(sub_board, PLAYER, (2, 1))
-    sub_board = Board._sub_play(sub_board, OPPONENT, (0, 1))
-    sub_board = Board._sub_play(sub_board, OPPONENT, (1, 1))
-    sub_board = Board._sub_play(sub_board, OPPONENT, (2, 0))
-    sub_board = Board._sub_play(sub_board, OPPONENT, (2, 2))
-    assert not Board._sub_available_moves((0, 0), sub_board)
+    sub_boards = np.zeros(shape=(9, 9))
+    for pos in [(0, 0), (0, 2), (1, 0), (1, 2), (2, 1)]:
+        sub_boards[pos] = PLAYER
+    for pos in [(0, 1), (1, 1), (2, 0), (2, 2)]:
+        sub_boards[pos] = OPPONENT
+    assert not Board._sub_available_moves(sub_boards, (0, 0))
 
 
 def tests_game():
