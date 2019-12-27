@@ -185,7 +185,7 @@ class Board:
                 count += self.sub_winners[pos]
             if count == 3:
                 return CROSS
-            elif count == 3:
+            elif count == -3:
                 return CIRCLE
 
         # +1 for CROSS, -1 for CIRCLE, the sign gives you the winner

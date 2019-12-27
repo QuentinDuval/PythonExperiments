@@ -39,6 +39,15 @@ def test_sub_winner():
     assert CROSS == board._sub_winner((2, 0))
 
 
+def test_winner():
+    for player in CROSS, CIRCLE:
+        for combi in COMBINATIONS:
+            board = Board.empty()
+            for pos in combi:
+                board.sub_winners[pos] = player
+            assert player == board._winner()
+
+
 def test_game_over():
     """
     x o x
@@ -57,6 +66,7 @@ def tests_game():
     test_initial_moves()
     test_row()
     test_sub_winner()
+    test_winner()
     test_game_over()
 
 
