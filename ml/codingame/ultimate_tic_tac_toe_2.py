@@ -79,6 +79,7 @@ def decompose_move(move: Move) -> Tuple[Move, Move]:
 Player
 """
 
+Reward = float
 PlayerId = int
 
 EMPTY = 0
@@ -161,7 +162,7 @@ class Board:
             available_moves=self.available_moves
         )
 
-    def is_game_over(self):
+    def is_over(self):
         return self.winner != EMPTY
 
     def play_debug(self, player_id: PlayerId, move: Move):
@@ -491,7 +492,7 @@ class MCTSAgent:
         node = self.game_tree
         move = None
         nodes = []
-        while node is not None and not node.board.is_game_over():
+        while node is not None and not node.board.is_over():
             nodes.append(node)
             move, node = node.select(self.player == player_id, self.exploration_factor)
             player_id = next_player(player_id)
@@ -505,7 +506,7 @@ class MCTSAgent:
 
         # Play-out (random action until the end)
         board = node.board.clone()
-        while not board.is_game_over():
+        while not board.is_over():
             moves = board.available_moves
             board.play_(player_id, random.choice(moves))
             player_id = next_player(player_id)

@@ -97,11 +97,11 @@ def test_ia(agent1, agent2):
     move_count = 0
     board = Board.empty()
 
-    while not board.is_game_over():
+    while not board.is_over():
         move = agent1.get_action(board)
         board = board.play_debug(CROSS, move)
         move_count += 1
-        if not board.is_game_over():
+        if not board.is_over():
             move = agent2.get_action(board)
             board = board.play_debug(CIRCLE, move)
             move_count += 1
