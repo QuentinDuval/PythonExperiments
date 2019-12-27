@@ -212,42 +212,32 @@ class Board:
 
     @staticmethod
     def _sub_winner(sub_boards: np.ndarray, quadrant: Move) -> PlayerId:
-        shift_x, shift_y = quadrant
-        shift_x *= 3
-        shift_y *= 3
+        sub_board = Board._quadrant(sub_boards, quadrant)
         for combi in COMBINATIONS:
             count = 0   # +1 for CROSS, -1 for CIRCLE, if total is 3 or -3, you have a winner
-            for x, y in combi:
-                count += sub_boards[(shift_x + x, shift_y + y)]
+            for pos in combi:
+                count += sub_board[pos]
             if count == 3:
                 return CROSS
             elif count == 3:
                 return CIRCLE
-        if Board._filled(sub_boards, quadrant):
+        if np.count_nonzero(sub_board) == 9:
             return DRAW
         return EMPTY
 
     @staticmethod
-    def _filled(sub_boards: np.ndarray, quadrant: Move) -> bool:
-        for position in Board._quadrant_coords(quadrant):
-            if sub_boards[position] == EMPTY:
-                return False
-        return True
+    def _sub_available_moves(sub_boards: np.ndarray, quadrant: Move) -> List[Move]:
+        return [position for position in Board._quadrant_coords(quadrant) if sub_boards[position] == EMPTY]
 
     @staticmethod
-    def _sub_available_moves(sub_boards: np.ndarray, quadrant: Move) -> List[Move]:
-        moves = []
-        for position in Board._quadrant_coords(quadrant):
-            if sub_boards[position] == EMPTY:
-                moves.append(position)
-        return moves
+    def _quadrant(sub_boards: np.ndarray, quadrant: Move):
+        shift_x, shift_y = quadrant
+        return sub_boards[shift_x * 3:(shift_x + 1) * 3, shift_y * 3:(shift_y + 1) * 3]
 
     @staticmethod
     def _quadrant_coords(quadrant: Move):
-        shift_x = 3 * quadrant[0]
-        shift_y = 3 * quadrant[1]
         for x, y in SUB_COORDINATES:
-            yield shift_x + x, shift_y + y
+            yield 3 * quadrant[0] + x, 3 * quadrant[1] + y
 
     def __repr__(self):
         return "Board:\n" + repr(self.sub_boards) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
