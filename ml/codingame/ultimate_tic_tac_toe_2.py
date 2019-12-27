@@ -402,6 +402,9 @@ class CombinedEvaluation(EvaluationFct):
         return sum(val(board, player_id) for val in self.evals)
 
 
+# TODO - add an IA that is interested in the difference in cross vs circle in each quadrant?
+
+
 """
 Monte Carlo Tree Search (MCTS) agent
 """
