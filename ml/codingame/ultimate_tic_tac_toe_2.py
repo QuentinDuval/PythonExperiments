@@ -125,24 +125,59 @@ COMBINATIONS = [
 
 
 class Board:
-    def __init__(self, sub_boards: np.ndarray, sub_winners: np.ndarray, next_quadrant: Move):
+    __slots__ = ['sub_boards', 'sub_winners', 'next_quadrant', 'winner', 'available_moves']
+
+    def __init__(self,
+                 sub_boards: np.ndarray,
+                 sub_winners: np.ndarray,
+                 next_quadrant: Move,
+                 winner: PlayerId,
+                 available_moves: List[Move]):
         self.sub_boards = sub_boards
         self.sub_winners = sub_winners
         self.next_quadrant = next_quadrant
+        self.winner = winner
+        self.available_moves = available_moves
+
+    def as_board_matrix(self):
+        return self.sub_boards
 
     @classmethod
     def empty(cls):
         return Board(
             sub_boards=np.zeros(shape=(9, 9), dtype=np.int32),
             sub_winners=np.zeros(shape=(3, 3), dtype=np.int32),
-            next_quadrant=NO_MOVE
+            next_quadrant=NO_MOVE,
+            winner=EMPTY,
+            available_moves=ALL_COORDINATES
+        )
+
+    def clone(self):
+        return Board(
+            sub_boards=self.sub_boards.copy(),
+            sub_winners=self.sub_winners.copy(),
+            next_quadrant=self.next_quadrant,
+            winner=self.winner,
+            available_moves=self.available_moves
         )
 
     def is_game_over(self):
         return self.winner != EMPTY
 
-    @CachedProperty
-    def winner(self) -> PlayerId:
+    def play(self, player_id: PlayerId, move: Move) -> 'new board':
+        next_board = self.clone()
+        next_board.play_(player_id, move)
+        return next_board
+
+    def play_(self, player_id: PlayerId, move: Move):
+        main_move, sub_move = decompose_move(move)
+        self.sub_boards[move] = player_id
+        self.sub_winners[main_move] = self._sub_winner(self.sub_boards, main_move)
+        self.next_quadrant = NO_MOVE if self.sub_winners[sub_move] != EMPTY else sub_move
+        self.winner = self._winner()
+        self.available_moves = self._available_moves()
+
+    def _winner(self) -> PlayerId:
         for combi in COMBINATIONS:
             player_count = 0
             opponent_count = 0
@@ -172,17 +207,7 @@ class Board:
         else:
             return DRAW
 
-    def play(self, player_id: PlayerId, move: Move) -> 'new board':
-        main_move, sub_move = decompose_move(move)
-        sub_boards = self.sub_boards.copy()
-        sub_winners = self.sub_winners.copy()
-        sub_boards[move] = player_id
-        sub_winners[main_move] = self._sub_winner(sub_boards, main_move)
-        next_quadrant = NO_MOVE if sub_winners[sub_move] != EMPTY else sub_move
-        return Board(sub_boards=sub_boards, sub_winners=sub_winners, next_quadrant=next_quadrant)
-
-    @CachedProperty
-    def available_moves(self) -> List[Move]:
+    def _available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
             return self._sub_available_moves(self.sub_boards, self.next_quadrant)
         else:
@@ -235,9 +260,6 @@ class Board:
         shift_y = 3 * quadrant[1]
         for x, y in SUB_COORDINATES:
             yield shift_x + x, shift_y + y
-
-    def as_board_matrix(self):
-        return self.sub_boards
 
     def __repr__(self):
         return "Board:\n" + repr(self.sub_boards) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
@@ -296,9 +318,7 @@ class MinimaxAgent:
         self.max_depth = max_depth
         self.eval_fct = eval_fct
         # TODO - order the moves to improve the A/B pruning - how?
-        # TODO - improve the evaluation function (right now, useless in many situations) => Machine Learning?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
-        pass
 
     def opponent_action(self, move: Move):
         pass
@@ -333,7 +353,7 @@ class MinimaxAgent:
             if winner != EMPTY:
                 return self._win_score(winner), move
 
-            score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth - 1)
+            score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth-1)
             if player_id == self.player:
                 if score > best_score:
                     best_score = score
@@ -410,7 +430,7 @@ class GameTree:
         self.board = board
         self.total: int = 0
         self.played: int = 0
-        self.children = {move: None for move in board.available_moves()}
+        self.children = {move: None for move in board.available_moves}
 
     def add_experience(self, score: int):
         self.total += score
@@ -427,7 +447,6 @@ class GameTree:
         return move, self.children[move]
 
     def select(self, maximizing: bool, exploration_factor: float = 0.) -> Tuple[Move, 'child']:
-        # TODO - opponent should choose the other path...
         moves = []
         weights = []
         for move, node in self.children.items():
@@ -469,7 +488,7 @@ class MCTSAgent:
         scenario_count = 0
         chrono = Chronometer()
         chrono.start()
-        while chrono.spent() <= 0.9 * MAX_TURN_TIME:
+        while chrono.spent() <= 0.8 * MAX_TURN_TIME:
             self._monte_carlo_tree_search()
             scenario_count += 1
 
@@ -500,14 +519,13 @@ class MCTSAgent:
             nodes.append(node)
 
         # Play-out (random action until the end)
-        board = node.board
+        board = node.board.clone()
         while not board.is_game_over():
-            moves = board.available_moves()
-            board = board.play(player_id, random.choice(moves))
+            board.play_(player_id, random.choice(board.available_moves))
             player_id = next_player(player_id)
 
         # Back-propagation (of the score across the tree)
-        score = 100 if board.is_winner(self.player) else -100
+        score = 100 if board.winner == self.player else -100
         for node in nodes:
             node.add_experience(score)
 
