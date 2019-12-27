@@ -82,16 +82,16 @@ Player
 PlayerId = int
 
 EMPTY = 0
-PLAYER = 1
-OPPONENT = -1
+CROSS = 1
+CIRCLE = -1
 DRAW = 2
 
 
 def next_player(player_id: PlayerId) -> PlayerId:
-    if player_id == PLAYER:
-        return OPPONENT
+    if player_id == CROSS:
+        return CIRCLE
     else:
-        return PLAYER
+        return CROSS
 
 
 """
@@ -182,28 +182,28 @@ class Board:
             player_count = 0
             opponent_count = 0
             for pos in combi:
-                if self.sub_winners[pos] == PLAYER:
+                if self.sub_winners[pos] == CROSS:
                     player_count += 1
-                elif self.sub_winners[pos] == OPPONENT:
+                elif self.sub_winners[pos] == CIRCLE:
                     opponent_count += 1
             if player_count == 3:
-                return PLAYER
+                return CROSS
             elif opponent_count == 3:
-                return OPPONENT
+                return CIRCLE
 
         player_count = 0
         opponent_count = 0
         for move in SUB_COORDINATES:
             if self.sub_winners[move] == EMPTY:
                 return EMPTY
-            elif self.sub_winners[move] == PLAYER:
+            elif self.sub_winners[move] == CROSS:
                 player_count += 1
-            elif self.sub_winners[move] == OPPONENT:
+            elif self.sub_winners[move] == CIRCLE:
                 opponent_count += 1
         if player_count > opponent_count:
-            return PLAYER
+            return CROSS
         elif opponent_count > player_count:
-            return OPPONENT
+            return CIRCLE
         else:
             return DRAW
 
@@ -227,14 +227,14 @@ class Board:
             opponent_count = 0
             for x, y in combi:
                 position = shift_x + x, shift_y + y
-                if sub_boards[position] == PLAYER:
+                if sub_boards[position] == CROSS:
                     player_count += 1
-                elif sub_boards[position] == OPPONENT:
+                elif sub_boards[position] == CIRCLE:
                     opponent_count += 1
             if player_count == 3:
-                return PLAYER
+                return CROSS
             elif opponent_count == 3:
-                return OPPONENT
+                return CIRCLE
         if Board._filled(sub_boards, quadrant):
             return DRAW
         return EMPTY
@@ -405,7 +405,7 @@ class PriceMapEvaluation(EvaluationFct):
 
     def __call__(self, board: Board, player_id: PlayerId) -> float:
         winnings = np.where(board.sub_winners != 2, board.sub_winners, 0)
-        if player_id == OPPONENT:
+        if player_id == CIRCLE:
             winnings *= -1
         return (board.as_board_matrix() * self.weights).sum() + (winnings * self.sub_weights).sum()
 
@@ -531,6 +531,14 @@ class MCTSAgent:
 
 
 """
+Monte Carlo Tree Search (MCTS) with evaluation agent
+"""
+
+
+# TODO - a kind of MCTS, in which you open lower level just to check the evaluation function (like AlphaGo Zero)
+
+
+"""
 Inputs acquisition
 """
 
@@ -572,7 +580,7 @@ def game_loop(agent):
         if opponent_move != NO_MOVE:
             # debug("opponent move:", opponent_move)
             # debug("decompose to:", decompose_move(opponent_move))
-            board = board.play(OPPONENT, opponent_move)
+            board = board.play(CIRCLE, opponent_move)
             agent.opponent_action(opponent_move)
             # debug(board)
 
@@ -580,13 +588,13 @@ def game_loop(agent):
         check_available_moves(valid_moves, board)
 
         move = agent.get_action(board)
-        board = board.play(PLAYER, move)
+        board = board.play(CROSS, move)
         # debug(board)
         print_move(move)
 
 
 if __name__ == '__main__':
     # game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()))
-    game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=PriceMapEvaluation()))
+    game_loop(agent=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=PriceMapEvaluation()))
     # TODO - try a "kind of" MCTS but with evaluation function: expand the most promising move?
     # game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))

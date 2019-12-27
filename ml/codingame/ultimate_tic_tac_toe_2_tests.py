@@ -14,16 +14,16 @@ def test_initial_moves():
 
 def test_row():
     sub_boards = np.zeros(shape=(9, 9))
-    sub_boards[(0, 0)] = PLAYER
-    sub_boards[(1, 1)] = PLAYER
-    sub_boards[(2, 2)] = PLAYER
-    assert PLAYER == Board._sub_winner(sub_boards, (0, 0))
+    sub_boards[(0, 0)] = CROSS
+    sub_boards[(1, 1)] = CROSS
+    sub_boards[(2, 2)] = CROSS
+    assert CROSS == Board._sub_winner(sub_boards, (0, 0))
 
     board = Board.empty()
-    board = board.play(PLAYER, (0, 0))
-    board = board.play(PLAYER, (1, 1))
-    board = board.play(PLAYER, (2, 2))
-    assert PLAYER == board.sub_winners[(0, 0)]
+    board = board.play(CROSS, (0, 0))
+    board = board.play(CROSS, (1, 1))
+    board = board.play(CROSS, (2, 2))
+    assert CROSS == board.sub_winners[(0, 0)]
 
 
 def test_game_over():
@@ -34,9 +34,9 @@ def test_game_over():
     """
     sub_boards = np.zeros(shape=(9, 9))
     for pos in [(0, 0), (0, 2), (1, 0), (1, 2), (2, 1)]:
-        sub_boards[pos] = PLAYER
+        sub_boards[pos] = CROSS
     for pos in [(0, 1), (1, 1), (2, 0), (2, 2)]:
-        sub_boards[pos] = OPPONENT
+        sub_boards[pos] = CIRCLE
     assert not Board._sub_available_moves(sub_boards, (0, 0))
 
 
@@ -75,11 +75,11 @@ def test_ia(agent1, agent2):
 
     while not board.is_game_over():
         move = agent1.get_action(board)
-        board = board.play(PLAYER, move)
+        board = board.play(CROSS, move)
         move_count += 1
         if not board.is_game_over():
             move = agent2.get_action(board)
-            board = board.play(OPPONENT, move)
+            board = board.play(CIRCLE, move)
             move_count += 1
     time_spent = chrono.spent()
 
@@ -90,14 +90,14 @@ def test_ia(agent1, agent2):
     # print(board)
 
 
-test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=PriceMapEvaluation()),
-        agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=CountOwnedEvaluation()))
 
-test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=PriceMapEvaluation()))
+test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))
 
-test_ia(agent1=MCTSAgent(player=PLAYER, exploration_factor=1.0),
-        agent2=MinimaxAgent(player=OPPONENT, max_depth=3, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MCTSAgent(player=CROSS, exploration_factor=1.0),
+        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=CountOwnedEvaluation()))
 
 # test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
 
