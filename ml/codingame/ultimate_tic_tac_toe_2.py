@@ -178,34 +178,27 @@ class Board:
         self.available_moves = self._available_moves()
 
     def _winner(self) -> PlayerId:
+        # +1 for CROSS, -1 for CIRCLE, if total is 3 or -3, you have a winner
         for combi in COMBINATIONS:
-            player_count = 0
-            opponent_count = 0
+            count = 0
             for pos in combi:
-                if self.sub_winners[pos] == CROSS:
-                    player_count += 1
-                elif self.sub_winners[pos] == CIRCLE:
-                    opponent_count += 1
-            if player_count == 3:
+                count += self.sub_winners[pos]
+            if count == 3:
                 return CROSS
-            elif opponent_count == 3:
+            elif count == 3:
                 return CIRCLE
 
-        player_count = 0
-        opponent_count = 0
+        # +1 for CROSS, -1 for CIRCLE, the sign gives you the winner
+        count = 0
         for move in SUB_COORDINATES:
             if self.sub_winners[move] == EMPTY:
                 return EMPTY
-            elif self.sub_winners[move] == CROSS:
-                player_count += 1
-            elif self.sub_winners[move] == CIRCLE:
-                opponent_count += 1
-        if player_count > opponent_count:
+            count += self.sub_winners[move]
+        if count > 0:
             return CROSS
-        elif opponent_count > player_count:
+        elif count < 0:
             return CIRCLE
-        else:
-            return DRAW
+        return DRAW
 
     def _available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
@@ -223,17 +216,12 @@ class Board:
         shift_x *= 3
         shift_y *= 3
         for combi in COMBINATIONS:
-            player_count = 0
-            opponent_count = 0
+            count = 0   # +1 for CROSS, -1 for CIRCLE, if total is 3 or -3, you have a winner
             for x, y in combi:
-                position = shift_x + x, shift_y + y
-                if sub_boards[position] == CROSS:
-                    player_count += 1
-                elif sub_boards[position] == CIRCLE:
-                    opponent_count += 1
-            if player_count == 3:
+                count += sub_boards[(shift_x + x, shift_y + y)]
+            if count == 3:
                 return CROSS
-            elif opponent_count == 3:
+            elif count == 3:
                 return CIRCLE
         if Board._filled(sub_boards, quadrant):
             return DRAW
