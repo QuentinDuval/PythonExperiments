@@ -218,7 +218,7 @@ class Board:
                 count += sub_board[pos]
             if count == 3:
                 return CROSS
-            elif count == 3:
+            elif count == -3:
                 return CIRCLE
         if np.count_nonzero(sub_board) == 9:
             return DRAW

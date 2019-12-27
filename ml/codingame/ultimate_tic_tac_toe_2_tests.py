@@ -21,6 +21,24 @@ def test_row():
     assert CROSS == board.sub_winners[(0, 0)]
 
 
+def test_sub_winner():
+    board = Board.empty()
+    board.grid = np.array([
+        [0, -1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, -1, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, -1, -1, -1, 0, 0, 0],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0],
+        [-1, 1, 0, -1, -1, -1, 0, 1, 0],
+        [0, 0, 0, 0, 0, 0, 0, -1, 0],
+        [-1, 1, 0, 0, 1, 0, 0, 1, 0],
+        [0, 1, 0, 1, 1, 0, 0, 0, 0],
+        [0, 1, 0, 0, -1, 0, 0, 0, 0]])
+    assert EMPTY == board._sub_winner((0, 0))
+    assert CIRCLE == board._sub_winner((0, 1))
+    assert CIRCLE == board._sub_winner((1, 1))
+    assert CROSS == board._sub_winner((2, 0))
+
+
 def test_game_over():
     """
     x o x
@@ -38,6 +56,7 @@ def test_game_over():
 def tests_game():
     test_initial_moves()
     test_row()
+    test_sub_winner()
     test_game_over()
 
 
