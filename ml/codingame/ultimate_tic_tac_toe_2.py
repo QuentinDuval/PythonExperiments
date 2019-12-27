@@ -164,6 +164,11 @@ class Board:
     def is_game_over(self):
         return self.winner != EMPTY
 
+    def play_debug(self, player_id: PlayerId, move: Move):
+        if move not in self.available_moves:
+            raise Exception("Invalid move", move, "in grid", self)
+        return self.play(player_id, move)
+
     def play(self, player_id: PlayerId, move: Move) -> 'new board':
         next_board = self.clone()
         next_board.play_(player_id, move)
@@ -237,7 +242,10 @@ class Board:
             yield 3 * quadrant[0] + x, 3 * quadrant[1] + y
 
     def __repr__(self):
-        return "Board:\n" + repr(self.grid) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
+        return "Board:\n" + repr(self.grid)\
+               + "\nWinners:\n" + repr(self.sub_winners)\
+               + "\nQuadrant: " + repr(self.next_quadrant)\
+               + "\nMoves: " + repr(self.available_moves)
 
 
 """
@@ -405,6 +413,7 @@ class GameTree:
         self.board = board
         self.total: int = 0
         self.played: int = 0
+        # TODO - add bias here - based on Machine Learning
         self.children = {move: None for move in board.available_moves}
 
     def add_experience(self, score: int):
@@ -496,7 +505,8 @@ class MCTSAgent:
         # Play-out (random action until the end)
         board = node.board.clone()
         while not board.is_game_over():
-            board.play_(player_id, random.choice(board.available_moves))
+            moves = board.available_moves
+            board.play_(player_id, random.choice(moves))
             player_id = next_player(player_id)
 
         # Back-propagation (of the score across the tree)
