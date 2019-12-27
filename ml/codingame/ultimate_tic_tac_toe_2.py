@@ -125,27 +125,27 @@ COMBINATIONS = [
 
 
 class Board:
-    __slots__ = ['sub_boards', 'sub_winners', 'next_quadrant', 'winner', 'available_moves']
+    __slots__ = ['grid', 'sub_winners', 'next_quadrant', 'winner', 'available_moves']
 
     def __init__(self,
-                 sub_boards: np.ndarray,
+                 grid: np.ndarray,
                  sub_winners: np.ndarray,
                  next_quadrant: Move,
                  winner: PlayerId,
                  available_moves: List[Move]):
-        self.sub_boards = sub_boards
+        self.grid = grid
         self.sub_winners = sub_winners
         self.next_quadrant = next_quadrant
         self.winner = winner
         self.available_moves = available_moves
 
     def as_board_matrix(self):
-        return self.sub_boards
+        return self.grid
 
     @classmethod
     def empty(cls):
         return Board(
-            sub_boards=np.zeros(shape=(9, 9), dtype=np.int32),
+            grid=np.zeros(shape=(9, 9), dtype=np.int32),
             sub_winners=np.zeros(shape=(3, 3), dtype=np.int32),
             next_quadrant=NO_MOVE,
             winner=EMPTY,
@@ -154,7 +154,7 @@ class Board:
 
     def clone(self):
         return Board(
-            sub_boards=self.sub_boards.copy(),
+            grid=self.grid.copy(),
             sub_winners=self.sub_winners.copy(),
             next_quadrant=self.next_quadrant,
             winner=self.winner,
@@ -171,7 +171,7 @@ class Board:
 
     def play_(self, player_id: PlayerId, move: Move):
         main_move, sub_move = decompose_move(move)
-        self.sub_boards[move] = player_id
+        self.grid[move] = player_id
         self.sub_winners[main_move] = self._sub_winner(main_move)
         self.next_quadrant = NO_MOVE if self.sub_winners[sub_move] != EMPTY else sub_move
         self.winner = self._winner()
@@ -225,11 +225,11 @@ class Board:
         return EMPTY
 
     def _sub_available_moves(self, quadrant: Move) -> List[Move]:
-        return [position for position in Board._quadrant_coords(quadrant) if self.sub_boards[position] == EMPTY]
+        return [position for position in Board._quadrant_coords(quadrant) if self.grid[position] == EMPTY]
 
     def _quadrant(self, quadrant: Move):
         shift_x, shift_y = quadrant
-        return self.sub_boards[shift_x * 3:(shift_x + 1) * 3, shift_y * 3:(shift_y + 1) * 3]
+        return self.grid[shift_x * 3:(shift_x + 1) * 3, shift_y * 3:(shift_y + 1) * 3]
 
     @staticmethod
     def _quadrant_coords(quadrant: Move):
@@ -237,7 +237,7 @@ class Board:
             yield 3 * quadrant[0] + x, 3 * quadrant[1] + y
 
     def __repr__(self):
-        return "Board:\n" + repr(self.sub_boards) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
+        return "Board:\n" + repr(self.grid) + "\nWinners:\n" + repr(self.sub_winners) + "\nQuadrant:" + repr(self.next_quadrant)
 
 
 """
