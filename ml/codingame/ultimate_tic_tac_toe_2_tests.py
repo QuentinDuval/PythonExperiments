@@ -123,5 +123,6 @@ test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvalua
 test_ia(agent1=MCTSAgent(player=CROSS, exploration_factor=1.0),
         agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))
 
-# test_ia(agent1=MinimaxAgent(player=PLAYER, max_depth=3), agent2=MCTSAgent(player=OPPONENT, exploration_factor=1.0))
+test_ia(agent1=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MCTSAgent(player=CROSS, exploration_factor=1.0))
 

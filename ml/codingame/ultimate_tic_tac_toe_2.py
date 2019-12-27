@@ -463,7 +463,8 @@ class MCTSAgent:
         self.game_tree: GameTree = None
 
     def opponent_action(self, move: Move):
-        self.game_tree = self.game_tree.children.get(move, None)
+        if self.game_tree is not None:
+            self.game_tree = self.game_tree.children.get(move, None)
 
     def get_action(self, board: Board) -> Move:
         if self.game_tree is None:
@@ -480,7 +481,7 @@ class MCTSAgent:
         debug("spent:", chrono.spent())
 
         move, child = self.game_tree.best()
-        self.game_tree = child
+        self.game_tree = None
         return move
 
     def _monte_carlo_tree_search(self):
@@ -565,7 +566,7 @@ def game_loop(agent):
         if opponent_move != NO_MOVE:
             # debug("opponent move:", opponent_move)
             # debug("decompose to:", decompose_move(opponent_move))
-            board = board.play(CIRCLE, opponent_move)
+            board.play_(CIRCLE, opponent_move)
             agent.opponent_action(opponent_move)
             # debug(board)
 
@@ -573,7 +574,7 @@ def game_loop(agent):
         check_available_moves(valid_moves, board)
 
         move = agent.get_action(board)
-        board = board.play(CROSS, move)
+        board.play_(CROSS, move)
         # debug(board)
         print_move(move)
 
