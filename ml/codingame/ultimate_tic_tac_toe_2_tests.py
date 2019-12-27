@@ -13,16 +13,11 @@ def test_initial_moves():
 
 
 def test_row():
-    sub_boards = np.zeros(shape=(9, 9))
-    sub_boards[(0, 0)] = CROSS
-    sub_boards[(1, 1)] = CROSS
-    sub_boards[(2, 2)] = CROSS
-    assert CROSS == Board._sub_winner(sub_boards, (0, 0))
-
     board = Board.empty()
     board = board.play(CROSS, (0, 0))
     board = board.play(CROSS, (1, 1))
     board = board.play(CROSS, (2, 2))
+    assert CROSS == board._sub_winner((0, 0))
     assert CROSS == board.sub_winners[(0, 0)]
 
 
@@ -32,12 +27,12 @@ def test_game_over():
     x o x
     o x o
     """
-    sub_boards = np.zeros(shape=(9, 9))
+    board = Board.empty()
     for pos in [(0, 0), (0, 2), (1, 0), (1, 2), (2, 1)]:
-        sub_boards[pos] = CROSS
+        board.play_(CROSS, pos)
     for pos in [(0, 1), (1, 1), (2, 0), (2, 2)]:
-        sub_boards[pos] = CIRCLE
-    assert not Board._sub_available_moves(sub_boards, (0, 0))
+        board.play_(CIRCLE, pos)
+    assert not board._sub_available_moves((0, 0))
 
 
 def tests_game():

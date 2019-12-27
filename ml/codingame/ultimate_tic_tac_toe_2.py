@@ -172,7 +172,7 @@ class Board:
     def play_(self, player_id: PlayerId, move: Move):
         main_move, sub_move = decompose_move(move)
         self.sub_boards[move] = player_id
-        self.sub_winners[main_move] = self._sub_winner(self.sub_boards, main_move)
+        self.sub_winners[main_move] = self._sub_winner(main_move)
         self.next_quadrant = NO_MOVE if self.sub_winners[sub_move] != EMPTY else sub_move
         self.winner = self._winner()
         self.available_moves = self._available_moves()
@@ -202,17 +202,16 @@ class Board:
 
     def _available_moves(self) -> List[Move]:
         if self.next_quadrant != NO_MOVE:
-            return self._sub_available_moves(self.sub_boards, self.next_quadrant)
+            return self._sub_available_moves(self.next_quadrant)
         else:
             moves = []
             for quadrant in SUB_COORDINATES:
                 if self.sub_winners[quadrant] == EMPTY:
-                    moves.extend(self._sub_available_moves(self.sub_boards, quadrant))
+                    moves.extend(self._sub_available_moves(quadrant))
             return moves
 
-    @staticmethod
-    def _sub_winner(sub_boards: np.ndarray, quadrant: Move) -> PlayerId:
-        sub_board = Board._quadrant(sub_boards, quadrant)
+    def _sub_winner(self, quadrant: Move) -> PlayerId:
+        sub_board = self._quadrant(quadrant)
         for combi in COMBINATIONS:
             count = 0   # +1 for CROSS, -1 for CIRCLE, if total is 3 or -3, you have a winner
             for pos in combi:
@@ -225,14 +224,12 @@ class Board:
             return DRAW
         return EMPTY
 
-    @staticmethod
-    def _sub_available_moves(sub_boards: np.ndarray, quadrant: Move) -> List[Move]:
-        return [position for position in Board._quadrant_coords(quadrant) if sub_boards[position] == EMPTY]
+    def _sub_available_moves(self, quadrant: Move) -> List[Move]:
+        return [position for position in Board._quadrant_coords(quadrant) if self.sub_boards[position] == EMPTY]
 
-    @staticmethod
-    def _quadrant(sub_boards: np.ndarray, quadrant: Move):
+    def _quadrant(self, quadrant: Move):
         shift_x, shift_y = quadrant
-        return sub_boards[shift_x * 3:(shift_x + 1) * 3, shift_y * 3:(shift_y + 1) * 3]
+        return self.sub_boards[shift_x * 3:(shift_x + 1) * 3, shift_y * 3:(shift_y + 1) * 3]
 
     @staticmethod
     def _quadrant_coords(quadrant: Move):
