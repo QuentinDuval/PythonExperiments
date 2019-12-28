@@ -80,7 +80,7 @@ Test evaluation functions
 
 def test_price_map():
     eval = PriceMapEvaluation()
-    print(eval.weights)
+    assert 9*9 == eval.weights.size
 
 
 test_price_map()
@@ -114,11 +114,29 @@ def test_ia(agent1, agent2):
     # print(board)
 
 
+print("Naive, depth 4")
+print("-" * 50)
+
+test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()))
+
+print("Naive VS better eval")
+print("-" * 50)
+
 test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=PriceMapEvaluation()),
         agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=CountOwnedEvaluation()))
 
 test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()),
         agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))
+
+print("MCTS vs Minimax")
+print("-" * 50)
 
 test_ia(agent1=MCTSAgent(player=CROSS, exploration_factor=1.0),
         agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))

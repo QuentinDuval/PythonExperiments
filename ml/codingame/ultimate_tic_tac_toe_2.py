@@ -370,8 +370,10 @@ Minimax: evaluation functions
 
 class CountOwnedEvaluation(EvaluationFct):
     def __call__(self, board: Board, player_id: PlayerId) -> float:
-        opponent_id = next_player(player_id)
-        return np.count_nonzero(board.sub_winners == player_id) - np.count_nonzero(board.sub_winners == opponent_id)
+        count = board.sub_winners.sum()
+        if player_id == CIRCLE:
+            count *= -1
+        return count
 
 
 class PriceMapEvaluation(EvaluationFct):
@@ -418,6 +420,7 @@ class GameTree:
         self.total: int = 0
         self.played: int = 0
         # TODO - add bias here - based on Machine Learning
+        # TODO - add a value function - based on anything...
         self.children = {move: None for move in board.available_moves}
 
     def add_experience(self, score: int):
