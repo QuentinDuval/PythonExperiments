@@ -457,15 +457,39 @@ class PriceMapEvaluation(EvaluationFct):
         return (board.as_board_matrix() * self.weights).sum() + (winnings * self.sub_weights).sum()
 
 
+class StrategicMapEvaluation(EvaluationFct):
+    # TODO - do this as the sub-level
+
+    def __call__(self, board: Board, player_id: PlayerId) -> float:
+        return (self.compute_map(board) * board.sub_winners).sum()
+
+    @staticmethod
+    def compute_map(board: Board) -> np.ndarray:
+        strategic_map = np.array([
+            [3, 2, 3],
+            [2, 4, 2],
+            [3, 2, 3]
+        ])
+        for combi in COMBINATIONS:
+            cross_count = 0
+            circle_count = 0
+            for pos in combi:
+                if board.sub_winners[pos] == CROSS:
+                    cross_count += 1
+                elif board.sub_winners[pos] == CIRCLE:
+                    circle_count += 1
+            if cross_count > 0 and circle_count > 0:
+                for pos in combi:
+                    strategic_map[pos] -= 1
+        return strategic_map
+
+
 class CombinedEvaluation(EvaluationFct):
     def __init__(self, *evals):
         self.evals = list(evals)
 
     def __call__(self, board: Board, player_id: PlayerId) -> float:
         return sum(val(board, player_id) for val in self.evals)
-
-
-# TODO - add an IA that is interested in the difference in cross vs circle in each quadrant? Not really a good strategy
 
 
 """
@@ -649,5 +673,6 @@ def game_loop(agent: Agent):
 
 if __name__ == '__main__':
     # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
-    game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+    # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+    game_loop(agent=NegamaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
     # game_loop(agent=MCTSAgent(exploration_factor=1.0))

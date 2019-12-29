@@ -89,7 +89,25 @@ def test_price_map():
     assert 9*9 == eval.weights.size
 
 
+def test_strategic_map():
+    board = Board.empty()
+    board.sub_winners = np.array([
+        [CROSS, CIRCLE, EMPTY],
+        [CROSS, CIRCLE, CIRCLE],
+        [EMPTY, EMPTY, EMPTY]
+    ])
+    eval = StrategicMapEvaluation()
+    strategic_map = eval.compute_map(board)
+    assert np.array_equal(
+        strategic_map,
+        np.array(
+            [[1, 1, 2],
+             [1, 2, 1],
+             [3, 2, 2]]))
+
+
 test_price_map()
+test_strategic_map()
 
 
 """
@@ -161,7 +179,7 @@ test_ia(agent1=NegamaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
         agent2=NegamaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
 
 
-print("\nNaive VS better eval")
+print("\nNaive VS price map eval")
 print("-" * 50)
 
 test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
@@ -169,6 +187,27 @@ test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
 
 test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
         agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+
+
+print("\nNaive VS strategic map eval")
+print("-" * 50)
+
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()))
+
+
+print("\nStrategic map eval VS price map eval")
+print("-" * 50)
+
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()))
+
 
 print("\nMCTS vs Minimax")
 print("-" * 50)
