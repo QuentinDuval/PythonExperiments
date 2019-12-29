@@ -87,10 +87,8 @@ DRAW = 2
 
 
 def next_player(player_id: PlayerId) -> PlayerId:
-    if player_id == CROSS:
-        return CIRCLE
-    else:
-        return CROSS
+    # return CIRCLE if player_id == CROSS else CROSS
+    return -player_id   # optimization based on the fact that players have opposite IDs
 
 
 """
