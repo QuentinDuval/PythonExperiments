@@ -6,6 +6,11 @@ Test game
 """
 
 
+def test_agent_prototypes():
+    random_agent = RandomAgent()
+    random_agent.on_end_episode()
+
+
 def test_initial_moves():
     board = Board.empty()
     available_moves = board.available_moves
@@ -63,6 +68,7 @@ def test_game_over():
 
 
 def tests_game():
+    test_agent_prototypes()
     test_initial_moves()
     test_row()
     test_sub_winner()

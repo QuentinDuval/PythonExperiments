@@ -1,13 +1,11 @@
 import abc
-import itertools
-import numpy as np
-import sys
-import random
 import math
-from collections import OrderedDict
-from functools import lru_cache
-from typing import *
+import random
+import sys
 import time
+from typing import *
+
+import numpy as np
 
 
 """
@@ -259,34 +257,16 @@ class Agent(abc.ABC):
     def get_action(self, board: Board, player_id: PlayerId) -> Move:
         pass
 
-    @abc.abstractmethod
     def on_end_episode(self):
         """
-        Allows stateful agents (cleaning memory)
+        Allows stateful agents (cleaning memory) vs Reflex agents (acting on percepts only)
         """
-        pass
-
-    @abc.abstractmethod
-    def on_opponent_action(self, move: Move, player_id: PlayerId):
-        """
-        Allows stateful agents (tracking opponent)
-        """
-        pass
-
-
-class ReflexAgent(Agent):
-    """
-    An agent that does not keep any history (purely act on the last percept)
-    """
-
-    @abc.abstractmethod
-    def get_action(self, board: Board, player_id: PlayerId) -> Move:
-        pass
-
-    def on_end_episode(self):
         pass
 
     def on_opponent_action(self, move: Move, player_id: PlayerId):
+        """
+        Allows stateful agents (cleaning memory) vs Reflex agents (acting on percepts only)
+        """
         pass
 
 
@@ -295,29 +275,20 @@ Basic agents (random agent, first move agent, etc)
 """
 
 
-class FirstMoveAgent(ReflexAgent):
-    def __init__(self):
-        pass
-
+class FirstMoveAgent(Agent):
     def get_action(self, board: Board, player_id: PlayerId) -> Move:
         return board.available_moves[0]
 
 
-class LastMoveAgent(ReflexAgent):
-    def __init__(self):
-        pass
-
+class LastMoveAgent(Agent):
     def get_action(self, board: Board, player_id: PlayerId) -> Move:
         return board.available_moves[-1]
 
 
-class RandomAgent(ReflexAgent):
-    def __init__(self):
-        self.chooser = random.choice
-
+class RandomAgent(Agent):
     def get_action(self, board: Board, player_id: PlayerId) -> Move:
         moves = board.available_moves
-        return self.chooser(moves)
+        return random.choice(moves)
 
 
 """
@@ -331,7 +302,7 @@ class EvaluationFct(abc.ABC):
         pass
 
 
-class MinimaxAgent(ReflexAgent):
+class MinimaxAgent(Agent):
     def __init__(self, max_depth: int, eval_fct: EvaluationFct):
         self.min_score = -200
         self.max_score = 200
@@ -623,5 +594,4 @@ def game_loop(agent: Agent):
 if __name__ == '__main__':
     # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
     game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
-    # TODO - try a "kind of" MCTS but with evaluation function: expand the most promising move?
     # game_loop(agent=MCTSAgent(exploration_factor=1.0))
