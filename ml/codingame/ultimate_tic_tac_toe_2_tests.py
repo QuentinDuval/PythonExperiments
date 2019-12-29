@@ -117,7 +117,7 @@ def test_ia(agent1: Agent, agent2: Agent):
     # print(board)
 
 
-print("Naive, depth 4")
+print("\nNaive, depth 4")
 print("-" * 50)
 
 test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
@@ -129,7 +129,7 @@ test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
 test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
         agent2=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
 
-print("Naive VS better eval")
+print("\nNaive VS better eval")
 print("-" * 50)
 
 test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
@@ -138,7 +138,7 @@ test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
 test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
         agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
 
-print("MCTS vs Minimax")
+print("\nMCTS vs Minimax")
 print("-" * 50)
 
 test_ia(agent1=MCTSAgent(exploration_factor=1.0),
