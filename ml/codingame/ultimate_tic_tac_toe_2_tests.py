@@ -91,20 +91,23 @@ Test AI
 """
 
 
-def test_ia(agent1, agent2):
+def test_ia(agent1: Agent, agent2: Agent):
     chrono = Chronometer()
     chrono.start()
     move_count = 0
     board = Board.empty()
 
     while not board.is_over():
-        move = agent1.get_action(board)
+        move = agent1.get_action(board, CROSS)
         board = board.play_debug(CROSS, move)
         move_count += 1
         if not board.is_over():
-            move = agent2.get_action(board)
+            move = agent2.get_action(board, CIRCLE)
             board = board.play_debug(CIRCLE, move)
             move_count += 1
+
+    agent1.on_end_episode()
+    agent2.on_end_episode()
     time_spent = chrono.spent()
 
     print("time spent:", time_spent)
@@ -117,30 +120,30 @@ def test_ia(agent1, agent2):
 print("Naive, depth 4")
 print("-" * 50)
 
-test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()))
 
-test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()))
 
-test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=4, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
 
 print("Naive VS better eval")
 print("-" * 50)
 
-test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=PriceMapEvaluation()),
-        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=CountOwnedEvaluation()))
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
 
-test_ia(agent1=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=CountOwnedEvaluation()),
-        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
 
 print("MCTS vs Minimax")
 print("-" * 50)
 
-test_ia(agent1=MCTSAgent(player=CROSS, exploration_factor=1.0),
-        agent2=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()))
+test_ia(agent1=MCTSAgent(exploration_factor=1.0),
+        agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
 
-test_ia(agent1=MinimaxAgent(player=CIRCLE, max_depth=3, eval_fct=PriceMapEvaluation()),
-        agent2=MCTSAgent(player=CROSS, exploration_factor=1.0))
+test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MCTSAgent(exploration_factor=1.0))
 

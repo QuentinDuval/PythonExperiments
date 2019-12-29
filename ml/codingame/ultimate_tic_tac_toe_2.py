@@ -250,34 +250,72 @@ class Board:
 
 
 """
-Agent : first available move agent
+Definition of an agent
 """
 
 
-class FirstMoveAgent:
+class Agent(abc.ABC):
+    @abc.abstractmethod
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
+        pass
+
+    @abc.abstractmethod
+    def on_end_episode(self):
+        """
+        Allows stateful agents (cleaning memory)
+        """
+        pass
+
+    @abc.abstractmethod
+    def on_opponent_action(self, move: Move, player_id: PlayerId):
+        """
+        Allows stateful agents (tracking opponent)
+        """
+        pass
+
+
+class ReflexAgent(Agent):
+    """
+    An agent that does not keep any history (purely act on the last percept)
+    """
+
+    @abc.abstractmethod
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
+        pass
+
+    def on_end_episode(self):
+        pass
+
+    def on_opponent_action(self, move: Move, player_id: PlayerId):
+        pass
+
+
+"""
+Basic agents (random agent, first move agent, etc)
+"""
+
+
+class FirstMoveAgent(ReflexAgent):
     def __init__(self):
         pass
 
-    def opponent_action(self, move: Move):
-        pass
-
-    def get_action(self, board: Board) -> Move:
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
         return board.available_moves[0]
 
 
-"""
-Agent : random agent
-"""
+class LastMoveAgent(ReflexAgent):
+    def __init__(self):
+        pass
+
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
+        return board.available_moves[-1]
 
 
-class RandomAgent:
+class RandomAgent(ReflexAgent):
     def __init__(self):
         self.chooser = random.choice
 
-    def opponent_action(self, move: Move):
-        pass
-
-    def get_action(self, board: Board) -> Move:
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
         moves = board.available_moves
         return self.chooser(moves)
 
@@ -293,27 +331,23 @@ class EvaluationFct(abc.ABC):
         pass
 
 
-class MinimaxAgent:
-    def __init__(self, player: PlayerId, max_depth: int, eval_fct: EvaluationFct):
+class MinimaxAgent(ReflexAgent):
+    def __init__(self, max_depth: int, eval_fct: EvaluationFct):
         self.min_score = -200
         self.max_score = 200
-        self.player = player
-        self.opponent = next_player(self.player)
         self.max_depth = max_depth
         self.eval_fct = eval_fct
         # TODO - order the moves to improve the A/B pruning - how?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
 
-    def opponent_action(self, move: Move):
-        pass
-
-    def get_action(self, board: Board) -> Move:
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
         depth = max(1, self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth)
-        best_score, best_move = self._mini_max(board, self.player, alpha=self.min_score, beta=self.max_score, depth=depth)
+        best_score, best_move = self._mini_max(board, player_id, player_id,
+                                               alpha=self.min_score, beta=self.max_score, depth=depth)
         return best_move
 
     # TODO - @lru_cache(maxsize=10_000)
-    def _mini_max(self, board: Board, player_id: int, alpha: int, beta: int, depth: int) -> Tuple[int, Move]:
+    def _mini_max(self, board: Board, player_id: int, current_player_id: int, alpha: int, beta: int, depth: int) -> Tuple[float, Move]:
         """
         Search for the best move to perform, stopping the search at a given depth to use the evaluation function
         :param player_id: the current playing player
@@ -325,20 +359,18 @@ class MinimaxAgent:
             => We can cut on our turn, if one move leads to more than this, the opponent will never allow us to go there
         """
         if depth <= 0:
-            # debug("eval:", self._eval_board(board))
-            return self.eval_fct(board, self.player), NO_MOVE
+            return self.eval_fct(board, player_id), NO_MOVE
 
         best_move = None
-        best_score = self.min_score if player_id == self.player else self.max_score
+        best_score = self.min_score if player_id == current_player_id else self.max_score
         for move in board.available_moves:
-            # debug("try move:", move)
-            new_board = board.play(player_id, move)
+            new_board = board.play(current_player_id, move)
             winner = new_board.winner
             if winner != EMPTY:
-                return self._win_score(winner), move
+                return self._win_score(winner, current_player_id), move
 
-            score, _ = self._mini_max(new_board, next_player(player_id), alpha, beta, depth=depth-1)
-            if player_id == self.player:
+            score, _ = self._mini_max(new_board, player_id, next_player(current_player_id), alpha, beta, depth=depth-1)
+            if player_id == current_player_id:
                 if score > best_score:
                     best_score = score
                     best_move = move
@@ -355,12 +387,14 @@ class MinimaxAgent:
 
         return best_score, best_move
 
-    def _win_score(self, player_id: int) -> int:
-        if player_id == self.player:
+    @staticmethod
+    def _win_score(player_id: int, current_player_id) -> int:
+        if player_id == current_player_id:
             return 100
-        elif player_id == self.opponent:
-            return -100
-        return 0
+        return -100
+
+
+# TODO - try negascout and other heuristics
 
 
 """
@@ -404,7 +438,7 @@ class CombinedEvaluation(EvaluationFct):
         return sum(val(board, player_id) for val in self.evals)
 
 
-# TODO - add an IA that is interested in the difference in cross vs circle in each quadrant?
+# TODO - add an IA that is interested in the difference in cross vs circle in each quadrant? Not really a good strategy
 
 
 """
@@ -462,18 +496,19 @@ class GameTree:
         })
 
 
-class MCTSAgent:
-    def __init__(self, player: PlayerId, exploration_factor: float):
-        self.player = player
-        self.opponent = next_player(self.player)
+class MCTSAgent(Agent):
+    def __init__(self, exploration_factor: float):
         self.exploration_factor = exploration_factor
         self.game_tree: GameTree = None
 
-    def opponent_action(self, move: Move):
+    def on_end_episode(self):
+        self.game_tree = None
+
+    def on_opponent_action(self, move: Move, player_id: PlayerId):
         if self.game_tree is not None:
             self.game_tree = self.game_tree.children.get(move, None)
 
-    def get_action(self, board: Board) -> Move:
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
         if self.game_tree is None:
             self.game_tree = GameTree(board)
 
@@ -481,7 +516,7 @@ class MCTSAgent:
         chrono = Chronometer()
         chrono.start()
         while chrono.spent() <= 0.8 * MAX_TURN_TIME:
-            self._monte_carlo_tree_search()
+            self._monte_carlo_tree_search(player_id)
             scenario_count += 1
 
         debug("scenarios:", scenario_count)
@@ -491,34 +526,35 @@ class MCTSAgent:
         self.game_tree = None
         return move
 
-    def _monte_carlo_tree_search(self):
+    def _monte_carlo_tree_search(self, player_id: PlayerId):
 
         # Selection (of a node to be expanded)
-        player_id = self.player
+        current_player_id = player_id
         node = self.game_tree
         move = None
         nodes = []
         while node is not None and not node.board.is_over():
             nodes.append(node)
-            move, node = node.select(self.player == player_id, self.exploration_factor)
-            player_id = next_player(player_id)
+            move, node = node.select(player_id == current_player_id, self.exploration_factor)
+            current_player_id = next_player(current_player_id)
 
         # Expansion (of a node without statistics)
         if node is None:
-            new_board = nodes[-1].board.play(player_id, move)
+            new_board = nodes[-1].board.play(current_player_id, move)
             node = GameTree(new_board)
             nodes[-1].children[move] = node
             nodes.append(node)
+            current_player_id = next_player(current_player_id)
 
         # Play-out (random action until the end)
         board = node.board.clone()
         while not board.is_over():
             moves = board.available_moves
-            board.play_(player_id, random.choice(moves))
-            player_id = next_player(player_id)
+            board.play_(current_player_id, random.choice(moves))
+            current_player_id = next_player(current_player_id)
 
         # Back-propagation (of the score across the tree)
-        score = 100 if board.winner == self.player else -100
+        score = 100 if board.winner == player_id else -100
         for node in nodes:
             node.add_experience(score)
 
@@ -566,28 +602,26 @@ def check_available_moves(expected: List[Move], board: Board):
         debug(board)
 
 
-def game_loop(agent):
+def game_loop(agent: Agent):
     board = Board.empty()
+    # TODO - recognize the start player instead of considering the opponent is CIRCLE always
     while True:
         opponent_move = read_coord()
         if opponent_move != NO_MOVE:
-            # debug("opponent move:", opponent_move)
-            # debug("decompose to:", decompose_move(opponent_move))
             board.play_(CIRCLE, opponent_move)
-            agent.opponent_action(opponent_move)
-            # debug(board)
+            agent.on_opponent_action(opponent_move, CIRCLE)
 
         valid_moves = read_valid()
         check_available_moves(valid_moves, board)
 
-        move = agent.get_action(board)
+        move = agent.get_action(board, CROSS)
         board.play_(CROSS, move)
-        # debug(board)
         print_move(move)
+    agent.on_end_episode()
 
 
 if __name__ == '__main__':
-    # game_loop(agent=MinimaxAgent(player=PLAYER, max_depth=3, eval_fct=CountOwnedEvaluation()))
-    game_loop(agent=MinimaxAgent(player=CROSS, max_depth=3, eval_fct=PriceMapEvaluation()))
+    # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
+    game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
     # TODO - try a "kind of" MCTS but with evaluation function: expand the most promising move?
-    # game_loop(agent=MCTSAgent(player=PLAYER, exploration_factor=1.0))
+    # game_loop(agent=MCTSAgent(exploration_factor=1.0))
