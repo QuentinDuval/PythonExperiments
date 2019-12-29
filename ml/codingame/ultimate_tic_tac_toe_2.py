@@ -60,11 +60,11 @@ NO_MOVE = (-1, -1)
 
 def div3(x: int):
     # A specific mod 3 for small numbers
-    count = 0
-    while x >= 3:
-        count += 1
-        x -= 3
-    return count, x
+    if x >= 6:
+        return 2, x - 6
+    if x >= 3:
+        return 1, x - 3
+    return 0, x
 
 
 def decompose_move(move: Move) -> Tuple[Move, Move]:
@@ -139,6 +139,7 @@ class Board:
         self.available_moves = available_moves
 
     def as_board_matrix(self):
+        # TODO - encode the available_moves inside this matrix
         return self.grid
 
     @classmethod
