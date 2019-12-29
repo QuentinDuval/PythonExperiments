@@ -123,7 +123,19 @@ def test_ia(agent1: Agent, agent2: Agent):
     # print(board)
 
 
-print("\nNaive, depth 4")
+print("\nNaive, depth 4 (minimax vs negamax)")
+print("-" * 50)
+
+
+for depth in 3, 4:
+    test_ia(agent1=MinimaxAgent(max_depth=depth, eval_fct=CountOwnedEvaluation()),
+            agent2=NegamaxAgent(max_depth=depth, eval_fct=CountOwnedEvaluation()))
+
+    test_ia(agent1=NegamaxAgent(max_depth=depth, eval_fct=CountOwnedEvaluation()),
+            agent2=MinimaxAgent(max_depth=depth, eval_fct=CountOwnedEvaluation()))
+
+
+print("\nNaive, depth 4 (minimax)")
 print("-" * 50)
 
 test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
@@ -134,6 +146,20 @@ test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
 
 test_ia(agent1=MinimaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
         agent2=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
+
+
+print("\nNaive, depth 4 (negamax)")
+print("-" * 50)
+
+test_ia(agent1=NegamaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=NegamaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=NegamaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()),
+        agent2=NegamaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()))
+
+test_ia(agent1=NegamaxAgent(max_depth=4, eval_fct=CountOwnedEvaluation()),
+        agent2=NegamaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
+
 
 print("\nNaive VS better eval")
 print("-" * 50)

@@ -366,6 +366,63 @@ class MinimaxAgent(Agent):
         return -100
 
 
+"""
+Agent : negamax agent (slight optimization of minimax - with less branching)
+"""
+
+
+class NegamaxAgent(Agent):
+    def __init__(self, max_depth: int, eval_fct: EvaluationFct):
+        self.min_score = -200
+        self.max_score = 200
+        self.max_depth = max_depth
+        self.eval_fct = eval_fct
+        # TODO - order the moves to improve the A/B pruning - how?
+        # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
+
+    def get_action(self, board: Board, player_id: PlayerId) -> Move:
+        depth = max(1, self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth)
+        best_score, best_move = self._nega_max(board, player_id, alpha=self.min_score, beta=self.max_score, depth=depth)
+        return best_move
+
+    def _nega_max(self, board: Board, current_player_id: int, alpha: int, beta: int, depth: int) -> Tuple[float, Move]:
+        """
+        Search for the best move to perform, stopping the search at a given depth to use the evaluation function
+        :param player_id: the current playing player
+        :param alpha:
+            The best score we can achieve already (the lower bound of our search)
+            => We can cut on opponent turn, if one sub-move leads to lower value than alpha
+        :param beta:
+            The best score we could ever achieve (the upper limit of our search) - or the best score the opponent can do
+            => We can cut on our turn, if one move leads to more than this, the opponent will never allow us to go there
+        """
+
+        # TODO - optimize by avoiding to return a tuple?
+        # TODO - investigate how it works in details
+
+        if depth <= 0:
+            return self.eval_fct(board, current_player_id), NO_MOVE
+
+        best_move = None
+        best_score = self.min_score
+        for move in board.available_moves:
+            new_board = board.play(current_player_id, move)
+            winner = new_board.winner
+            if winner != EMPTY:
+                return 100, move
+
+            score, _ = self._nega_max(new_board, next_player(current_player_id), -beta, -alpha, depth=depth-1)
+            score *= -1
+            if score > best_score:
+                best_score = score
+                best_move = move
+                alpha = max(alpha, score)
+                if alpha >= beta:
+                    break
+
+        return best_score, best_move
+
+
 # TODO - try negascout and other heuristics
 
 
