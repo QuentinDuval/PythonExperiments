@@ -468,6 +468,8 @@ class PriceMapEvaluation(EvaluationFct):
         self.sub_weights /= np.sum(self.sub_weights)
 
     def __call__(self, board: Board, player_id: PlayerId) -> float:
+        # TODO - the boss wins because it does not create combinations... just stack its pieces (avoiding detection)
+        # TODO - the evaluation function should take the next quadrant and send it to position with no values
         winnings = np.where(board.sub_winners != 2, board.sub_winners, 0)
         if player_id == CIRCLE:
             winnings *= -1
