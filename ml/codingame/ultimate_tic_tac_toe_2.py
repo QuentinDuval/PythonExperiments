@@ -369,21 +369,36 @@ Agent : negamax agent (slight optimization of minimax - with less branching)
 """
 
 
+class OutOfTimeException(Exception):
+    pass
+
+
 class NegamaxAgent(Agent):
-    def __init__(self, max_depth: int, eval_fct: EvaluationFct):
+    def __init__(self, max_depth: int, eval_fct: EvaluationFct, max_time: int = MAX_TURN_TIME):
         self.min_score = -200
         self.max_score = 200
         self.max_depth = max_depth
+        self.max_time = max_time
         self.eval_fct = eval_fct
         # TODO - order the moves to improve the A/B pruning - how?
         # TODO - use the previous minimax to direct the search (MTD methods) - BUT move change at each turn
 
     def get_action(self, board: Board, player_id: PlayerId) -> Move:
-        depth = max(1, self.max_depth - 1 if board.next_quadrant == NO_MOVE else self.max_depth)
-        best_score, best_move = self._nega_max(board, player_id, alpha=self.min_score, beta=self.max_score, depth=depth)
-        return best_move
+        chrono = Chronometer()
+        chrono.start()
+        move = random.choice(board.available_moves)
 
-    def _nega_max(self, board: Board, current_player_id: int, alpha: int, beta: int, depth: int) -> Tuple[float, Move]:
+        # Iterative deepening with time limit
+        for d in range(3, self.max_depth+1):
+            depth = max(1, d - 1 if board.next_quadrant == NO_MOVE else d)
+            try:
+                score, move = self._nega_max(chrono, board, player_id, alpha=self.min_score, beta=self.max_score, depth=depth)
+            except OutOfTimeException:
+                break
+        return move
+
+    def _nega_max(self, chrono: Chronometer, board: Board, current_player_id: int,
+                  alpha: int, beta: int, depth: int) -> Tuple[float, Move]:
         """
         Search for the best move to perform, stopping the search at a given depth to use the evaluation function
         :param player_id: the current playing player
@@ -399,6 +414,8 @@ class NegamaxAgent(Agent):
         # TODO - investigate how it works in details
 
         if depth <= 0:
+            if chrono.spent() > self.max_time * 0.8:
+                raise OutOfTimeException("")
             return self.eval_fct(board, current_player_id), NO_MOVE
 
         best_move = None
@@ -409,7 +426,7 @@ class NegamaxAgent(Agent):
             if winner != EMPTY:
                 return 100, move
 
-            score, _ = self._nega_max(new_board, next_player(current_player_id), -beta, -alpha, depth=depth-1)
+            score, _ = self._nega_max(chrono, new_board, next_player(current_player_id), -beta, -alpha, depth=depth-1)
             score *= -1
             if score > best_score:
                 best_score = score
@@ -674,5 +691,5 @@ def game_loop(agent: Agent):
 if __name__ == '__main__':
     # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=CountOwnedEvaluation()))
     # game_loop(agent=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
-    game_loop(agent=NegamaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+    game_loop(agent=NegamaxAgent(max_depth=4, eval_fct=PriceMapEvaluation()))
     # game_loop(agent=MCTSAgent(exploration_factor=1.0))
