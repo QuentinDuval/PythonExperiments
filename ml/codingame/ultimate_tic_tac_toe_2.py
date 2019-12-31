@@ -387,14 +387,13 @@ class NegamaxAgent(Agent):
         chrono = Chronometer()
         chrono.start()
         move = random.choice(board.available_moves)
-
         # Iterative deepening with time limit
-        for d in range(3, self.max_depth+1):
-            depth = max(1, d - 1 if board.next_quadrant == NO_MOVE else d)
-            try:
+        try:
+            for d in range(3, self.max_depth+1):
+                depth = max(1, d - 1 if board.next_quadrant == NO_MOVE else d)
                 score, move = self._nega_max(chrono, board, player_id, alpha=self.min_score, beta=self.max_score, depth=depth)
-            except OutOfTimeException:
-                break
+        except OutOfTimeException:
+            pass
         return move
 
     def _nega_max(self, chrono: Chronometer, board: Board, current_player_id: int,
@@ -409,10 +408,6 @@ class NegamaxAgent(Agent):
             The best score we could ever achieve (the upper limit of our search) - or the best score the opponent can do
             => We can cut on our turn, if one move leads to more than this, the opponent will never allow us to go there
         """
-
-        # TODO - optimize by avoiding to return a tuple?
-        # TODO - investigate how it works in details
-
         if depth <= 0:
             if chrono.spent() > self.max_time * 0.8:
                 raise OutOfTimeException("")
