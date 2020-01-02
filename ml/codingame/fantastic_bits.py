@@ -4,6 +4,7 @@ Move towards a Snaffle and use your team id to determine where you need to throw
 """
 
 
+import abc
 from collections import *
 from dataclasses import *
 import numpy as np
@@ -22,8 +23,30 @@ def debug(*args):
 
 
 """
-Input acquisition
+Input acquisition & Game constants
 """
+
+
+Vector = np.ndarray
+
+
+def vector(x: int, y: int) -> Vector:
+    return np.array([x, y])
+
+
+WIDTH = 16001
+HEIGHT = 7501
+
+
+class Goal(NamedTuple):
+    x: int
+    y_lo: int
+    y_hi: int
+
+
+LEFT_GOAL = Goal(x=0, y_lo=2150, y_hi=5500)
+RIGHT_GOAL = Goal(x=WIDTH, y_lo=2150, y_hi=5500)
+OWN_GOALS = (LEFT_GOAL, RIGHT_GOAL)
 
 
 @dataclass()
@@ -35,9 +58,6 @@ class PlayerStatus:
 def read_status():
     score, magic = [int(i) for i in input().split()]
     return PlayerStatus(score=score, magic=magic)
-
-
-Vector = np.ndarray
 
 
 class Entity(NamedTuple):
@@ -63,13 +83,57 @@ def read_entities():
     return entities
 
 
+class Action(NamedTuple):
+    # Action for each wizard (0 ≤ thrust ≤ 150, 0 ≤ power ≤ 500)
+    # i.e.: "MOVE x y thrust" or "THROW x y power"
+
+    is_throw: bool  # Otherwise, it is a move
+    direction: Vector
+    power: int
+
+    def __repr__(self):
+        action_type = "THROW" if self.is_throw else "MOVE"
+        x, y = self.direction
+        return action_type + " " + str(x) + " " + str(y) + " " + str(self.power)
+
+
 """
-Game loop
+------------------------------------------------------------------------------------------------------------------------
+AGENTS
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
-def game_loop(my_team_id: int):
+class Agent(abc.ABC):
+    @abc.abstractmethod
+    def get_actions(self):
+        pass
+
+
+class StupidAgent(Agent):
+    def get_actions(self):
+        return [Action(is_throw=False, direction=vector(8000, 3750), power=100),
+                Action(is_throw=False, direction=vector(8000, 3750), power=100)]
+
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+GAME LOOP
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+def game_loop(agent: Agent):
+    # if 0 you need to score on the right of the map, if 1 you need to score on the left
+    my_team_id = int(input())
+    player_goal = OWN_GOALS[my_team_id]
+    opponent_goal = OWN_GOALS[1-my_team_id]
+
     debug("my team id:", my_team_id)
+    debug("my goal:", player_goal)
+    debug("target goal:", opponent_goal)
+
     while True:
         player_status = read_status()
         opponent_status = read_status()
@@ -79,12 +143,9 @@ def game_loop(my_team_id: int):
         debug("opponent status:", opponent_status)
         debug("entities:", entities)
 
-        for i in range(2):
-            # Edit this line to indicate the action for each wizard (0 ≤ thrust ≤ 150, 0 ≤ power ≤ 500)
-            # i.e.: "MOVE x y thrust" or "THROW x y power"
-            print("MOVE 8000 3750 100")
+        for action in agent.get_actions():
+            print(action)
 
 
 if __name__ == '__main__':
-    my_team_id = int(input())  # if 0 you need to score on the right of the map, if 1 you need to score on the left
-    game_loop(my_team_id)
+    game_loop(agent=StupidAgent())
