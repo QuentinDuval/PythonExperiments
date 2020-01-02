@@ -73,21 +73,24 @@ class Snaffle(NamedTuple):
     speed: Vector
 
 
-@dataclass(frozen=False)
+@dataclass(frozen=True)
 class GameState:
+    player_goal: Goal
+    opponent_goal: Goal
     player_wizards: List[Wizard]
     opponent_wizards: List[Wizard]
     snaffles: List[Snaffle]
 
     @classmethod
-    def empty(cls):
-        return cls(player_wizards=[], opponent_wizards=[], snaffles=[])
+    def empty(cls, player_goal: Goal, opponent_goal: Goal):
+        return cls(player_goal=player_goal, opponent_goal=opponent_goal,
+                   player_wizards=[], opponent_wizards=[], snaffles=[])
 
 
-def read_state() -> GameState:
-    game_state = GameState.empty()
+def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
+    game_state = GameState.empty(player_goal, opponent_goal)
     entity_nb = int(input())
-    for i in range(entity_nb):
+    for _ in range(entity_nb):
         entity_id, entity_type, x, y, vx, vy, state = input().split()
         entity_id = int(entity_id)
         position = vector(int(x), int(y))
@@ -125,14 +128,20 @@ AGENTS
 
 class Agent(abc.ABC):
     @abc.abstractmethod
-    def get_actions(self):
+    def get_actions(self, state: GameState):
         pass
 
 
 class StupidAgent(Agent):
-    def get_actions(self):
+    def get_actions(self, state: GameState):
         return [Action(is_throw=False, direction=vector(8000, 3750), power=100),
                 Action(is_throw=False, direction=vector(8000, 3750), power=100)]
+
+
+class GrabAndShootAgent(Agent):
+    def get_actions(self, state: GameState):
+        pass
+
 
 
 
@@ -156,13 +165,13 @@ def game_loop(agent: Agent):
     while True:
         player_status = read_status()
         opponent_status = read_status()
-        game_state = read_state()
+        game_state = read_state(player_goal, opponent_goal)
 
         debug("player status:", player_status)
         debug("opponent status:", opponent_status)
         debug("game state:", game_state)
 
-        for action in agent.get_actions():
+        for action in agent.get_actions(game_state):
             print(action)
 
 
