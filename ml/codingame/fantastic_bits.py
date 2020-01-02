@@ -86,6 +86,12 @@ class Snaffle(NamedTuple):
     speed: Vector
 
 
+class Bludger(NamedTuple):
+    id: int
+    position: Vector
+    speed: Vector
+
+
 @dataclass(frozen=True)
 class GameState:
     player_goal: Goal
@@ -93,11 +99,13 @@ class GameState:
     player_wizards: List[Wizard]
     opponent_wizards: List[Wizard]
     snaffles: List[Snaffle]
+    bludgers: List[Bludger]
 
     @classmethod
     def empty(cls, player_goal: Goal, opponent_goal: Goal):
         return cls(player_goal=player_goal, opponent_goal=opponent_goal,
-                   player_wizards=[], opponent_wizards=[], snaffles=[])
+                   player_wizards=[], opponent_wizards=[],
+                   snaffles=[], bludgers=[])
 
 
 def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
@@ -115,6 +123,8 @@ def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
         elif entity_type == "OPPONENT_WIZARD":
             game_state.opponent_wizards.append(Wizard(id=entity_id, position=position,
                                                       speed=speed, has_snaffle=has_snaffle))
+        elif entity_type == "BLUDGER":
+            game_state.bludgers.append(Bludger(id=entity_id, position=position, speed=speed))
         else:
             game_state.snaffles.append(Snaffle(id=entity_id, position=position, speed=speed))
     return game_state
@@ -167,22 +177,26 @@ class GrabClosestAndShootTowardGoal(Agent):
         available_snaffles = list(state.snaffles)
         for wizard in state.player_wizards:
             if not wizard.has_snaffle:
-                action = self._choose_snaffle(wizard, available_snaffles)
+                action = self._choose_snaffle(state, wizard, available_snaffles)
             else:
                 # del self.targeted_snaffles[wizard.id]     # Commented to keep the same snaffle to the end
                 action = self._shoot_toward_goal(state.opponent_goal)
             actions.append(action)
         return actions
 
-    def _choose_snaffle(self, wizard, available_snaffles):
+    def _choose_snaffle(self, state, wizard, available_snaffles):
+        # TODO - always try to make sure each wizard take not the closest, but such that the sum of distance is MIN
         snaffle = None
         prefered_snaffle_id = self.targeted_snaffles.get(wizard.id)
         if prefered_snaffle_id:
             snaffle = self._find_by_id(available_snaffles, prefered_snaffle_id)
         if snaffle is None:
-            snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position))
-            self.targeted_snaffles[wizard.id] = snaffle.id
-        available_snaffles.remove(snaffle)
+            snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
+            available_snaffles.remove(snaffle)
+        if snaffle is None:
+            # In case there is but one snaffle and it is already taken
+            snaffle = state.snaffles[0]
+        self.targeted_snaffles[wizard.id] = snaffle.id
         return Action(is_throw=False, direction=snaffle.position, power=MAX_THRUST)
 
     def _find_by_id(self, entities, identity):
