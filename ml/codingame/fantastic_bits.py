@@ -30,7 +30,8 @@ def vector(x: int, y: int) -> Vector:
 
 
 def distance2(v1: Vector, v2: Vector):
-    return np.dot(v1, v2)
+    v = v1 - v2
+    return np.dot(v, v)
 
 
 def distance(v1: Vector, v2: Vector):
@@ -168,7 +169,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             if not wizard.has_snaffle:
                 action = self._choose_snaffle(wizard, available_snaffles)
             else:
-                del self.targeted_snaffles[wizard.id]
+                # del self.targeted_snaffles[wizard.id]     # Commented to keep the same snaffle to the end
                 action = self._shoot_toward_goal(state.opponent_goal)
             actions.append(action)
         return actions
