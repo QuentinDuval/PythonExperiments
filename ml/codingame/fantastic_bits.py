@@ -60,27 +60,46 @@ def read_status():
     return PlayerStatus(score=score, magic=magic)
 
 
-class Entity(NamedTuple):
-    entity_id: int
-    entity_type: str
+class Wizard(NamedTuple):
+    id: int
     position: Vector
     speed: Vector
     has_snaffle: bool
 
 
-def read_entities():
-    entities = []
+class Snaffle(NamedTuple):
+    id: int
+    position: Vector
+    speed: Vector
+
+
+@dataclass(frozen=False)
+class GameState:
+    player_wizards: List[Wizard]
+    opponent_wizards: List[Wizard]
+    snaffles: List[Snaffle]
+
+    @classmethod
+    def empty(cls):
+        return cls(player_wizards=[], opponent_wizards=[], snaffles=[])
+
+
+def read_state() -> GameState:
+    game_state = GameState.empty()
     entity_nb = int(input())
     for i in range(entity_nb):
         entity_id, entity_type, x, y, vx, vy, state = input().split()
-        entity = Entity(
-            entity_id=int(entity_id),
-            entity_type=entity_type,
-            position=np.array([int(x), int(y)]),
-            speed=np.array([int(vx), int(vy)]),
-            has_snaffle=int(state) > 0)
-        entities.append(entity)
-    return entities
+        entity_id = int(entity_id)
+        position = vector(int(x), int(y))
+        speed = vector(int(vx), int(vy))
+        has_snaffle = int(state) > 0
+        if entity_type == "WIZARD":
+            game_state.player_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
+        elif entity_type == "OPPONENT_WIZARD":
+            game_state.opponent_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
+        else:
+            game_state.snaffles.append(Snaffle(id=entity_id, position=position, speed=speed))
+    return game_state
 
 
 class Action(NamedTuple):
@@ -137,11 +156,11 @@ def game_loop(agent: Agent):
     while True:
         player_status = read_status()
         opponent_status = read_status()
-        entities = read_entities()
+        game_state = read_state()
 
         debug("player status:", player_status)
         debug("opponent status:", opponent_status)
-        debug("entities:", entities)
+        debug("game state:", game_state)
 
         for action in agent.get_actions():
             print(action)
