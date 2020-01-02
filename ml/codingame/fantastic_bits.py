@@ -14,17 +14,12 @@ import math
 
 
 """
-Utilities
+Utilities for debugging an Geometry
 """
 
 
 def debug(*args):
     print(*args, file=sys.stderr)
-
-
-"""
-Input acquisition & Game constants
-"""
 
 
 Vector = np.ndarray
@@ -34,8 +29,25 @@ def vector(x: int, y: int) -> Vector:
     return np.array([x, y])
 
 
+def distance2(v1: Vector, v2: Vector):
+    return np.dot(v1, v2)
+
+
+def distance(v1: Vector, v2: Vector):
+    return math.sqrt(distance2(v1, v2))
+
+
+"""
+Input acquisition & Game constants
+"""
+
+
 WIDTH = 16001
 HEIGHT = 7501
+
+
+MAX_THRUST = 150
+MAX_THROW_POWER = 500
 
 
 class Goal(NamedTuple):
@@ -97,9 +109,11 @@ def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
         speed = vector(int(vx), int(vy))
         has_snaffle = int(state) > 0
         if entity_type == "WIZARD":
-            game_state.player_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
+            game_state.player_wizards.append(Wizard(id=entity_id, position=position,
+                                                    speed=speed, has_snaffle=has_snaffle))
         elif entity_type == "OPPONENT_WIZARD":
-            game_state.opponent_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
+            game_state.opponent_wizards.append(Wizard(id=entity_id, position=position,
+                                                      speed=speed, has_snaffle=has_snaffle))
         else:
             game_state.snaffles.append(Snaffle(id=entity_id, position=position, speed=speed))
     return game_state
@@ -128,21 +142,60 @@ AGENTS
 
 class Agent(abc.ABC):
     @abc.abstractmethod
-    def get_actions(self, state: GameState):
+    def get_actions(self, state: GameState) -> List[Action]:
         pass
 
 
 class StupidAgent(Agent):
-    def get_actions(self, state: GameState):
+    def get_actions(self, state: GameState) -> List[Action]:
         return [Action(is_throw=False, direction=vector(8000, 3750), power=100),
                 Action(is_throw=False, direction=vector(8000, 3750), power=100)]
 
 
-class GrabAndShootAgent(Agent):
-    def get_actions(self, state: GameState):
-        pass
+class GrabClosestAndShootTowardGoal(Agent):
+    """
+    You need to keep a state here, in order to avoid the situation in which your agent changes
+    direction suddenly and remains stuck, with two wizard each alternating snaffles
+    """
+
+    def __init__(self):
+        self.targeted_snaffles = {}
+
+    def get_actions(self, state: GameState) -> List[Action]:
+        actions = []
+        available_snaffles = list(state.snaffles)
+        for wizard in state.player_wizards:
+            if not wizard.has_snaffle:
+                action = self._choose_snaffle(wizard, available_snaffles)
+            else:
+                del self.targeted_snaffles[wizard.id]
+                action = self._shoot_toward_goal(state.opponent_goal)
+            actions.append(action)
+        return actions
+
+    def _choose_snaffle(self, wizard, available_snaffles):
+        snaffle = None
+        prefered_snaffle_id = self.targeted_snaffles.get(wizard.id)
+        if prefered_snaffle_id:
+            snaffle = self._find_by_id(available_snaffles, prefered_snaffle_id)
+        if snaffle is None:
+            snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position))
+            self.targeted_snaffles[wizard.id] = snaffle.id
+        available_snaffles.remove(snaffle)
+        return Action(is_throw=False, direction=snaffle.position, power=MAX_THRUST)
+
+    def _find_by_id(self, entities, identity):
+        for entity in entities:
+            if entity.id == identity:
+                return entity
+        return None
+
+    def _shoot_toward_goal(self, goal):
+        goal_center = vector(goal.x, int((goal.y_lo + goal.y_hi) / 2))
+        return Action(is_throw=True, direction=goal_center, power=MAX_THROW_POWER)
 
 
+# TODO - an evaluation function that counts the goal + tries to put the balls in the adversary camp
 
 
 """
@@ -176,4 +229,4 @@ def game_loop(agent: Agent):
 
 
 if __name__ == '__main__':
-    game_loop(agent=StupidAgent())
+    game_loop(agent=GrabClosestAndShootTowardGoal())
