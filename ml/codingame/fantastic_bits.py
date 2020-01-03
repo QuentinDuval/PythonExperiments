@@ -73,6 +73,9 @@ def read_status():
     return PlayerStatus(score=score, magic=magic)
 
 
+# TODO - use a ECS system (would help move the objects)
+
+
 class Wizard(NamedTuple):
     id: int
     position: Vector
@@ -146,7 +149,7 @@ class Action(NamedTuple):
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-AGENTS
+BASIC AGENTS
 ------------------------------------------------------------------------------------------------------------------------
 """
 
@@ -177,15 +180,14 @@ class GrabClosestAndShootTowardGoal(Agent):
         available_snaffles = list(state.snaffles)
         for wizard in state.player_wizards:
             if not wizard.has_snaffle:
-                action = self._choose_snaffle(state, wizard, available_snaffles)
+                action = self._move_toward_snaffle(state, wizard, available_snaffles)
             else:
                 # del self.targeted_snaffles[wizard.id]     # Commented to keep the same snaffle to the end
                 action = self._shoot_toward_goal(state.opponent_goal)
             actions.append(action)
         return actions
 
-    def _choose_snaffle(self, state, wizard, available_snaffles):
-        # TODO - always try to make sure each wizard take not the closest, but such that the sum of distance is MIN
+    def _move_toward_snaffle(self, state, wizard, available_snaffles) -> Action:
         snaffle = None
         prefered_snaffle_id = self.targeted_snaffles.get(wizard.id)
         if prefered_snaffle_id:
@@ -197,7 +199,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             # In case there is but one snaffle and it is already taken
             snaffle = state.snaffles[0]
         self.targeted_snaffles[wizard.id] = snaffle.id
-        return Action(is_throw=False, direction=snaffle.position, power=MAX_THRUST)
+        return Action(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
 
     def _find_by_id(self, entities, identity):
         for entity in entities:
@@ -211,6 +213,21 @@ class GrabClosestAndShootTowardGoal(Agent):
 
 
 # TODO - an evaluation function that counts the goal + tries to put the balls in the adversary camp
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+PHYSIC ENGINE
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+def apply_force(position: Vector, speed: Vector, thrust: float, direction: Vector) -> Vector:
+    pass
+
+
+def simulate(state: GameState, actions: Dict[int, Action]) -> GameState:
+    pass
 
 
 """
