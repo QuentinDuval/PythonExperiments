@@ -93,7 +93,7 @@ class Goal(NamedTuple):
     y_hi: int
 
     def center(self):
-        return vector(self.x, (self.y_li + self.y_lo) // 2)
+        return vector(self.x, (self.y_lo + self.y_hi) // 2)
 
 
 LEFT_GOAL = Goal(x=0, y_lo=2150, y_hi=5500)
@@ -237,8 +237,15 @@ def apply_force(entity: T, thrust: float, destination: Vector, friction: float, 
         speed=np.trunc(new_speed * friction))
 
 
-def intersect_goal(snaffle: Snaffle, next_snaffle: Snaffle, goal: Goal):
-    pass
+def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
+    # Should be on each side of the goal
+    dx1 = snaffle1.position[0] - goal.x
+    dx2 = snaffle2.position[0] - goal.x
+    if dx1 * dx2 > 0.:
+        return False
+
+    # ys should be in the range of the goal: TODO - only an approximation (just compute the tangent and solve for x)
+    return goal.y_lo <= snaffle2.position[1] <= goal.y_hi
 
 
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
