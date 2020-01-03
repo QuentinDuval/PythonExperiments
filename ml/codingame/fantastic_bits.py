@@ -222,7 +222,10 @@ PHYSIC ENGINE
 """
 
 
-def apply_force(entity: NamedTuple, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> NamedTuple:
+T = TypeVar('T')
+
+
+def apply_force(entity: T, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> T:
     direction = get_angle(destination - entity.position)
     force = np.array([thrust * math.cos(direction), thrust * math.sin(direction)])
     dv_dt = force / mass
@@ -234,22 +237,57 @@ def apply_force(entity: NamedTuple, thrust: float, destination: Vector, friction
         speed=np.trunc(new_speed * friction))
 
 
-def intersect(snaffle: Snaffle, next_snaffle: Snaffle, goal: Goal):
+def intersect_goal(snaffle: Snaffle, next_snaffle: Snaffle, goal: Goal):
     pass
 
 
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
     next_state = GameState.init_next()
+
+    # Move the snaffle
     for snaffle in state.snaffles:
-        next_snaffle = apply_force(snaffle, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=0.5, dt=1.0)
-        # TODO - score a goal, remove the snaffle if we score a goal
+        thrust = 0.
+        destination = state.opponent_goal.center()
+        for wizard, action in actions:
+            if wizard.position == snaffle.position:
+                if isinstance(action, Move) and action.is_throw:
+                    thrust = action.power   # TODO - inherit the speed of the player?
+                    destination = action.direction
+                    break
+        next_snaffle = apply_force(snaffle, thrust=thrust, destination=destination, friction=0.75, mass=0.5, dt=1.0)
+        if intersect_goal(snaffle, next_snaffle, state.opponent_goal):
+            next_state.player_status.score += 1
+        elif intersect_goal(snaffle, next_snaffle, state.player_goal):
+            next_state.opponent_status.score += 1
+        else:
+            next_state.snaffles.append(next_snaffle)
+
+    # Move the wizard
     for wizard in state.player_wizards:
-        apply_force(wizard, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+        thrust = 0.
+        destination = state.opponent_goal.center()
+        for action_wizard, action in actions:
+            if action_wizard.id == wizard.id:
+                if isinstance(action, Move) and not action.is_throw:
+                    thrust = action.power
+                    destination = action.direction
+                    break
+        next_wizard = apply_force(wizard, thrust=thrust, destination=destination, friction=0.75, mass=1.0, dt=1.0)
+        next_state.player_wizards.append(next_wizard)
+
+    # Move the opponent wizard: TODO - move them according to a basic AI
     for wizard in state.opponent_wizards:
-        apply_force(wizard, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+        next_wizard = apply_force(wizard, thrust=0., destination=state.player_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+        next_state.opponent_wizards.append(next_wizard)
+
+    # Move the bludgers: TODO - how does the acceleration of bludgers work?
     for bludger in state.bludgers:
-        apply_force(bludger, thrust=0., destination=state.opponent_goal.center(), friction=0.9, mass=8.0, dt=1.0)
-    # TODO - increase mana
+        next_bludger = apply_force(bludger, thrust=0., destination=bludger.position, friction=0.9, mass=8.0, dt=1.0)
+        state.bludgers.append(next_bludger)
+
+    # Increase the magic
+    next_state.player_status.magic += 1
+    next_state.opponent_status.magic += 1
     return next_state
 
 
