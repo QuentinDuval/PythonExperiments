@@ -243,6 +243,8 @@ def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
     next_state = state.init_next()
 
+    # TODO - take into account the spells?
+
     # Move the snaffle
     for snaffle in state.snaffles:
         thrust = 0.
