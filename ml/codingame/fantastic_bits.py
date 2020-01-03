@@ -194,6 +194,7 @@ class GrabClosestAndShootTowardGoal(Agent):
         available_snaffles = [s for s in state.snaffles
                               if s.id not in targeted_snaffles and s.id not in opponent_snaffles]
 
+        # TODO - specialize the wizard: one to defend, one to attack
         for wizard in state.player_wizards:
             bludger = self._incoming_bludger(state, wizard)
             # TODO - if a snaffle is too far away, and moving toward you camp, take it
