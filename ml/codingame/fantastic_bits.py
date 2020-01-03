@@ -144,17 +144,10 @@ class GameState:
     opponent_status: PlayerStatus
     player_goal: Goal
     opponent_goal: Goal
-    player_wizards: List[Wizard]
-    opponent_wizards: List[Wizard]
-    snaffles: List[Snaffle]
-    bludgers: List[Bludger]
-
-    @classmethod
-    def empty(cls, player_status: PlayerStatus, opponent_status: PlayerStatus, player_goal: Goal, opponent_goal: Goal):
-        return cls(player_status=player_status, opponent_status=opponent_status,
-                   player_goal=player_goal, opponent_goal=opponent_goal,
-                   player_wizards=[], opponent_wizards=[],
-                   snaffles=[], bludgers=[])
+    player_wizards: List[Wizard] = field(default_factory=list)
+    opponent_wizards: List[Wizard] = field(default_factory=list)
+    snaffles: List[Snaffle] = field(default_factory=list)
+    bludgers: List[Bludger] = field(default_factory=list)
 
     def init_next(self):
         return GameState(
@@ -164,8 +157,9 @@ class GameState:
             snaffles=[], bludgers=[])
 
 
-def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
-    game_state = GameState.empty(player_goal, opponent_goal)
+def read_state(player_status, opponent_status, player_goal: Goal, opponent_goal: Goal) -> GameState:
+    debug("read state")
+    game_state = GameState(player_status, opponent_status, player_goal, opponent_goal)
     entity_nb = int(input())
     for _ in range(entity_nb):
         entity_id, entity_type, x, y, vx, vy, state = input().split()
@@ -174,14 +168,12 @@ def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
         speed = vector(int(vx), int(vy))
         has_snaffle = int(state) > 0
         if entity_type == "WIZARD":
-            game_state.player_wizards.append(Wizard(id=entity_id, position=position,
-                                                    speed=speed, has_snaffle=has_snaffle))
+            game_state.player_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
         elif entity_type == "OPPONENT_WIZARD":
-            game_state.opponent_wizards.append(Wizard(id=entity_id, position=position,
-                                                      speed=speed, has_snaffle=has_snaffle))
+            game_state.opponent_wizards.append(Wizard(id=entity_id, position=position, speed=speed, has_snaffle=has_snaffle))
         elif entity_type == "BLUDGER":
             game_state.bludgers.append(Bludger(id=entity_id, position=position, speed=speed))
-        else:
+        elif entity_type == "SNAFFLE":
             game_state.snaffles.append(Snaffle(id=entity_id, position=position, speed=speed))
     return game_state
 
@@ -249,14 +241,14 @@ def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
 
 
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
-    next_state = GameState.init_next()
+    next_state = state.init_next()
 
     # Move the snaffle
     for snaffle in state.snaffles:
         thrust = 0.
         destination = state.opponent_goal.center()
-        for wizard, action in actions:
-            if wizard.position == snaffle.position:
+        for action_wizard, action in actions:
+            if np.array_equal(action_wizard.position, snaffle.position):
                 if isinstance(action, Move) and action.is_throw:
                     thrust = action.power   # TODO - inherit the speed of the player?
                     destination = action.direction
@@ -279,18 +271,20 @@ def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameStat
                     thrust = action.power
                     destination = action.direction
                     break
+        # TODO - detection of catching / throwing a snaffle
         next_wizard = apply_force(wizard, thrust=thrust, destination=destination, friction=0.75, mass=1.0, dt=1.0)
         next_state.player_wizards.append(next_wizard)
 
     # Move the opponent wizard: TODO - move them according to a basic AI
     for wizard in state.opponent_wizards:
+        # TODO - detection of catching / throwing a snaffle
         next_wizard = apply_force(wizard, thrust=0., destination=state.player_goal.center(), friction=0.75, mass=1.0, dt=1.0)
         next_state.opponent_wizards.append(next_wizard)
 
     # Move the bludgers: TODO - how does the acceleration of bludgers work?
     for bludger in state.bludgers:
         next_bludger = apply_force(bludger, thrust=0., destination=bludger.position, friction=0.9, mass=8.0, dt=1.0)
-        state.bludgers.append(next_bludger)
+        next_state.bludgers.append(next_bludger)
 
     # Increase the magic
     next_state.player_status.magic += 1
@@ -325,8 +319,11 @@ class GrabClosestAndShootTowardGoal(Agent):
 
     def __init__(self):
         self.wizard_snaffles = {}
+        self.predictions = None
 
     def get_actions(self, state: GameState) -> List[Action]:
+        debug(self.predictions)
+
         actions = []
 
         targeted_snaffles = set(self.wizard_snaffles.values())
@@ -347,6 +344,8 @@ class GrabClosestAndShootTowardGoal(Agent):
                 action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
             actions.append(action)
 
+        debug("simulation")
+        self.predictions = simulate(state, list(zip(state.player_wizards, actions)))
         return actions
 
     def _opponent_snaffles(self, state: GameState) -> Set[Snaffle]:
