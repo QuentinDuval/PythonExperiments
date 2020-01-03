@@ -51,6 +51,11 @@ MAX_THRUST = 150
 MAX_THROW_POWER = 500
 
 
+WIZARD_RADIUS = 400
+BLUDGER_RADIUS = 200
+SNAFFLE_RADIUS = 150
+
+
 class Goal(NamedTuple):
     x: int
     y_lo: int
@@ -71,9 +76,6 @@ class PlayerStatus:
 def read_status():
     score, magic = [int(i) for i in input().split()]
     return PlayerStatus(score=score, magic=magic)
-
-
-# TODO - use a ECS system (would help move the objects)
 
 
 class Wizard(NamedTuple):
@@ -147,6 +149,14 @@ class Action(NamedTuple):
         return action_type + " " + str(x) + " " + str(y) + " " + str(self.power)
 
 
+class Spell(NamedTuple):
+    name: str
+    target_id: int
+
+    def __repr__(self):
+        return self.name + " " + str(self.target_id)
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 BASIC AGENTS
@@ -173,32 +183,64 @@ class GrabClosestAndShootTowardGoal(Agent):
     """
 
     def __init__(self):
-        self.targeted_snaffles = {}
+        self.player_mana = 0
+        self.wizard_snaffles = {}
 
-    def get_actions(self, state: GameState) -> List[Action]:
+    def get_actions(self, state: GameState) -> List[Union[Action, Spell]]:
         actions = []
-        available_snaffles = list(state.snaffles)
+
+        targeted_snaffles = set(self.wizard_snaffles.values())
+        opponent_snaffles = self._opponent_snaffles(state)
+        available_snaffles = [s for s in state.snaffles
+                              if s.id not in targeted_snaffles and s.id not in opponent_snaffles]
+
         for wizard in state.player_wizards:
-            if not wizard.has_snaffle:
+            bludger = self._incoming_bludger(state, wizard)
+            # TODO - if a snaffle is too far away, and moving toward you camp, take it
+            if bludger is not None and self.player_mana >= 5:
+                action = Spell(name="OBLIVIATE", target_id=bludger.id)
+                self.player_mana -= 5
+            elif not wizard.has_snaffle:
                 action = self._move_toward_snaffle(state, wizard, available_snaffles)
             else:
                 # del self.targeted_snaffles[wizard.id]     # Commented to keep the same snaffle to the end
-                action = self._shoot_toward_goal(state.opponent_goal)
+                action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
             actions.append(action)
+
+        self.player_mana += 1
         return actions
+
+    def _opponent_snaffles(self, state: GameState) -> Set[Snaffle]:
+        taken = set()
+        for wizard in state.opponent_wizards:
+            if wizard.has_snaffle:
+                for snaffle in state.snaffles:
+                    if distance2(snaffle.position, wizard.position) < WIZARD_RADIUS ** 2:
+                        taken.add(snaffle.id)
+                        break
+        return taken
+
+    def _incoming_bludger(self, state: GameState, wizard: Wizard) -> Bludger:
+        # TODO - or check the cosine similarity + distance ?
+        next_positions = [b.position + b.speed * 4 for b in state.bludgers]
+        for i, next_position in enumerate(next_positions):
+            if distance(wizard.position, next_position) < WIZARD_RADIUS + BLUDGER_RADIUS:
+                return state.bludgers[i]
+        return None
 
     def _move_toward_snaffle(self, state, wizard, available_snaffles) -> Action:
         snaffle = None
-        prefered_snaffle_id = self.targeted_snaffles.get(wizard.id)
+        prefered_snaffle_id = self.wizard_snaffles.get(wizard.id)
         if prefered_snaffle_id:
-            snaffle = self._find_by_id(available_snaffles, prefered_snaffle_id)
+            snaffle = self._find_by_id(state.snaffles, prefered_snaffle_id)
         if snaffle is None:
             snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
-            available_snaffles.remove(snaffle)
+            if snaffle is not None:
+                available_snaffles.remove(snaffle)
         if snaffle is None:
             # In case there is but one snaffle and it is already taken
             snaffle = state.snaffles[0]
-        self.targeted_snaffles[wizard.id] = snaffle.id
+        self.wizard_snaffles[wizard.id] = snaffle.id
         return Action(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
 
     def _find_by_id(self, entities, identity):
@@ -207,9 +249,10 @@ class GrabClosestAndShootTowardGoal(Agent):
                 return entity
         return None
 
-    def _shoot_toward_goal(self, goal):
+    def _shoot_toward_goal(self, state, wizard, goal):
+        # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
         goal_center = vector(goal.x, int((goal.y_lo + goal.y_hi) / 2))
-        return Action(is_throw=True, direction=goal_center, power=MAX_THROW_POWER)
+        return Action(is_throw=True, direction=goal_center-wizard.speed, power=MAX_THROW_POWER)
 
 
 # TODO - an evaluation function that counts the goal + tries to put the balls in the adversary camp
