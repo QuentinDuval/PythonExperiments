@@ -22,11 +22,26 @@ def debug(*args):
     print(*args, file=sys.stderr)
 
 
+"""
+Geometry
+"""
+
+
+Angle = float
+Mass = float
 Vector = np.ndarray
 
 
 def vector(x: int, y: int) -> Vector:
     return np.array([x, y])
+
+
+def norm2(v) -> float:
+    return np.dot(v, v)
+
+
+def norm(v) -> float:
+    return math.sqrt(norm2(v))
 
 
 def distance2(v1: Vector, v2: Vector):
@@ -38,6 +53,24 @@ def distance(v1: Vector, v2: Vector):
     return math.sqrt(distance2(v1, v2))
 
 
+def get_angle(v: Vector) -> Angle:
+    # Get angle from a vector (x, y) in radian
+    x, y = v
+    if x > 0:
+        return np.arctan(y / x)
+    if x < 0:
+        return math.pi - np.arctan(- y / x)
+    return math.pi / 2 if y >= 0 else -math.pi / 2
+
+
+def mod_angle(angle: Angle) -> Angle:
+    if angle > 2 * math.pi:
+        return angle - 2 * math.pi
+    if angle < 0:
+        return angle + 2 * math.pi
+    return angle
+
+
 """
 Input acquisition & Game constants
 """
@@ -46,10 +79,8 @@ Input acquisition & Game constants
 WIDTH = 16001
 HEIGHT = 7501
 
-
 MAX_THRUST = 150
 MAX_THROW_POWER = 500
-
 
 WIZARD_RADIUS = 400
 BLUDGER_RADIUS = 200
@@ -61,13 +92,16 @@ class Goal(NamedTuple):
     y_lo: int
     y_hi: int
 
+    def center(self):
+        return vector(self.x, (self.y_li + self.y_lo) // 2)
+
 
 LEFT_GOAL = Goal(x=0, y_lo=2150, y_hi=5500)
 RIGHT_GOAL = Goal(x=WIDTH, y_lo=2150, y_hi=5500)
 OWN_GOALS = (LEFT_GOAL, RIGHT_GOAL)
 
 
-@dataclass()
+@dataclass(frozen=False)
 class PlayerStatus:
     score: int
     magic: int
@@ -97,8 +131,17 @@ class Bludger(NamedTuple):
     speed: Vector
 
 
+"""
+------------------------------------------------------------------------------------------------------------------------
+GAME STATE
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
 @dataclass(frozen=True)
 class GameState:
+    player_status: PlayerStatus
+    opponent_status: PlayerStatus
     player_goal: Goal
     opponent_goal: Goal
     player_wizards: List[Wizard]
@@ -107,10 +150,18 @@ class GameState:
     bludgers: List[Bludger]
 
     @classmethod
-    def empty(cls, player_goal: Goal, opponent_goal: Goal):
-        return cls(player_goal=player_goal, opponent_goal=opponent_goal,
+    def empty(cls, player_status: PlayerStatus, opponent_status: PlayerStatus, player_goal: Goal, opponent_goal: Goal):
+        return cls(player_status=player_status, opponent_status=opponent_status,
+                   player_goal=player_goal, opponent_goal=opponent_goal,
                    player_wizards=[], opponent_wizards=[],
                    snaffles=[], bludgers=[])
+
+    def init_next(self):
+        return GameState(
+            player_status=self.player_status, opponent_status=self.opponent_status,
+            player_goal=self.player_goal, opponent_goal=self.opponent_goal,
+            player_wizards=[], opponent_wizards=[],
+            snaffles=[], bludgers=[])
 
 
 def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
@@ -135,10 +186,14 @@ def read_state(player_goal: Goal, opponent_goal: Goal) -> GameState:
     return game_state
 
 
-class Action(NamedTuple):
-    # Action for each wizard (0 ≤ thrust ≤ 150, 0 ≤ power ≤ 500)
-    # i.e.: "MOVE x y thrust" or "THROW x y power"
+"""
+------------------------------------------------------------------------------------------------------------------------
+ACTIONS
+------------------------------------------------------------------------------------------------------------------------
+"""
 
+
+class Move(NamedTuple):
     is_throw: bool  # Otherwise, it is a move
     direction: Vector
     power: int
@@ -157,6 +212,47 @@ class Spell(NamedTuple):
         return self.name + " " + str(self.target_id)
 
 
+Action = Union[Move, Spell]
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+PHYSIC ENGINE
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+def apply_force(entity: NamedTuple, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> NamedTuple:
+    direction = get_angle(destination - entity.position)
+    force = np.array([thrust * math.cos(direction), thrust * math.sin(direction)])
+    dv_dt = force / mass
+    new_speed = entity.speed + dv_dt * dt
+    new_position = np.round(entity.position + new_speed * dt)
+    # TODO - take into account the borders ? beware of snaffles
+    return entity._replace(
+        position=new_position,
+        speed=np.trunc(new_speed * friction))
+
+
+def intersect(snaffle: Snaffle, next_snaffle: Snaffle, goal: Goal):
+    pass
+
+
+def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
+    next_state = GameState.init_next()
+    for snaffle in state.snaffles:
+        next_snaffle = apply_force(snaffle, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=0.5, dt=1.0)
+        # TODO - score a goal, remove the snaffle if we score a goal
+    for wizard in state.player_wizards:
+        apply_force(wizard, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+    for wizard in state.opponent_wizards:
+        apply_force(wizard, thrust=0., destination=state.opponent_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+    for bludger in state.bludgers:
+        apply_force(bludger, thrust=0., destination=state.opponent_goal.center(), friction=0.9, mass=8.0, dt=1.0)
+    # TODO - increase mana
+    return next_state
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 BASIC AGENTS
@@ -166,14 +262,14 @@ BASIC AGENTS
 
 class Agent(abc.ABC):
     @abc.abstractmethod
-    def get_actions(self, state: GameState) -> List[Action]:
+    def get_actions(self, state: GameState) -> List[Move]:
         pass
 
 
 class StupidAgent(Agent):
-    def get_actions(self, state: GameState) -> List[Action]:
-        return [Action(is_throw=False, direction=vector(8000, 3750), power=100),
-                Action(is_throw=False, direction=vector(8000, 3750), power=100)]
+    def get_actions(self, state: GameState) -> List[Move]:
+        return [Move(is_throw=False, direction=vector(8000, 3750), power=100),
+                Move(is_throw=False, direction=vector(8000, 3750), power=100)]
 
 
 class GrabClosestAndShootTowardGoal(Agent):
@@ -183,10 +279,9 @@ class GrabClosestAndShootTowardGoal(Agent):
     """
 
     def __init__(self):
-        self.player_mana = 0
         self.wizard_snaffles = {}
 
-    def get_actions(self, state: GameState) -> List[Union[Action, Spell]]:
+    def get_actions(self, state: GameState) -> List[Action]:
         actions = []
 
         targeted_snaffles = set(self.wizard_snaffles.values())
@@ -198,9 +293,8 @@ class GrabClosestAndShootTowardGoal(Agent):
         for wizard in state.player_wizards:
             bludger = self._incoming_bludger(state, wizard)
             # TODO - if a snaffle is too far away, and moving toward you camp, take it
-            if bludger is not None and self.player_mana >= 5:
+            if bludger is not None and state.player_status.magic >= 5:
                 action = Spell(name="OBLIVIATE", target_id=bludger.id)
-                self.player_mana -= 5
             elif not wizard.has_snaffle:
                 action = self._move_toward_snaffle(state, wizard, available_snaffles)
             else:
@@ -208,7 +302,6 @@ class GrabClosestAndShootTowardGoal(Agent):
                 action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
             actions.append(action)
 
-        self.player_mana += 1
         return actions
 
     def _opponent_snaffles(self, state: GameState) -> Set[Snaffle]:
@@ -229,7 +322,7 @@ class GrabClosestAndShootTowardGoal(Agent):
                 return state.bludgers[i]
         return None
 
-    def _move_toward_snaffle(self, state, wizard, available_snaffles) -> Action:
+    def _move_toward_snaffle(self, state, wizard, available_snaffles) -> Move:
         snaffle = None
         prefered_snaffle_id = self.wizard_snaffles.get(wizard.id)
         if prefered_snaffle_id:
@@ -242,7 +335,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             # In case there is but one snaffle and it is already taken
             snaffle = state.snaffles[0]
         self.wizard_snaffles[wizard.id] = snaffle.id
-        return Action(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
+        return Move(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
 
     def _find_by_id(self, entities, identity):
         for entity in entities:
@@ -252,26 +345,10 @@ class GrabClosestAndShootTowardGoal(Agent):
 
     def _shoot_toward_goal(self, state, wizard, goal):
         # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
-        goal_center = vector(goal.x, int((goal.y_lo + goal.y_hi) / 2))
-        return Action(is_throw=True, direction=goal_center-wizard.speed, power=MAX_THROW_POWER)
+        return Move(is_throw=True, direction=goal.center() - wizard.speed, power=MAX_THROW_POWER)
 
 
 # TODO - an evaluation function that counts the goal + tries to put the balls in the adversary camp
-
-
-"""
-------------------------------------------------------------------------------------------------------------------------
-PHYSIC ENGINE
-------------------------------------------------------------------------------------------------------------------------
-"""
-
-
-def apply_force(position: Vector, speed: Vector, thrust: float, direction: Vector) -> Vector:
-    pass
-
-
-def simulate(state: GameState, actions: Dict[int, Action]) -> GameState:
-    pass
 
 
 """
@@ -294,7 +371,7 @@ def game_loop(agent: Agent):
     while True:
         player_status = read_status()
         opponent_status = read_status()
-        game_state = read_state(player_goal, opponent_goal)
+        game_state = read_state(player_status, opponent_status, player_goal, opponent_goal)
 
         debug("player status:", player_status)
         debug("opponent status:", opponent_status)
