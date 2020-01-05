@@ -31,6 +31,7 @@ Geometry
 
 
 Angle = float
+Duration = float
 Mass = float
 Vector = np.ndarray
 
@@ -100,6 +101,11 @@ MASS_SNAFFLE = 0.5
 MASS_BLUDGER = 9.0
 
 
+GOAL_Y_LO = 2150
+GOAL_Y_HI = 5500
+GOAL_Y_CENTER = (GOAL_Y_HI + GOAL_Y_LO) // 2
+
+
 class Goal(NamedTuple):
     x: int
     y_lo: int
@@ -107,12 +113,12 @@ class Goal(NamedTuple):
     center: Vector
 
     @classmethod
-    def create(cls, x, y_lo, y_hi):
-        return cls(x=x, y_lo=y_lo, y_hi=y_hi, center=vector(x, (y_lo + y_hi) // 2))
+    def create(cls, x):
+        return cls(x=x, y_lo=GOAL_Y_LO, y_hi=GOAL_Y_HI, center=vector(x, GOAL_Y_CENTER))
 
 
-LEFT_GOAL: Goal = Goal.create(x=0, y_lo=2150, y_hi=5500)
-RIGHT_GOAL: Goal = Goal.create(x=WIDTH, y_lo=2150, y_hi=5500)
+LEFT_GOAL: Goal = Goal.create(x=0)
+RIGHT_GOAL: Goal = Goal.create(x=WIDTH)
 OWN_GOALS = (LEFT_GOAL, RIGHT_GOAL)
 
 
@@ -154,17 +160,33 @@ class Wizard(NamedTuple):
     speed: Vector
     has_snaffle: bool
 
+    def __eq__(self, other):
+        return self.id == other.id\
+            and np.array_equal(self.position, other.position)\
+            and np.array_equal(self.speed, other.speed)\
+            and self.has_snaffle == other.has_snaffle
+
 
 class Snaffle(NamedTuple):
     id: EntityId
     position: Vector
     speed: Vector
 
+    def __eq__(self, other):
+        return self.id == other.id\
+            and np.array_equal(self.position, other.position)\
+            and np.array_equal(self.speed, other.speed)
+
 
 class Bludger(NamedTuple):
     id: EntityId
     position: Vector
     speed: Vector
+
+    def __eq__(self, other):
+        return self.id == other.id\
+            and np.array_equal(self.position, other.position)\
+            and np.array_equal(self.speed, other.speed)
 
 
 def find_by_id(entities: List[T], identity: EntityId) -> T:
@@ -285,30 +307,69 @@ PHYSIC ENGINE
 """
 
 
+def intersect_vertical_line(pos1: Vector, pos2: Vector, x_line: int) -> Optional[Tuple[int, Duration]]:
+    # Quick check: should be on each side of the goal
+    dx1 = pos1[0] - x_line
+    dx2 = pos2[0] - x_line
+    if dx1 * dx2 > 0.:
+        return None
+
+    # Find the intersection point
+    x1, y1 = pos1
+    dx, dy = pos2 - pos1
+    dt = (x_line - x1) / dx     # Solve x1 + dx * dt = x_line for dt
+    y_cross = y1 + dy * dt      # Then move y to the intersection point
+    return int(y_cross), dt
+
+
+def intersect_horizontal_line(pos1: Vector, pos2: Vector, y_line: int) -> Optional[Tuple[int, Duration]]:
+    # Quick check: should be on each side of the goal
+    dy1 = pos1[1] - y_line
+    dy2 = pos2[1] - y_line
+    if dy1 * dy2 > 0.:
+        return None
+
+    # Find the intersection point
+    x1, y1 = pos1
+    dx, dy = pos2 - pos1
+    dt = (y_line - y1) / dy     # Solve y1 + dy * dt = y_line for dt
+    x_cross = x1 + dx * dt      # Then move x to the intersection point
+    return int(x_cross), dt
+
+
 def apply_force(entity: T, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> T:
-    direction = get_angle(destination - entity.position)
-    force = np.array([thrust * math.cos(direction), thrust * math.sin(direction)])
-    dv_dt = force / mass
+    # Update the speed vector
+    position = entity.position
+    if thrust > 0.:
+        direction = get_angle(destination - position)
+        force = np.array([thrust * math.cos(direction), thrust * math.sin(direction)])
+        dv_dt = force / mass
+    else:
+        dv_dt = np.zeros(shape=(2,))
     new_speed = entity.speed + dv_dt * dt
-    new_position = np.round(entity.position + new_speed * dt)
-    # TODO - take into account the borders ? beware for snaffles, they need to cross the goal
+
+    # Compute the new position (assumption: there can be at most one collision with the walls)
+    new_position = np.round(position + new_speed * dt)
+    for y_line in 0, HEIGHT:
+        intersection = intersect_horizontal_line(position, new_position, y_line)
+        if intersection is not None:
+            x_cross, dt_till_hit = intersection
+            position = vector(x_cross, y_line)
+            new_speed[1] *= -1
+            new_position = np.round(position + new_speed * (dt - dt_till_hit))
+
+    # TODO - take into account the X borders ? beware for snaffles, they need to cross the goal
     return entity._replace(
         position=new_position,
         speed=np.trunc(new_speed * friction))
 
 
-def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
-    # Quick check: should be on each side of the goal
-    dx1 = snaffle1.position[0] - goal.x
-    dx2 = snaffle2.position[0] - goal.x
-    if dx1 * dx2 > 0.:
+def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal) -> bool:
+    intersection = intersect_vertical_line(snaffle1.position, snaffle2.position, goal.x)
+    if intersection is None:
         return False
 
-    # Find the intersection point
-    x1, y1 = snaffle1.position
-    dx, dy = snaffle2.position - snaffle1.position
-    dt = (goal.x - x1) / dx     # Solve x + dx * dt = goal.x for dt
-    y_cross = y1 + dy * dt      # Then move y to the intersection point
+    y_cross, dt = intersection
     return goal.y_lo <= y_cross <= goal.y_hi
 
 
@@ -463,7 +524,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             return False # Do not waste the flipendo
 
         # TODO - check there are no opponent in front
-        # TODO - check for rebound
+        # TODO - check for rebound (try the symetric of GOAL CENTER AT TOP AND LOW)
         goal = state.opponent_goal
         for _ in range(DURATION_FLIPPENDO):
             thrust = flippendo_power(wizard, snaffle)
