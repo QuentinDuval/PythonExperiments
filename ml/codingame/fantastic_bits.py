@@ -357,8 +357,10 @@ class GrabClosestAndShootTowardGoal(Agent):
         - filter out the wizard that have a snaffle, then the logic can assign the closest snaffles to both wizard
 
     TODO (IDEAS):
-        - specialize the wizard: one to defend, one to attack
-        - stick to one target
+        - specialize the wizard: one to defend, one to attack (based on where is center of mass of balls, like soccer... move front):
+            - the defender should try to intercept opponent (move between opponent and goal)
+            - the defender should put the balls on the side (where opponent are not, or toward other wizard)
+            - stick to one target for the attacking player?
         - use the detection of collisions to do something different (change target?)
     """
 
@@ -387,7 +389,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             if wizard.has_snaffle:
                 action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
             else:
-                # TODO - before this 'if', try flipendo on an existing snaffle
+                # TODO - before this 'if', try flipendo on an existing snaffle (do a simulation of N-turns to see if it ends up in goals)
                 action = self._capture_snaffle(state, wizard, free_snaffles)
             actions.append(action)
 
@@ -431,6 +433,7 @@ class GrabClosestAndShootTowardGoal(Agent):
 
     def _shoot_toward_goal(self, state, wizard, goal):
         # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
+        # TODO - simulate to see if it will end up in goal, store that computation, to switch target if it will
         return Move(is_throw=True, direction=goal.center - wizard.speed, power=MAX_THROW_POWER)
 
     @staticmethod
