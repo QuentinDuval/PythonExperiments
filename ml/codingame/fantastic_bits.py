@@ -174,6 +174,24 @@ def find_by_id(entities: List[T], identity: EntityId) -> T:
     return None
 
 
+def assign_closest_snaffles(wizards: List[Wizard], all_snaffles: List[Snaffle]) -> Dict[EntityId, Snaffle]:
+    def try_assignment_order(ordered_wizards: List[Wizard]) -> Tuple[Dict[EntityId, Snaffle], float]:
+        assignments = dict()
+        sum_distances = 0.
+        snaffles = list(all_snaffles)
+        for wizard in ordered_wizards:
+            snaffle = min(snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
+            if snaffle is not None:
+                assignments[wizard.id] = snaffle
+                snaffles.remove(snaffle)
+                sum_distances += distance2(wizard.position, snaffle.position)
+        return assignments, sum_distances
+
+    assignment_1, cost_1 = try_assignment_order(wizards)
+    assignment_2, cost_2 = try_assignment_order(wizards[::-1])
+    return assignment_1 if cost_1 <= cost_2 else assignment_2
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME STATE
@@ -273,7 +291,7 @@ def apply_force(entity: T, thrust: float, destination: Vector, friction: float, 
     dv_dt = force / mass
     new_speed = entity.speed + dv_dt * dt
     new_position = np.round(entity.position + new_speed * dt)
-    # TODO - take into account the borders ? beware of snaffles
+    # TODO - take into account the borders ? beware for snaffles, they need to cross the goal
     return entity._replace(
         position=new_position,
         speed=np.trunc(new_speed * friction))
@@ -290,6 +308,7 @@ def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
     return goal.y_lo <= snaffle2.position[1] <= goal.y_hi
 
 
+'''
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
     next_state = state.init_next()
 
@@ -342,6 +361,7 @@ def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameStat
     next_state.player_status.magic += 1
     next_state.opponent_status.magic += 1
     return next_state
+'''
 
 
 """
@@ -371,9 +391,6 @@ class GrabClosestAndShootTowardGoal(Agent):
     You need to keep a state here, in order to avoid the situation in which your agent changes
     direction suddenly and remains stuck, with two wizard each alternating snaffles
 
-    TODO (FIXIT):
-        - filter out the wizard that have a snaffle, then the logic can assign the closest snaffles to both wizard
-
     TODO (IDEAS):
         - specialize the wizard: one to defend, one to attack (based on where is center of mass of balls, like soccer... move front):
             - the defender should try to intercept opponent (move between opponent and goal)
@@ -383,7 +400,6 @@ class GrabClosestAndShootTowardGoal(Agent):
     """
 
     def __init__(self):
-        self.predictions = None
         self.on_accio: Dict[EntityId, int] = {}
         self.on_flipendo: Dict[EntityId, int] = {}
         self.player_snaffles: Dict[EntityId, Wizard] = {}
@@ -396,9 +412,9 @@ class GrabClosestAndShootTowardGoal(Agent):
         self.opponent_snaffles = self._find_snaffles_owned(state.snaffles, state.opponent_wizards)
 
     def get_actions(self, state: GameState) -> List[Action]:
-        debug(self.predictions)
-        actions = [None] * len(state.player_wizards)
+        actions: List[Action] = [None] * len(state.player_wizards)
 
+        # Book-keeping of which snaffles are owned or not
         free_snaffles = [s for s in state.snaffles
                          if s.id not in self.opponent_snaffles
                          if s.id not in self.player_snaffles]
@@ -413,38 +429,18 @@ class GrabClosestAndShootTowardGoal(Agent):
                     free_snaffles.remove(find_by_id(state.snaffles, action.target_id))
             actions[i] = action
 
+        # Try to stop a ball that will go in my goal if it is possible (no one is near...)
+        # TODO
+
         # Assign snaffles to remaining wizards with no actions
         free_wizards = [wizard for i, wizard in enumerate(state.player_wizards) if actions[i] is None]
-        assignments = self._assign_snaffles(free_wizards, free_snaffles)
+        assignments = assign_closest_snaffles(free_wizards, free_snaffles)
 
         # Play with the snaffle that is assigned to you
         for i, wizard in enumerate(state.player_wizards):
             if actions[i] is None:
                 actions[i] = self._capture_snaffle(state, wizard, assignments)
-
-        debug("simulation (for later)")
-        self.predictions = simulate(state, list(zip(state.player_wizards, actions)))
         return actions
-
-    def _assign_snaffles(self, free_wizards: List[Wizard], free_snaffles: List[Snaffle]) -> Dict[EntityId, Snaffle]:
-        assignment_1, cost_1 = self._try_assign_snaffles(free_wizards, free_snaffles)
-        assignment_2, cost_2 = self._try_assign_snaffles(free_wizards[::-1], free_snaffles)
-        if cost_1 <= cost_2:
-            return assignment_1
-        else:
-            return assignment_2
-
-    def _try_assign_snaffles(self, free_wizards: List[Wizard], free_snaffles: List[Snaffle]) -> Dict[EntityId, Snaffle]:
-        assignments = dict()
-        sum_distances = 0.
-        free_snaffles = list(free_snaffles)
-        for wizard in free_wizards:
-            snaffle = min(free_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
-            if snaffle is not None:
-                assignments[wizard.id] = snaffle
-                free_snaffles.remove(snaffle)
-                sum_distances += distance2(wizard.position, snaffle.position)
-        return assignments, sum_distances
 
     def _try_flipendo(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Spell:
         if state.player_status.magic < MANA_COST_FLIPENDO:
@@ -490,7 +486,6 @@ class GrabClosestAndShootTowardGoal(Agent):
     def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
         possible = state.player_status.magic >= MANA_COST_ACCIO
         possible &= snaffle.id not in self.on_accio
-        # TODO - should be able to accio something close to my goal to get rid of it
         possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
         possible &= distance2(wizard.position, snaffle.position) >= 3000 ** 2
         return possible
@@ -509,7 +504,9 @@ class GrabClosestAndShootTowardGoal(Agent):
             return find_by_id(state.snaffles, closest_snaffle_id)
         return None
 
-    def _shoot_toward_goal(self, state, wizard, goal):
+    def _shoot_toward_goal(self, state: GameState, wizard: Wizard, goal: Goal):
+        # TODO - if the goal is near, just shoot toward it
+        # TODO - otherwise, there are better things to do to avoid opponents
         # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
         # TODO - simulate to see if it will end up in goal, store that computation, to switch target if it will
         return Move(is_throw=True, direction=goal.center - wizard.speed, power=MAX_THROW_POWER)
