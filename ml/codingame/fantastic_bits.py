@@ -298,14 +298,18 @@ def apply_force(entity: T, thrust: float, destination: Vector, friction: float, 
 
 
 def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
-    # Should be on each side of the goal
+    # Quick check: should be on each side of the goal
     dx1 = snaffle1.position[0] - goal.x
     dx2 = snaffle2.position[0] - goal.x
     if dx1 * dx2 > 0.:
         return False
 
-    # ys should be in the range of the goal: TODO - only an approximation (just compute the tangent and solve for x)
-    return goal.y_lo <= snaffle2.position[1] <= goal.y_hi
+    # Find the intersection point
+    x1, y1 = snaffle1.position
+    dx, dy = snaffle2.position - snaffle1.position
+    dt = (goal.x - x1) / dx     # Solve x + dx * dt = goal.x for dt
+    y_cross = y1 + dy * dt      # Then move y to the intersection point
+    return goal.y_lo <= y_cross <= goal.y_hi
 
 
 '''
