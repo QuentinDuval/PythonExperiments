@@ -47,12 +47,12 @@ def norm(v) -> float:
     return math.sqrt(norm2(v))
 
 
-def distance2(v1: Vector, v2: Vector):
+def distance2(v1: Vector, v2: Vector) -> float:
     v = v1 - v2
     return np.dot(v, v)
 
 
-def distance(v1: Vector, v2: Vector):
+def distance(v1: Vector, v2: Vector) -> float:
     return math.sqrt(distance2(v1, v2))
 
 
@@ -90,6 +90,14 @@ MAX_THROW_POWER = 500
 WIZARD_RADIUS = 400
 BLUDGER_RADIUS = 200
 SNAFFLE_RADIUS = 150
+
+FRICTION_SNAFFLE = 0.75
+FRICTION_WIZARD = 0.75
+FRICTION_BLUDGER = 0.9
+
+MASS_WIZARD = 1.0
+MASS_SNAFFLE = 0.5
+MASS_BLUDGER = 9.0
 
 
 class Goal(NamedTuple):
@@ -242,6 +250,16 @@ class Spell(NamedTuple):
 Action = Union[Move, Spell]
 
 
+def accio_power(wizard: Wizard, snaffle: Snaffle) -> float:
+    dist2 = distance2(wizard.position, snaffle.position)
+    return min(3000/(dist2/1_000_000), 1000)
+
+
+def flippendo_power(wizard: Wizard, snaffle: Snaffle) -> float:
+    dist2 = distance2(wizard.position, snaffle.position)
+    return min(6000/(dist2/1_000_000), 1000)
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 PHYSIC ENGINE
@@ -389,18 +407,47 @@ class GrabClosestAndShootTowardGoal(Agent):
             if wizard.has_snaffle:
                 action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
             else:
-                # TODO - before this 'if', try flipendo on an existing snaffle (do a simulation of N-turns to see if it ends up in goals)
-                action = self._capture_snaffle(state, wizard, free_snaffles)
+                action = self._try_flipendo(state, wizard, free_snaffles)
+                if action is None:
+                    action = self._capture_snaffle(state, wizard, free_snaffles)
             actions.append(action)
 
         debug("simulation (for later)")
         self.predictions = simulate(state, list(zip(state.player_wizards, actions)))
         return actions
 
-    def _capture_snaffle(self, state: GameState, wizard: Wizard, available_snaffles: List[Snaffle]) -> Union[Move, Spell]:
-        snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
+    def _try_flipendo(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Spell:
+        if state.player_status.magic < MANA_COST_FLIPENDO:
+            return None
+
+        for snaffle in free_snaffles:
+            if snaffle.id not in self.on_flipendo:
+                if self._flipendo_to_goal(state, wizard, snaffle):
+                    self.on_flipendo[snaffle.id] = DURATION_FLIPPENDO + 1
+                    return Spell(name="FLIPENDO", target_id=snaffle.id)
+        return None
+
+    def _flipendo_to_goal(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
+        if abs(snaffle.position[0] - state.opponent_goal.x) < WIDTH / 4:
+            return False # Do not waste the flipendo
+
+        # TODO - check there are no opponent in front
+        goal = state.opponent_goal
+        for _ in range(DURATION_FLIPPENDO):
+            thrust = flippendo_power(wizard, snaffle)
+            destination = snaffle.position + (snaffle.position - wizard.position)
+            next_wizard = apply_force(wizard, thrust=0, destination=goal.center, friction=FRICTION_WIZARD, mass=MASS_WIZARD)
+            next_snaffle = apply_force(snaffle, thrust=thrust, destination=destination, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE, dt=1.0)
+            if intersect_goal(snaffle, next_snaffle, state.opponent_goal):
+                return True
+            snaffle = next_snaffle
+            wizard = next_wizard
+        return False
+
+    def _capture_snaffle(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Union[Move, Spell]:
+        snaffle = min(free_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
         if snaffle is not None:
-            available_snaffles.remove(snaffle)
+            free_snaffles.remove(snaffle)
             if self._can_accio(state, wizard, snaffle):
                 self.on_accio[snaffle.id] = DURATION_ACCIO + 1
                 return Spell(name="ACCIO", target_id=snaffle.id)
