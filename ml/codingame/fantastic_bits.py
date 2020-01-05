@@ -22,6 +22,9 @@ def debug(*args):
     print(*args, file=sys.stderr)
 
 
+T = TypeVar('T')
+
+
 """
 Geometry
 """
@@ -72,7 +75,9 @@ def mod_angle(angle: Angle) -> Angle:
 
 
 """
-Input acquisition & Game constants
+------------------------------------------------------------------------------------------------------------------------
+GAME CONSTANTS
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -91,14 +96,34 @@ class Goal(NamedTuple):
     x: int
     y_lo: int
     y_hi: int
+    center: Vector
 
-    def center(self):
-        return vector(self.x, (self.y_lo + self.y_hi) // 2)
+    @classmethod
+    def create(cls, x, y_lo, y_hi):
+        return cls(x=x, y_lo=y_lo, y_hi=y_hi, center=vector(x, (y_lo + y_hi) // 2))
 
 
-LEFT_GOAL = Goal(x=0, y_lo=2150, y_hi=5500)
-RIGHT_GOAL = Goal(x=WIDTH, y_lo=2150, y_hi=5500)
+LEFT_GOAL: Goal = Goal.create(x=0, y_lo=2150, y_hi=5500)
+RIGHT_GOAL: Goal = Goal.create(x=WIDTH, y_lo=2150, y_hi=5500)
 OWN_GOALS = (LEFT_GOAL, RIGHT_GOAL)
+
+
+MANA_COST_OBLIVIATE = 5
+MANA_COST_PETRIFICUS = 10
+MANA_COST_ACCIO = 15
+MANA_COST_FLIPENDO = 20
+
+DURATION_OBLIVIATE = 4
+DURATION_PETRIFICUS = 1
+DURATION_ACCIO = 6
+DURATION_FLIPPENDO = 3
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+MAIN DATA STRUCTURES
+------------------------------------------------------------------------------------------------------------------------
+"""
 
 
 @dataclass(frozen=False)
@@ -112,23 +137,33 @@ def read_status():
     return PlayerStatus(score=score, magic=magic)
 
 
+EntityId = int
+
+
 class Wizard(NamedTuple):
-    id: int
+    id: EntityId
     position: Vector
     speed: Vector
     has_snaffle: bool
 
 
 class Snaffle(NamedTuple):
-    id: int
+    id: EntityId
     position: Vector
     speed: Vector
 
 
 class Bludger(NamedTuple):
-    id: int
+    id: EntityId
     position: Vector
     speed: Vector
+
+
+def find_by_id(entities: List[T], identity: EntityId) -> T:
+    for entity in entities:
+        if entity.id == identity:
+            return entity
+    return None
 
 
 """
@@ -214,9 +249,6 @@ PHYSIC ENGINE
 """
 
 
-T = TypeVar('T')
-
-
 def apply_force(entity: T, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> T:
     direction = get_angle(destination - entity.position)
     force = np.array([thrust * math.cos(direction), thrust * math.sin(direction)])
@@ -243,12 +275,12 @@ def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal):
 def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
     next_state = state.init_next()
 
-    # TODO - take into account the spells?
+    # TODO - take into account the last longing spells?
 
     # Move the snaffle
     for snaffle in state.snaffles:
         thrust = 0.
-        destination = state.opponent_goal.center()
+        destination = state.opponent_goal.center
         for action_wizard, action in actions:
             if np.array_equal(action_wizard.position, snaffle.position):
                 if isinstance(action, Move) and action.is_throw:
@@ -266,7 +298,7 @@ def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameStat
     # Move the wizard
     for wizard in state.player_wizards:
         thrust = 0.
-        destination = state.opponent_goal.center()
+        destination = state.opponent_goal.center
         for action_wizard, action in actions:
             if action_wizard.id == wizard.id:
                 if isinstance(action, Move) and not action.is_throw:
@@ -280,7 +312,7 @@ def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameStat
     # Move the opponent wizard: TODO - move them according to a basic AI
     for wizard in state.opponent_wizards:
         # TODO - detection of catching / throwing a snaffle
-        next_wizard = apply_force(wizard, thrust=0., destination=state.player_goal.center(), friction=0.75, mass=1.0, dt=1.0)
+        next_wizard = apply_force(wizard, thrust=0., destination=state.player_goal.center, friction=0.75, mass=1.0, dt=1.0)
         next_state.opponent_wizards.append(next_wizard)
 
     # Move the bludgers: TODO - how does the acceleration of bludgers work?
@@ -302,6 +334,9 @@ BASIC AGENTS
 
 
 class Agent(abc.ABC):
+    def on_turn_start(self, state: GameState):
+        pass
+
     @abc.abstractmethod
     def get_actions(self, state: GameState) -> List[Move]:
         pass
@@ -317,81 +352,105 @@ class GrabClosestAndShootTowardGoal(Agent):
     """
     You need to keep a state here, in order to avoid the situation in which your agent changes
     direction suddenly and remains stuck, with two wizard each alternating snaffles
+
+    TODO (FIXIT):
+        - filter out the wizard that have a snaffle, then the logic can assign the closest snaffles to both wizard
+
+    TODO (IDEAS):
+        - specialize the wizard: one to defend, one to attack
+        - stick to one target
+        - use the detection of collisions to do something different (change target?)
     """
 
     def __init__(self):
-        self.wizard_snaffles = {}
         self.predictions = None
+        self.on_accio: Dict[EntityId, int] = {}
+        self.on_flipendo: Dict[EntityId, int] = {}
+        self.player_snaffles: Dict[EntityId, Wizard] = {}
+        self.opponent_snaffles: Dict[EntityId, Wizard] = {}
+
+    def on_turn_start(self, state: GameState):
+        self._decrease_duration(self.on_accio)
+        self._decrease_duration(self.on_flipendo)
+        self.player_snaffles = self._find_snaffles_owned(state.snaffles, state.player_wizards)
+        self.opponent_snaffles = self._find_snaffles_owned(state.snaffles, state.opponent_wizards)
 
     def get_actions(self, state: GameState) -> List[Action]:
         debug(self.predictions)
-
         actions = []
 
-        targeted_snaffles = set(self.wizard_snaffles.values())
-        opponent_snaffles = self._opponent_snaffles(state)
-        available_snaffles = [s for s in state.snaffles
-                              if s.id not in targeted_snaffles and s.id not in opponent_snaffles]
+        free_snaffles = [s for s in state.snaffles
+                         if s.id not in self.opponent_snaffles
+                         if s.id not in self.player_snaffles]
 
-        # TODO - specialize the wizard: one to defend, one to attack
         for wizard in state.player_wizards:
-            bludger = self._incoming_bludger(state, wizard)
-            # TODO - if a snaffle is too far away, and moving toward you camp, take it
-            if bludger is not None and state.player_status.magic >= 5:
-                action = Spell(name="OBLIVIATE", target_id=bludger.id)
-            elif not wizard.has_snaffle:
-                action = self._move_toward_snaffle(state, wizard, available_snaffles)
-            else:
-                # del self.targeted_snaffles[wizard.id]     # Commented to keep the same snaffle to the end
+            if wizard.has_snaffle:
                 action = self._shoot_toward_goal(state, wizard, state.opponent_goal)
+            else:
+                # TODO - before this 'if', try flipendo on an existing snaffle
+                action = self._capture_snaffle(state, wizard, free_snaffles)
             actions.append(action)
 
-        debug("simulation")
+        debug("simulation (for later)")
         self.predictions = simulate(state, list(zip(state.player_wizards, actions)))
         return actions
 
-    def _opponent_snaffles(self, state: GameState) -> Set[Snaffle]:
-        taken = set()
-        for wizard in state.opponent_wizards:
-            if wizard.has_snaffle:
-                for snaffle in state.snaffles:
-                    if distance2(snaffle.position, wizard.position) < WIZARD_RADIUS ** 2:
-                        taken.add(snaffle.id)
-                        break
-        return taken
-
-    def _incoming_bludger(self, state: GameState, wizard: Wizard) -> Bludger:
-        # TODO - or check the cosine similarity + distance ?
-        next_positions = [b.position + b.speed * 4 for b in state.bludgers]
-        for i, next_position in enumerate(next_positions):
-            if distance(wizard.position, next_position) < WIZARD_RADIUS + BLUDGER_RADIUS:
-                return state.bludgers[i]
-        return None
-
-    def _move_toward_snaffle(self, state, wizard, available_snaffles) -> Move:
-        snaffle = None
-        prefered_snaffle_id = self.wizard_snaffles.get(wizard.id)
-        if prefered_snaffle_id:
-            snaffle = self._find_by_id(state.snaffles, prefered_snaffle_id)
-        if snaffle is None:
-            snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
-            if snaffle is not None:
-                available_snaffles.remove(snaffle)
-        if snaffle is None:
-            # In case there is but one snaffle and it is already taken
-            snaffle = state.snaffles[0]
-        self.wizard_snaffles[wizard.id] = snaffle.id
+    def _capture_snaffle(self, state: GameState, wizard: Wizard, available_snaffles: List[Snaffle]) -> Union[Move, Spell]:
+        snaffle = min(available_snaffles, key=lambda s: distance2(wizard.position, s.position), default=None)
+        if snaffle is not None:
+            available_snaffles.remove(snaffle)
+            if self._can_accio(state, wizard, snaffle):
+                self.on_accio[snaffle.id] = DURATION_ACCIO + 1
+                return Spell(name="ACCIO", target_id=snaffle.id)
+        else:
+            snaffle = self._recapture_closest_snaffle(state, wizard)
+            if snaffle is None:
+                snaffle = state.snaffles[0]
         return Move(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
 
-    def _find_by_id(self, entities, identity):
-        for entity in entities:
-            if entity.id == identity:
-                return entity
+    def _recapture_closest_snaffle(self, state: GameState, wizard: Wizard):
+        # In case there is but one snaffle and it is already taken, go toward the closest opponent that has a snaffle
+        # TODO - try to use petrificus here
+        min_dist = float('inf')
+        closest_snaffle_id = None
+        for snaffle_id, opponent_wizard in self.opponent_snaffles.items():
+            dist = distance2(wizard.position, opponent_wizard.position)
+            if dist < min_dist:
+                min_dist = dist
+                closest_snaffle_id = snaffle_id
+        if closest_snaffle_id is not None:
+            return find_by_id(state.snaffles, closest_snaffle_id)
         return None
+
+    def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
+        possible = state.player_status.magic >= MANA_COST_ACCIO
+        possible &= snaffle.id not in self.on_accio
+        possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
+        possible &= distance2(wizard.position, snaffle.position) >= 3000 ** 2
+        return possible
 
     def _shoot_toward_goal(self, state, wizard, goal):
         # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
-        return Move(is_throw=True, direction=goal.center() - wizard.speed, power=MAX_THROW_POWER)
+        return Move(is_throw=True, direction=goal.center - wizard.speed, power=MAX_THROW_POWER)
+
+    @staticmethod
+    def _decrease_duration(durations: Dict[EntityId, int]):
+        for entity_id, cd in list(durations.items()):
+            if cd == 1:
+                del durations[entity_id]
+            else:
+                durations[entity_id] = cd - 1
+
+    @staticmethod
+    def _find_snaffles_owned(snaffles: List[Snaffle], wizards: List[Wizard]) -> Dict[EntityId, Wizard]:
+        owned = dict()
+        for wizard in wizards:
+            if wizard.has_snaffle:
+                for snaffle in snaffles:
+                    if distance2(snaffle.position, wizard.position) < WIZARD_RADIUS ** 2:
+                        owned[snaffle.id] = wizard
+                        break
+        return owned
 
 
 # TODO - an evaluation function that counts the goal + tries to put the balls in the adversary camp
@@ -423,6 +482,7 @@ def game_loop(agent: Agent):
         debug("opponent status:", opponent_status)
         debug("game state:", game_state)
 
+        agent.on_turn_start(game_state)
         for action in agent.get_actions(game_state):
             print(action)
 
