@@ -408,6 +408,13 @@ class GrabClosestAndShootTowardGoal(Agent):
                 snaffle = state.snaffles[0]
         return Move(is_throw=False, direction=snaffle.position + snaffle.speed, power=MAX_THRUST)
 
+    def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
+        possible = state.player_status.magic >= MANA_COST_ACCIO
+        possible &= snaffle.id not in self.on_accio
+        possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
+        possible &= distance2(wizard.position, snaffle.position) >= 3000 ** 2
+        return possible
+
     def _recapture_closest_snaffle(self, state: GameState, wizard: Wizard):
         # In case there is but one snaffle and it is already taken, go toward the closest opponent that has a snaffle
         # TODO - try to use petrificus here
@@ -421,13 +428,6 @@ class GrabClosestAndShootTowardGoal(Agent):
         if closest_snaffle_id is not None:
             return find_by_id(state.snaffles, closest_snaffle_id)
         return None
-
-    def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
-        possible = state.player_status.magic >= MANA_COST_ACCIO
-        possible &= snaffle.id not in self.on_accio
-        possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
-        possible &= distance2(wizard.position, snaffle.position) >= 3000 ** 2
-        return possible
 
     def _shoot_toward_goal(self, state, wizard, goal):
         # TODO - avoid to shoot toward an opponent wizard OR toward a bludger
