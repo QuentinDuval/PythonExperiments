@@ -459,6 +459,7 @@ class GrabClosestAndShootTowardGoal(Agent):
             return False # Do not waste the flipendo
 
         # TODO - check there are no opponent in front
+        # TODO - check for rebound
         goal = state.opponent_goal
         for _ in range(DURATION_FLIPPENDO):
             thrust = flippendo_power(wizard, snaffle)
