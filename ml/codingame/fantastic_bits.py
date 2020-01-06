@@ -338,6 +338,8 @@ def intersect_horizontal_line(pos1: Vector, pos2: Vector, y_line: int) -> Option
 
 
 def apply_force(entity: T, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> T:
+    # TODO - there is a bug here... the prev_snaffle, curr_snaffle will not be the correct line!
+
     # Update the speed vector
     position = entity.position
     if thrust > 0.:
