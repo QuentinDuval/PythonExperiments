@@ -101,8 +101,8 @@ MASS_SNAFFLE = 0.5
 MASS_BLUDGER = 9.0
 
 
-GOAL_Y_LO = 2150
-GOAL_Y_HI = 5500
+GOAL_Y_LO = 2150 + 50   # Radius of goal post
+GOAL_Y_HI = 5500 - 50   # Radius of goal post
 GOAL_Y_CENTER = (GOAL_Y_HI + GOAL_Y_LO) // 2
 
 
@@ -338,7 +338,9 @@ def intersect_horizontal_line(pos1: Vector, pos2: Vector, y_line: int) -> Option
 
 
 def apply_force(entity: T, thrust: float, destination: Vector, friction: float, mass: Mass, dt=1.0) -> T:
-    # TODO - there is a bug here... the prev_snaffle, curr_snaffle will not be the correct line!
+    # TODO - check for bugs here - it performs less than when I used to compute just horizontal lines and one rebound
+
+    is_snaffle = isinstance(entity, Snaffle)
 
     # Update the speed vector
     position = entity.position
@@ -350,19 +352,51 @@ def apply_force(entity: T, thrust: float, destination: Vector, friction: float, 
         dv_dt = np.zeros(shape=(2,))
     new_speed = entity.speed + dv_dt * dt
 
-    # Compute the new position (assumption: there can be at most one collision with the walls)
-    new_position = np.round(position + new_speed * dt)
-    for y_line in 0, HEIGHT:
-        intersection = intersect_horizontal_line(position, new_position, y_line)
-        if intersection is not None:
-            x_cross, dt_till_hit = intersection
-            position = vector(x_cross, y_line)
-            new_speed[1] *= -1
-            new_position = np.round(position + new_speed * (dt - dt_till_hit))
+    # Compute the new position
+    while dt > 0.:
+        collided = False
+        new_position = np.round(position + new_speed * dt)
 
-    # TODO - take into account the X borders ? beware for snaffles, they need to cross the goal
+        # Collision with horizontal lines
+        for y_line in 0, HEIGHT:
+            intersection = intersect_horizontal_line(position, new_position, y_line)
+            if intersection is not None:
+                x_cross, dt_till_hit = intersection
+                if dt_till_hit == 0.:   # Already processed
+                    continue
+
+                position = vector(x_cross, y_line)
+                new_speed[1] *= -1
+                dt -= dt_till_hit
+                collided = True
+                break
+        if collided:
+            continue
+
+        # Collision with vertical lines
+        for x_line in 0, WIDTH:
+            intersection = intersect_vertical_line(position, new_position, x_line)
+            if intersection is not None:
+                y_cross, dt_till_hit = intersection
+                if dt_till_hit == 0.:   # Already processed
+                    continue
+
+                if is_snaffle and GOAL_Y_LO <= y_cross <= GOAL_Y_HI:
+                    return entity._replace(position=vector(x_line, GOAL_Y_CENTER), speed=vector(0, 0))
+                position = vector(x_line, y_cross)
+                new_speed[0] *= -1
+                dt -= dt_till_hit
+                collided = True
+                break
+
+        # Otherwise, when no collisions
+        if not collided:
+            position = new_position
+            break
+
+    # Return the position of the new entity
     return entity._replace(
-        position=new_position,
+        position=position,
         speed=np.trunc(new_speed * friction))
 
 
@@ -526,14 +560,13 @@ class GrabClosestAndShootTowardGoal(Agent):
             return False # Do not waste the flipendo
 
         # TODO - check there are no opponent in front
-        # TODO - check for rebound (try the symetric of GOAL CENTER AT TOP AND LOW)
         goal = state.opponent_goal
         for _ in range(DURATION_FLIPPENDO):
             thrust = flippendo_power(wizard, snaffle)
             destination = snaffle.position + (snaffle.position - wizard.position)
             next_wizard = apply_force(wizard, thrust=0, destination=goal.center, friction=FRICTION_WIZARD, mass=MASS_WIZARD)
             next_snaffle = apply_force(snaffle, thrust=thrust, destination=destination, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE, dt=1.0)
-            if intersect_goal(snaffle, next_snaffle, state.opponent_goal):
+            if np.array_equal(next_snaffle.position, state.opponent_goal.center):
                 return True
             snaffle = next_snaffle
             wizard = next_wizard
