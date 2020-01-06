@@ -532,6 +532,9 @@ BASIC AGENTS
 """
 
 
+# TODO - fuzzy logic: consider all actions and give them a weight that can change as the game goes on: select the best one
+
+
 class Agent(abc.ABC):
     def on_turn_start(self, state: GameState):
         pass
