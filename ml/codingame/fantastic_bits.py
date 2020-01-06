@@ -639,7 +639,6 @@ class GrabClosestAndShootTowardGoal(Agent):
         if state.player_status.magic < MANA_COST_FLIPENDO:
             return None
 
-        # TODO - sometimes seems to be shooting my own goal !
         # TODO - try to move in a position to shoot if you are in the right half of the terrain
 
         for snaffle in free_snaffles:
@@ -657,7 +656,8 @@ class GrabClosestAndShootTowardGoal(Agent):
             return False
 
         # TODO - check there are no opponent in front
-        future_wizard_target = min(state.snaffles, key=lambda s: distance2(s.position, wizard.position)) # Should move too
+        # TODO - this logic is rather imprecise, and I get some misses when playing with rebounds
+        future_wizard_target = min(state.snaffles, key=lambda s: distance2(s.position, wizard.position))
         for _ in range(DURATION_FLIPPENDO):
             thrust = flippendo_power(wizard, snaffle)
             destination = snaffle.position + (snaffle.position - wizard.position)
@@ -713,7 +713,7 @@ class GrabClosestAndShootTowardGoal(Agent):
 
     def _shoot_toward_goal(self, state: GameState, wizard: Wizard):
         # Select the point the closest of the goal to shoot for
-        # TODO - avoid the bludgers and the opponents (just compute the distance to the normal? plus check if distance higher than segment distance)
+        # TODO - avoid the bludgers and the opponents
         goal = state.opponent_goal
         target = min((goal.center, goal.top, goal.bottom), key=lambda p: distance2(p, wizard.position))
         return Move.throw_ball(direction=target - wizard.speed)
@@ -732,6 +732,8 @@ class GrabClosestAndShootTowardGoal(Agent):
         '''
 
         def eval_function(pos: Vector, next_pos: Vector):
+            # TODO - just check if something in between - of if it come closer to an opponent wizard?
+            # TODO - check the bludgers
             shortest_dist = float('inf')
             for w in state.opponent_wizards:
                 shortest_dist = min(shortest_dist, distance2(w.position, next_pos), distance2(w.position + w.speed, next_pos))
