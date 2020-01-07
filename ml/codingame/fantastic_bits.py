@@ -301,7 +301,7 @@ class Throw(NamedTuple):
 
     def __repr__(self):
         x, y = self.direction
-        return "THROW " + str(x) + " " + str(y) + " " + str(self.power)
+        return "THROW " + str(int(x)) + " " + str(int(y)) + " " + str(self.power)
 
 
 class Move(NamedTuple):
@@ -314,7 +314,7 @@ class Move(NamedTuple):
 
     def __repr__(self):
         x, y = self.direction
-        return "MOVE " + str(x) + " " + str(y) + " " + str(self.thrust)
+        return "MOVE " + str(int(x)) + " " + str(int(y)) + " " + str(self.thrust)
 
 
 class Spell(NamedTuple):
@@ -644,17 +644,21 @@ class RuleBasedAgent(Agent):
                 if actions[i] is not None:
                     free_snaffles.remove(find_by_id(state.snaffles, actions[i].target_id))
 
+        # Look for opportunities to steel a ball from the opponent
+        # TODO
+        # TODO - try to see if the opponent as an opportunity to use flipendo and block that
+
         # Assign snaffles to remaining wizards with no actions
         free_wizards = [wizard for i, wizard in enumerate(state.player_wizards) if actions[i] is None]
+        defensive_mode = 1. if state.player_status.score < state.opponent_status.score else -1
         assignments = assign_snaffles(state, free_wizards, free_snaffles,
-                                      defensive_factor=0.1,
-                                      offensive_factor=0.0)
-        # TODO - vary the defensive factor based on the progression of the game (keep the number of balls at beginning)
+                                      defensive_factor=0.1 * max(defensive_mode, 0),     # TODO - calibrate (or remove)
+                                      offensive_factor=0.1 * max(-defensive_mode, 0))    # TODO - calibrate (or remove)
 
         # Try to catch the snaffle that is assigned to you
         for i, wizard in enumerate(state.player_wizards):
             if actions[i] is None:
-                actions[i] = self._capture_snaffle(state, wizard, assignments)
+                actions[i] = self._intercept_snaffle(state, wizard, assignments)
         return actions
 
     def _try_petrificus(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Optional[Action]:
@@ -710,8 +714,7 @@ class RuleBasedAgent(Agent):
             future_wizard_target = move_snaffle(future_wizard_target, thrust=0, destination=future_wizard_target.position)
         return False
 
-    def _capture_snaffle(self, state: GameState, wizard: Wizard, assignments: Dict[EntityId, Snaffle]) -> Union[Move, Spell]:
-        # TODO - when an opponent wizard comes close to a ball, it will throw it => better anticipate trajectories
+    def _intercept_snaffle(self, state: GameState, wizard: Wizard, assignments: Dict[EntityId, Snaffle]) -> Union[Move, Spell]:
         snaffle = assignments.get(wizard.id, None)
         if snaffle is not None:
             if self._can_accio(state, wizard, snaffle):
@@ -721,15 +724,25 @@ class RuleBasedAgent(Agent):
             snaffle = self._follow_closest_opponent_wizard_snaffle(state, wizard)
             if snaffle is None:
                 snaffle = state.snaffles[0]
-        return Move.toward(direction=snaffle.position + snaffle.speed)
+
+        # If an opponent is close to the snaffle, it will probably throw it toward the goal => anticipate this
+        closest_opponent = min(state.opponent_wizards, key=lambda w: distance2(w.position, snaffle.position))
+        if distance2(closest_opponent.position, snaffle.position) < 1000 ** 2:
+            snaffle = move_snaffle(snaffle, thrust=MAX_THRUST, destination=state.player_goal.center)
+            return Move.toward(direction=snaffle.position + snaffle.speed)
+
+        # Otherwise, just try to intercept the snaffle
+        return Move.toward(direction=snaffle.position + 2 * snaffle.speed)
 
     def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
-        # TODO - accio when my wizard is too close to goal => own goal for sure (cause it circles around wizard)
-        # TODO - do a bit of simulation to see if it is dangerous for my own goal / advantagous
+        closest_opponent = min(state.opponent_wizards, key=lambda w: distance2(w.position, snaffle.position))
+        closest_opponent_distance = distance2(closest_opponent.position, snaffle.position)
+
         possible = state.player_status.magic >= MANA_COST_ACCIO
         possible &= snaffle.id not in self.on_accio
         possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
-        possible &= distance2(wizard.position, snaffle.position) >= 3000 ** 2 or distance2(snaffle.position, state.player_goal.center) < 3000 ** 2 # TODO - should be ball going to goal...
+        possible &= distance2(wizard.position, snaffle.position) <= 10_000 ** 2     # Too far away to have much effect
+        possible &= distance2(wizard.position, snaffle.position) >= max(1500 ** 2, min(3000 ** 2, closest_opponent_distance))
         return possible
 
     def _follow_closest_opponent_wizard_snaffle(self, state: GameState, wizard: Wizard):
@@ -772,6 +785,8 @@ class RuleBasedAgent(Agent):
                     if abs(snaffle.position[1] - wizard.position[1]) < threshold / 3:
                         return Move(is_throw=True, direction=snaffle.position - wizard.speed, power=MAX_THROW_POWER)
         '''
+
+        # TODO - it would work better if you guessed the intention of the opponent (go for closest ball)
 
         def eval_function(pos: Vector, next_pos: Vector):
             # TODO - just check if something in between - of if it come closer to an opponent wizard?
