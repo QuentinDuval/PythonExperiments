@@ -467,6 +467,14 @@ def apply_force(entity: T, thrust: float, destination: Vector, friction: float, 
         speed=np.trunc(new_speed * friction))
 
 
+def move_snaffle(snaffle: Snaffle, thrust: float = 0., destination: Vector = None, dt=1.0) -> Snaffle:
+    return apply_force(snaffle, thrust, destination, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE, dt=dt)
+
+
+def move_wizard(wizard: Wizard, thrust: float = 0., destination: Vector = None, dt=1.0) -> Wizard:
+    return apply_force(wizard, thrust, destination, friction=FRICTION_WIZARD, mass=MASS_WIZARD, dt=dt)
+
+
 def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal) -> bool:
     intersection = intersect_vertical_line(snaffle1.position, snaffle2.position, goal.x)
     if intersection is None:
@@ -659,12 +667,12 @@ class RuleBasedAgent(Agent):
         for snaffle in free_snaffles:
             closest_opponent_wizard = min(state.opponent_wizards, key=lambda w: distance2(w.position, snaffle.position))
             if distance2(closest_opponent_wizard.position, snaffle.position) >= 2000 ** 2:
-                next_snaffle = apply_force(snaffle, thrust=0., destination=snaffle.position, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+                next_snaffle = move_snaffle(snaffle)
                 if intersect_goal(snaffle, next_snaffle, state.player_goal):
                     continue    # Too late, the spell will take effect in next turn
 
                 snaffle = next_snaffle
-                next_snaffle = apply_force(snaffle, thrust=0., destination=snaffle.position, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+                next_snaffle = move_snaffle(snaffle)
                 if intersect_goal(snaffle, next_snaffle, state.player_goal):
                     return Spell.throw_petrificus(state, target_id=snaffle.id)
         return None
@@ -695,14 +703,13 @@ class RuleBasedAgent(Agent):
         for _ in range(DURATION_FLIPPENDO):
             thrust = flippendo_power(wizard, snaffle)
             destination = snaffle.position + (snaffle.position - wizard.position)
-            next_wizard = apply_force(wizard, thrust=MAX_THRUST, destination=future_wizard_target.position, friction=FRICTION_WIZARD, mass=MASS_WIZARD)
-            next_snaffle = apply_force(snaffle, thrust=thrust, destination=destination, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+            next_wizard = move_wizard(wizard, thrust=MAX_THRUST, destination=future_wizard_target.position)
+            next_snaffle = move_snaffle(snaffle, thrust=thrust, destination=destination)
             if np.array_equal(next_snaffle.position, state.opponent_goal.center):
                 return True
             snaffle = next_snaffle
             wizard = next_wizard
-            future_wizard_target = apply_force(future_wizard_target, thrust=0, destination=future_wizard_target.position,
-                                               friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+            future_wizard_target = move_snaffle(future_wizard_target, thrust=0, destination=future_wizard_target.position)
         return False
 
     def _capture_snaffle(self, state: GameState, wizard: Wizard, assignments: Dict[EntityId, Snaffle]) -> Union[Move, Spell]:
@@ -780,7 +787,7 @@ class RuleBasedAgent(Agent):
         for direction in directions:
             direction = direction + wizard.position - wizard.speed
             snaffle = Snaffle(id=0, position=wizard.position, speed=wizard.speed)
-            next_snaffle = apply_force(snaffle, thrust=MAX_THROW_POWER, destination=direction, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+            next_snaffle = move_snaffle(snaffle, thrust=MAX_THROW_POWER, destination=direction)
             metric = eval_function(snaffle.position, next_snaffle.position)
             debug("direction:", direction, "=>", metric)
             if metric > max_metric:
