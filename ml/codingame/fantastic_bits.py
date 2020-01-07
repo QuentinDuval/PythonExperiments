@@ -592,11 +592,9 @@ class RuleBasedAgent(Agent):
     direction suddenly and remains stuck, with two wizard each alternating snaffles
 
     TODO (IDEAS):
-        - TRY SEVERAL APPROACHES, then take the one with the best SCORE
+        - TRY to deduce that will your ADVERSARY DO (counter flipendo/accio and such are possible)
         - specialize the wizard: one to defend, one to attack (based on where is center of mass of balls, like soccer... move front):
             - the defender should try to intercept opponent (move between opponent and goal)
-            - the defender should put the balls on the side (where opponent are not, or toward other wizard)
-            - stick to one target for the attacking player?
         - use the detection of collisions to do something different (change target?)
         - simulate to see if it a snaffle will end up in goal, and switch target if it will
     """
