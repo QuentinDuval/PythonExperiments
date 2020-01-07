@@ -632,7 +632,11 @@ class RuleBasedAgent(Agent):
                     free_snaffles.remove(find_by_id(state.snaffles, actions[i].target_id))
 
         # Look for opportunities to prevent a goal
-        # TODO - petrificus
+        for i, wizard in enumerate(state.player_wizards):
+            if actions[i] is None:
+                actions[i] = self._try_petrificus(state, wizard, free_snaffles)
+                if actions[i] is not None:
+                    free_snaffles.remove(find_by_id(state.snaffles, actions[i].target_id))
 
         # Assign snaffles to remaining wizards with no actions
         free_wizards = [wizard for i, wizard in enumerate(state.player_wizards) if actions[i] is None]
@@ -646,6 +650,24 @@ class RuleBasedAgent(Agent):
             if actions[i] is None:
                 actions[i] = self._capture_snaffle(state, wizard, assignments)
         return actions
+
+    def _try_petrificus(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Optional[Action]:
+        # TODO - take a wizard that has not something else to do...
+        if state.player_status.magic < MANA_COST_PETRIFICUS:
+            return None
+
+        for snaffle in free_snaffles:
+            closest_opponent_wizard = min(state.opponent_wizards, key=lambda w: distance2(w.position, snaffle.position))
+            if distance2(closest_opponent_wizard.position, snaffle.position) >= 2000 ** 2:
+                next_snaffle = apply_force(snaffle, thrust=0., destination=snaffle.position, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+                if intersect_goal(snaffle, next_snaffle, state.player_goal):
+                    continue    # Too late, the spell will take effect in next turn
+
+                snaffle = next_snaffle
+                next_snaffle = apply_force(snaffle, thrust=0., destination=snaffle.position, friction=FRICTION_SNAFFLE, mass=MASS_SNAFFLE)
+                if intersect_goal(snaffle, next_snaffle, state.player_goal):
+                    return Spell.throw_petrificus(state, target_id=snaffle.id)
+        return None
 
     def _try_flipendo(self, state: GameState, wizard: Wizard, free_snaffles: List[Snaffle]) -> Optional[Action]:
         if state.player_status.magic < MANA_COST_FLIPENDO:
