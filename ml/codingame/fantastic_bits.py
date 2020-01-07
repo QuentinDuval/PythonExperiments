@@ -777,11 +777,13 @@ class RuleBasedAgent(Agent):
 
         def eval_function(pos: Vector, next_pos: Vector):
             # TODO - just check if something in between - of if it come closer to an opponent wizard?
-            # TODO - check the bludgers
-            shortest_dist = float('inf')
+            wizard_shortest_dist = float('inf')
+            bludger_shortest_dist = float('inf')
             for w in state.opponent_wizards:
-                shortest_dist = min(shortest_dist, distance2(w.position, next_pos), distance2(w.position + w.speed, next_pos))
-            return shortest_dist - distance2(next_pos, state.opponent_goal.center)
+                wizard_shortest_dist = min(wizard_shortest_dist, distance2(w.position, next_pos), distance2(w.position + w.speed, next_pos))
+            for b in state.bludgers:
+                bludger_shortest_dist = min(bludger_shortest_dist, distance2(b.position, next_pos), distance2(b.position + w.speed, next_pos))
+            return wizard_shortest_dist + 0.5 * bludger_shortest_dist - 1.5 * distance2(next_pos, state.opponent_goal.center)
 
         max_metric = float('-inf')
         best_direction = None
