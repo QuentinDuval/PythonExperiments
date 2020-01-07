@@ -713,6 +713,7 @@ class RuleBasedAgent(Agent):
         return False
 
     def _capture_snaffle(self, state: GameState, wizard: Wizard, assignments: Dict[EntityId, Snaffle]) -> Union[Move, Spell]:
+        # TODO - when an opponent wizard comes close to a ball, it will throw it => better anticipate trajectories
         snaffle = assignments.get(wizard.id, None)
         if snaffle is not None:
             if self._can_accio(state, wizard, snaffle):
@@ -725,6 +726,8 @@ class RuleBasedAgent(Agent):
         return Move.toward(direction=snaffle.position + snaffle.speed)
 
     def _can_accio(self, state: GameState, wizard: Wizard, snaffle: Snaffle) -> bool:
+        # TODO - accio when my wizard is too close to goal => own goal for sure (cause it circles around wizard)
+        # TODO - do a bit of simulation to see if it is dangerous for my own goal / advantagous
         possible = state.player_status.magic >= MANA_COST_ACCIO
         possible &= snaffle.id not in self.on_accio
         possible &= distance2(snaffle.position, state.opponent_goal.center) > distance2(wizard.position, state.opponent_goal.center)
