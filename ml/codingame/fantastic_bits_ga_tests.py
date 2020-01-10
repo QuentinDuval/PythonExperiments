@@ -3,9 +3,9 @@ from ml.codingame.fantastic_bits_ga import *
 
 def test_collision_detection():
     entities = Entities(
-        positions=np.array([[0., 0.], [3., 1.]]),
-        speeds=np.array([[6., 0.], [0., 0.]]),
-        radius=np.array([1., 1.]),
+        positions=np.array([[0., 0.], [300., 100.]]),
+        speeds=np.array([[600., 0.], [0., 0.]]),
+        radius=np.array([100., 100.]),
         masses=np.array([1., 1.]),
         frictions=np.array([0.75, 0.75])
     )

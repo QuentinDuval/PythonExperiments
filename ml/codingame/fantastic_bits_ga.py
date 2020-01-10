@@ -116,6 +116,9 @@ class Entities:
             masses=self.masses,
             frictions=self.frictions)
 
+    def __repr__(self):
+        return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
+
 
 def normal_of(p1: Vector, p2: Vector) -> Vector:
     n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
@@ -189,8 +192,8 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     f12 = dp12 * product / (d12_squared * mcoeff)
 
     # Apply the force (first time)
-    entities.speeds[i1] -= f12 / m1
-    entities.speeds[i2] += f12 / m2
+    entities.speeds[i1] += f12 / m1
+    entities.speeds[i2] -= f12 / m2
 
     # Minimum impulsion
     norm_f = norm(f12)
@@ -198,8 +201,8 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
         f12 *= min_impulsion / norm_f
 
     # Apply the force (second time)
-    entities.speeds[i1] -= f12 / m1
-    entities.speeds[i2] += f12 / m2
+    entities.speeds[i1] += f12 / m1
+    entities.speeds[i2] -= f12 / m2
 
 
 def simulate_collisions(entities: Entities, dt: float = 1.0):
