@@ -252,6 +252,7 @@ class GameEngine:
             current_lap=new_current_lap,
             boost_available=vehicle.boost_available and thrust <= 100)
 
+    # TODO - this might miss the checkpoint if the speed of the vehicle is too high
     def _new_next_checkpoint(self, vehicle: Vehicle, new_position: Vector):
         new_current_lap = vehicle.current_lap
         new_next_checkpoint_id = vehicle.next_checkpoint_id
