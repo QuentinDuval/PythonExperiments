@@ -1,21 +1,25 @@
+from dataclasses import *
 import math
 import sys
 import itertools
-from typing import List, NamedTuple, Tuple
+from typing import *
 import time
 
 import numpy as np
 
 
-# import concurrent.futures
-
-
 """
-Constants
+------------------------------------------------------------------------------------------------------------------------
+GAME CONSTANTS
+------------------------------------------------------------------------------------------------------------------------
 """
+
 
 WIDTH = 16000
 HEIGHT = 9000
+
+TOP_LEFT = (0, 0)
+BOT_RIGHT = (WIDTH - 1, HEIGHT - 1)
 
 CHECKPOINT_RADIUS = 600
 FORCE_FIELD_RADIUS = 400
@@ -29,12 +33,11 @@ BOOST_STRENGTH = 650
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
 
-TOP_LEFT = (0, 0)
-BOT_RIGHT = (WIDTH - 1, HEIGHT - 1)
-
 
 """
-Utils
+------------------------------------------------------------------------------------------------------------------------
+UTILS
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -58,7 +61,9 @@ class Chronometer:
 
 
 """
-Vector arithmetic
+------------------------------------------------------------------------------------------------------------------------
+GEOMETRY & VECTOR CALCULUS
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -101,13 +106,23 @@ def mod_angle(angle: Angle) -> Angle:
 
 
 """
-Data structures
+------------------------------------------------------------------------------------------------------------------------
+DATA STRUCTURES
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
 Checkpoint = np.ndarray
 CheckpointId = int
 Thrust = int
+
+
+def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
+    if diff_angle > 0:
+        diff_angle = min(MAX_TURN_RAD, diff_angle)
+    elif diff_angle < 0:
+        diff_angle = max(-MAX_TURN_RAD, diff_angle)
+    return mod_angle(prev_angle + diff_angle)
 
 
 class Vehicle(NamedTuple):
@@ -119,11 +134,7 @@ class Vehicle(NamedTuple):
     boost_available: bool
 
     def next_direction(self, diff_angle: Angle) -> Angle:
-        if diff_angle > 0:
-            diff_angle = min(MAX_TURN_RAD, diff_angle)
-        elif diff_angle < 0:
-            diff_angle = max(-MAX_TURN_RAD, diff_angle)
-        return mod_angle(self.direction + diff_angle)
+        return turn_angle(self.direction, diff_angle)
 
     def target_point(self, diff_angle: Angle) -> Vector:
         target_distance = 5000
@@ -133,7 +144,9 @@ class Vehicle(NamedTuple):
 
 
 """
-Action performed by the POD
+------------------------------------------------------------------------------------------------------------------------
+ACTIONS
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -173,7 +186,9 @@ class Action(NamedTuple):
 
 
 """
-Track
+------------------------------------------------------------------------------------------------------------------------
+TRACK
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -187,24 +202,20 @@ class Track:
     def __len__(self):
         return len(self.checkpoints)
 
-    def progress_index(self, vehicle: Vehicle) -> int:
-        return vehicle.next_checkpoint_id + vehicle.current_lap * len(self.checkpoints)
+    def progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
+        return next_checkpoint_id + current_lap * len(self.checkpoints)
 
-    def remaining_distance2(self, vehicle: Vehicle) -> float:
-        checkpoint_id = self.progress_index(vehicle)
-        return distance2(vehicle.position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
+    def remaining_distance2(self, current_lap: int, next_checkpoint_id: int, position: Vector) -> float:
+        checkpoint_id = self.progress_index(current_lap, next_checkpoint_id)
+        return distance2(position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
 
-    def next_checkpoint(self, vehicle: Vehicle) -> Checkpoint:
-        checkpoint_id = self.progress_index(vehicle)
+    def next_checkpoint(self, current_lap: int, next_checkpoint_id: int) -> Checkpoint:
+        checkpoint_id = self.progress_index(current_lap, next_checkpoint_id)
         return self.total_checkpoints[checkpoint_id]
 
     def angle_next_checkpoint(self, vehicle: Vehicle) -> float:
         to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
         return get_angle(to_next_checkpoint)
-
-    def is_runner(self, vehicles: List[Vehicle], vehicle_id: int) -> bool:
-        other_id = 1 - vehicle_id
-        return self.remaining_distance2(vehicles[vehicle_id]) <= self.remaining_distance2(vehicles[other_id])
 
     def _pre_compute_distances_to_end(self):
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
@@ -214,89 +225,190 @@ class Track:
 
 
 """
-Game mechanics (movement and collisions)
+------------------------------------------------------------------------------------------------------------------------
+GAME MECHANICS (Movement & Collisions)
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
-class Collision(NamedTuple):
-    v1: int
-    v2: int
-    time: float
+@dataclass(frozen=False)
+class Entities:
+    positions: np.ndarray
+    speeds: np.ndarray
+    directions: np.ndarray
+    radius: np.ndarray
+    masses: np.ndarray
+    next_checkpoint_id: np.ndarray
+    current_lap: np.ndarray
 
-    def apply(self, vehicles: List[Vehicle]):
-        pass
+    def __len__(self):
+        return self.positions.shape[0]
+
+    def __eq__(self, other):
+        return np.array_equal(self.positions, other.positions) \
+            and np.array_equal(self.speeds, other.speeds) \
+            and np.array_equal(self.directions, other.directions) \
+            and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
+            and np.array_equal(self.current_lap, other.current_lap)
+
+    def clone(self):
+        return Entities(
+            positions=self.positions.copy(),
+            speeds=self.speeds.copy(),
+            directions=self.directions.copy(),
+            radius=self.radius,
+            masses=self.masses.copy(),
+            next_checkpoint_id=self.next_checkpoint_id.copy(),
+            current_lap=self.current_lap.copy())
+
+    def __repr__(self):
+        return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
 
 
-class GameEngine:
-    def __init__(self, track: Track):
-        self.track = track
+def normal_of(p1: Vector, p2: Vector) -> Vector:
+    n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
+    return n / norm(n)
 
-    def play(self, vehicles: List[Vehicle], actions: List[Action]):
-        self._apply_actions(vehicles, actions)
-        spent = 0.0
-        while spent < 1.0:
-            collision = self._first_collision(vehicles, dt=1.0-spent)
-            if not collision or collision.time > 1.0:
-                self._move(vehicles, dt=1.0-spent)
-            else:
-                collision.apply(vehicles)
-                self._move(vehicles, dt=collision.time)
-                spent += collision.time
-        self._frictions(vehicles)
-        return vehicles
 
-    def _apply_actions(self, vehicles: List[Vehicle], actions: List[Action]):
-        for i in range(len(vehicles)):
-            vehicles[i] = self._apply_action(vehicles[i], actions[i])
+def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
 
-    def _apply_action(self, vehicle: Vehicle, action: Action):
-        new_direction = vehicle.next_direction(action.angle)
-        dv_dt = np.array([action.thrust * math.cos(new_direction), action.thrust * math.sin(new_direction)])
-        new_speed = vehicle.speed + dv_dt
-        return vehicle._replace(
-            speed=new_speed,
-            direction=new_direction,
-            boost_available=vehicle.boost_available and action.thrust <= 100)
+    # Change referential to i1 => subtract speed of i1 to i2
+    # The goal will be to check if p1 intersects p2-p3
+    p1 = entities.positions[i1]
+    p2 = entities.positions[i2]
+    speed = entities.speeds[i2] - entities.speeds[i1]
+    p3 = p2 + speed * dt
 
-    def _frictions(self, vehicles: List[Vehicle]):
-        for v in vehicles:
-            for i in range(2):
-                v.position[i] = np.round(v.position[i])
-                v.speed[i] = np.trunc(v.speed[i] * 0.85)
+    # Quick collision check: check the distances
+    d13 = distance2(p3, p1)
+    d23 = distance2(p3, p2)
+    d12 = distance2(p1, p2)
+    if max(d12, d13) > d23:
+        return float('inf')
 
-    def _first_collision(self, vehicles: List[Vehicle], dt: float) -> Collision:
-        return None
+    # Check the distance of p1 to p2-p3
+    n = normal_of(p2, p3)
+    dist_to_segment = abs(np.dot(n, p1 - p2))
+    sum_radius = entities.radius[i1] + entities.radius[i2]
+    if dist_to_segment > sum_radius:
+        return float('inf')
 
-    def _move(self, vehicles: List[Vehicle], dt: float):
-        for i in range(len(vehicles)):
-            new_position = vehicles[i].position + vehicles[i].speed * dt
-            vehicles[i] = self._move_to(vehicles[i], new_position)
+    # Find the point of intersection (a bit of trigonometry and pythagoras involved)
+    distance_to_normal = np.dot(p1 - p2, p3 - p2) / math.sqrt(d23)
+    distance_to_intersection: float = distance_to_normal - math.sqrt(sum_radius ** 2 - dist_to_segment ** 2)
+    return distance_to_intersection / norm(speed)
 
-    def _move_to(self, vehicle: Vehicle, new_position: Vector):
-        new_current_lap = vehicle.current_lap
-        new_next_checkpoint_id = vehicle.next_checkpoint_id
-        next_checkpoint = self.track.next_checkpoint(vehicle)
-        distance_to_checkpoint = distance2(new_position, next_checkpoint)
+
+def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[int, int, float]:
+    low_t = float('inf')
+    best_i = 0
+    best_j = 0
+    n = len(entities)
+    for i in range(n-1):
+        for j in range(i+1, n):
+            if (i, j) not in last_collisions:
+                t = find_collision(entities, i, j, dt)
+                if t < low_t:
+                    low_t = t
+                    best_i = i
+                    best_j = j
+    return best_i, best_j, low_t
+
+
+def move_time_forward(entities: Entities, dt: float = 1.0):
+    entities.positions += entities.speeds * dt
+
+
+def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
+
+    # Getting the masses
+    m1 = entities.masses[i1]
+    m2 = entities.masses[i2]
+    mcoeff = (m1 + m2) / (m1 * m2)
+
+    # Difference of position and speeds
+    dp12 = entities.positions[i2] - entities.positions[i1]
+    dv12 = entities.speeds[i2] - entities.speeds[i1]
+
+    # Computing the force
+    product = np.dot(dp12, dv12)
+    d12_squared = np.dot(dp12, dp12)
+    f12 = dp12 * product / (d12_squared * mcoeff)
+
+    # Apply the force (first time)
+    entities.speeds[i1] += f12 / m1
+    entities.speeds[i2] -= f12 / m2
+
+    # Minimum impulsion
+    norm_f = norm(f12)
+    if norm_f < min_impulsion:
+        f12 *= min_impulsion / norm_f
+
+    # Apply the force (second time)
+    entities.speeds[i1] += f12 / m1
+    entities.speeds[i2] -= f12 / m2
+
+
+def simulate_round(entities: Entities, dt: float = 1.0):
+    # Run the turn to completion taking into account collisions
+    last_collisions = set()
+    while dt > 0.:
+        i, j, t = find_first_collision(entities, last_collisions, dt)
+        if t > dt:
+            move_time_forward(entities, dt)
+            dt = 0.
+        else:
+            if t > 0.:
+                last_collisions.clear()
+            move_time_forward(entities, t)
+            bounce(entities, i, j, min_impulsion=120.)
+            last_collisions.add((i, j))
+            dt -= t
+
+    # Rounding of the positions & speeds
+    np.round(entities.positions, out=entities.positions)
+    np.trunc(entities.speeds * 0.85, out=entities.speeds)
+
+
+def apply_actions(entities: Entities, actions: List[Tuple[Thrust, Angle]]):
+    # Assume my vehicles are the first 2 entities
+    for i, (thrust, diff_angle) in enumerate(actions):
+        entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
+        dv_dt = np.array([thrust * math.cos(entities.directions[i]),
+                          thrust * math.sin(entities.directions[i])])
+        entities.speeds[i] += dv_dt * 1.0
+
+
+def new_next_checkpoint(track: Track, entities: Entities):
+    for i in range(4):
+        new_current_lap = entities.current_lap[i]
+        new_next_checkpoint_id = entities.next_checkpoint_id[i]
+        next_total_checkpoint_id = new_next_checkpoint_id + new_current_lap * len(track.checkpoints)
+        next_checkpoint = track.total_checkpoints[next_total_checkpoint_id]
+        distance_to_checkpoint = distance2(entities.positions[i], next_checkpoint)
         if distance_to_checkpoint < CHECKPOINT_RADIUS ** 2:
             new_next_checkpoint_id += 1
-            if new_next_checkpoint_id >= len(self.track):
-                new_next_checkpoint_id = 0
-                new_current_lap += 1
-        return vehicle._replace(
-            position=new_position,
-            next_checkpoint_id=new_next_checkpoint_id,
-            current_lap=new_current_lap)
+            if new_next_checkpoint_id >= len(track.checkpoints):
+                entities.next_checkpoint_id[i] = 0
+                entities.current_lap[i] += 1
+
+
+def simulate_turns(track: Track, entities: Entities, actions_by_turn: List[List[Tuple[Thrust, Angle]]]):
+    for actions in actions_by_turn:
+        apply_actions(entities, actions)
+        simulate_round(entities, dt=1.0)
+        new_next_checkpoint(track, entities)    # TODO - ideally, should be included in the collisions
 
 
 """
-Game state
+------------------------------------------------------------------------------------------------------------------------
+GAME STATE
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
 class PlayerState:
-    # TODO - you should track also the timer to next checkpoint... for you and the opponent
-
-    def __init__(self, nb_checkpoints: int):
+    def __init__(self):
         self.prev_checkpoints = np.array([1, 1])
         self.laps = np.array([0, 0])
         self.boost_available = np.array([True, True])
@@ -323,14 +435,13 @@ class PlayerState:
     def _complete_vehicle(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
         return vehicle._replace(
             current_lap=self.laps[vehicle_id],
-            boost_available=self.boost_available[vehicle_id]
-        )
+            boost_available=self.boost_available[vehicle_id])
 
 
 class GameState:
-    def __init__(self, nb_checkpoints: int):
-        self.player = PlayerState(nb_checkpoints)
-        self.opponent = PlayerState(nb_checkpoints)
+    def __init__(self):
+        self.player = PlayerState()
+        self.opponent = PlayerState()
 
     def track_lap(self, player: List[Vehicle], opponent: List[Vehicle]):
         self.player.track_lap(player)
@@ -338,16 +449,17 @@ class GameState:
 
 
 """
+------------------------------------------------------------------------------------------------------------------------
 Agent that just tries to minimize the distance, not taking into account collisions
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
-class ShortestPathAgent:
+class GeneticAgent:
     def __init__(self, track: Track):
         self.track = track
-        self.game_state = GameState(nb_checkpoints=len(self.track))
-        self.game_engine = GameEngine(track=track)
-        self.predictions: List[Vehicle] = [None, None]
+        self.game_state = GameState()
+        self.predictions: Entities = None
         self.moves = np.array([
             (BOOST_STRENGTH, 0),
             (THRUST_STRENGTH, 0),
@@ -361,7 +473,9 @@ class ShortestPathAgent:
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.chronometer.start()
         self._complete_vehicles(player, opponent)
-        return self._find_best_actions(player, opponent)
+        actions = self._find_best_actions(player, opponent)
+        debug("Time spent:", self.chronometer.spent())
+        return actions
 
     def _complete_vehicles(self, player: List[Vehicle], opponent: List[Vehicle]):
         self.game_state.track_lap(player, opponent)
@@ -369,26 +483,67 @@ class ShortestPathAgent:
         self.game_state.opponent.complete_vehicles(opponent)
 
     def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
-        # TODO - genetic evolution first on the adversary (and player does not move)
-        # TODO - genetic evolution then on the player (and the adversary does not move)
-        pass
+        best_eval = float('inf')
+        best_actions = None
+        best_prediction = None
 
-    def _report_bad_prediction(self, vehicle: Vehicle, vehicle_id: int):
-        prediction = self.predictions[vehicle_id]
-        if prediction is None:
+        entities = Entities(
+            positions=np.stack([v.position for v in itertools.chain(player, opponent)]),
+            speeds=np.stack([v.speed for v in itertools.chain(player, opponent)]),
+            directions=np.array([v.direction for v in itertools.chain(player, opponent)]),
+            radius=np.array([FORCE_FIELD_RADIUS] * 4),
+            masses=np.array([1.0] * 4),
+            next_checkpoint_id=np.array([v.next_checkpoint_id for v in itertools.chain(player, opponent)]),
+            current_lap=np.array([v.current_lap for v in itertools.chain(player, opponent)])
+        )
+        self._report_bad_prediction(entities)
+
+        # TODO - replace by a loop with GA selection (Randomized Beam Search)
+        for action1 in self.moves[1:]:
+            for action2 in self.moves[1:]:
+                actions = [action1, action2]
+                simulated = entities.clone()
+                simulate_turns(self.track, simulated, [actions])
+                evaluation = self._eval(simulated)
+                if evaluation < best_eval:
+                    best_eval = evaluation
+                    best_actions = actions
+                    best_prediction = simulated
+
+        for i, (thrust, angle) in enumerate(best_actions):
+            best_actions[i] = self._select_action(i, player[i], thrust, angle)
+        self.predictions = best_prediction
+        return best_actions
+
+    def _eval(self, entities: Entities) -> float:
+        player_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
+                                                         entities.positions[i]) for i in range(2))
+        opponent_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
+                                                           entities.positions[i]) for i in range(2, 4))
+        return player_dist - opponent_dist
+
+
+    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
+        action = Action(angle=best_angle, thrust=best_thrust)
+        if action.is_boost():
+            self.game_state.player.notify_boost_used(vehicle_id)
+        return str(action.to_output(vehicle))
+
+    def _report_bad_prediction(self, entities: Entities):
+        if self.predictions is None:
             return
 
-        isBad = distance(prediction.position, vehicle.position) > 5
-        isBad |= distance(prediction.speed, vehicle.speed) > 5
-        isBad |= abs(mod_angle(prediction.direction) - mod_angle(vehicle.direction)) > 0.1
+        isBad = entities != self.predictions
         if isBad:
             debug("BAD PREDICTION")
-            debug("predicted:", prediction)
-            debug("got:", vehicle)
+            debug("predicted:", self.predictions)
+            debug("got:", entities)
 
 
 """
-Inputs acquisition
+------------------------------------------------------------------------------------------------------------------------
+INPUT ACQUISITION
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -404,8 +559,8 @@ def read_checkpoints() -> List[Checkpoint]:
 def read_vehicle() -> Vehicle:
     x, y, vx, vy, angle, next_check_point_id = [int(j) for j in input().split()]
     return Vehicle(
-        position=np.array([x, y]),
-        speed=np.array([vx, vy]),
+        position=np.array([x, y], dtype=np.float64),
+        speed=np.array([vx, vy], dtype=np.float64),
         direction=angle / 360 * 2 * math.pi,
         next_checkpoint_id=next_check_point_id,
         current_lap=0,
@@ -413,7 +568,9 @@ def read_vehicle() -> Vehicle:
 
 
 """
-Game loop
+------------------------------------------------------------------------------------------------------------------------
+GAME LOOP
+------------------------------------------------------------------------------------------------------------------------
 """
 
 
@@ -429,7 +586,7 @@ def game_loop():
     total_laps = int(input())
     checkpoints = read_checkpoints()
     track = Track(checkpoints, total_laps=total_laps)
-    agent = ShortestPathAgent(track)
+    agent = GeneticAgent(track)
 
     debug("laps", total_laps)
     debug("checkpoints:", checkpoints)
@@ -446,4 +603,5 @@ def game_loop():
             print(action)
 
 
-game_loop()
+if __name__ == '__main__':
+    game_loop()
