@@ -52,7 +52,7 @@ Vector = np.ndarray
 
 
 def vector(x: int, y: int) -> Vector:
-    return np.array([x, y])
+    return np.array([x, y], np.float64)
 
 
 def norm2(v) -> float:
@@ -103,13 +103,22 @@ class Entities:
     speeds: np.ndarray
     radius: np.ndarray
     masses: np.ndarray
+    frictions: np.ndarray
 
     def __len__(self):
         return self.positions.shape[0]
 
+    def clone(self):
+        return Entities(
+            positions=self.positions.copy(),
+            speeds=self.positions.copy(),
+            radius=self.radius,
+            masses=self.masses,
+            frictions=self.frictions)
+
 
 def normal_of(p1: Vector, p2: Vector) -> Vector:
-    n = np.array([p1[1] - p2[1], p2[0] - p1[0]])
+    n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
     return n / norm(n)
 
 
@@ -142,18 +151,20 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     return distance_to_intersection / norm(speed)
 
 
-def find_first_collision(entities: Entities, dt: float = 1.0) -> Tuple[int, int, float]:
+def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[int, int, float]:
     # TODO - take into account the walls ! (return id=-1)
     low_t = float('inf')
     best_i = 0
     best_j = 0
     n = len(entities)
-    for i in range(n):
-        for j in range(i, n):
-            t = find_collision(entities, i, j, dt)
-            if t < low_t:
-                best_i = i
-                best_j = j
+    for i in range(n-1):
+        for j in range(i+1, n):
+            if (i, j) not in last_collisions:
+                t = find_collision(entities, i, j, dt)
+                if t < low_t:
+                    low_t = t
+                    best_i = i
+                    best_j = j
     return best_i, best_j, low_t
 
 
@@ -191,11 +202,22 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     entities.speeds[i2] += f12 / m2
 
 
-def simulate_collisions(entities: Entities, dt: float = 1.0) -> Entities:
+def simulate_collisions(entities: Entities, dt: float = 1.0):
+    # Run the turn to completion taking into account collisions
+    last_collisions = set()
     while dt > 0.:
-        i, j, t = find_first_collision(entities, dt)    # TODO - beware when t is 0
-        move_time_forward(entities, t)
-        bounce(entities, i, j, min_impulsion=100.)      # TODO - min_impulsion is 0. against walls
-        dt -= t
-    return entities
+        i, j, t = find_first_collision(entities, last_collisions, dt)
+        if t > dt:
+            move_time_forward(entities, dt)
+            dt = 0.
+        else:
+            if t > 0.:
+                last_collisions.clear()
+            move_time_forward(entities, t)
+            bounce(entities, i, j, min_impulsion=100.)      # TODO - min_impulsion is 0. against walls
+            last_collisions.add((i, j))
+            dt -= t
 
+    # Rounding of the positions & speeds
+    np.round_(entities.positions)
+    entities.speeds = np.trunc(entities.speeds * entities.frictions)    # TODO - make it in-place
