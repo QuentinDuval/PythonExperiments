@@ -59,6 +59,10 @@ class Chronometer:
         return delay / 1_000_000
 
 
+class OutOfTimeException(Exception):
+    pass
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 GEOMETRY & VECTOR CALCULUS
@@ -271,7 +275,7 @@ GAME STATE
 class PlayerState:
     # TODO - you should track also the timer to next checkpoint... for you and the opponent
 
-    def __init__(self, nb_checkpoints: int):
+    def __init__(self):
         self.prev_checkpoints = np.array([1, 1])
         self.laps = np.array([0, 0])
         self.boost_available = np.array([True, True])
@@ -342,7 +346,9 @@ class ShortestPathAgent:
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.chronometer.start()
         self._complete_vehicles(player, opponent)
-        return self._find_best_actions(player, opponent)
+        actions = self._find_best_actions(player, opponent)
+        debug("Time spent:", self.chronometer.spent())
+        return actions
 
     def _complete_vehicles(self, player: List[Vehicle], opponent: List[Vehicle]):
         self.game_state.track_lap(player, opponent)
@@ -391,6 +397,7 @@ class ShortestPathAgent:
         best_next_vehicle = None
         for thrust, angle in self._possible_moves(vehicle):
             if self.chronometer.spent() > 0.9 * RESPONSE_TIME:
+                # It is okay to break and not drop the computation, because most likely options are first
                 debug("TIMEOUT: Skipping action", thrust, "with angle", angle)
                 break
 
