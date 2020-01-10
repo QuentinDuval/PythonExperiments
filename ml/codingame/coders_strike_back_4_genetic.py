@@ -522,7 +522,6 @@ class GeneticAgent:
                                                            entities.positions[i]) for i in range(2, 4))
         return player_dist - opponent_dist
 
-
     def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
         action = Action(angle=best_angle, thrust=best_thrust)
         if action.is_boost():
@@ -556,6 +555,7 @@ def read_checkpoints() -> List[Checkpoint]:
     return [read_checkpoint() for _ in range(checkpoint_count)]
 
 
+# TODO - completely rework this: you want the entities from the start
 def read_vehicle() -> Vehicle:
     x, y, vx, vy, angle, next_check_point_id = [int(j) for j in input().split()]
     return Vehicle(
