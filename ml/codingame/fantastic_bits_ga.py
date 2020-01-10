@@ -176,6 +176,8 @@ def move_time_forward(entities: Entities, dt: float = 1.0):
 
 
 def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
+    # TODO - min_impulsion is 0. against walls (say that id is -1)
+    # TODO - capture of snaffle by opposite wizard
 
     # Getting the masses
     m1 = entities.masses[i1]
@@ -217,7 +219,7 @@ def simulate_collisions(entities: Entities, dt: float = 1.0):
             if t > 0.:
                 last_collisions.clear()
             move_time_forward(entities, t)
-            bounce(entities, i, j, min_impulsion=100.)      # TODO - min_impulsion is 0. against walls
+            bounce(entities, i, j, min_impulsion=100.)
             last_collisions.add((i, j))
             dt -= t
 
