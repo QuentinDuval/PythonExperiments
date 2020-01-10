@@ -224,5 +224,5 @@ def simulate_collisions(entities: Entities, dt: float = 1.0):
             dt -= t
 
     # Rounding of the positions & speeds
-    np.round_(entities.positions)
-    entities.speeds = np.trunc(entities.speeds * entities.frictions)    # TODO - make it in-place
+    np.round(entities.positions, out=entities.positions)
+    np.trunc(entities.speeds * entities.frictions, out=entities.speeds)
