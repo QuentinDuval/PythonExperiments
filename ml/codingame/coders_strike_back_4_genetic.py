@@ -386,6 +386,7 @@ def simulate_round(entities: Entities, dt: float = 1.0):
             move_time_forward(entities, dt)
             dt = 0.
         else:
+            debug("Collision:", i, j, "at time", t)
             if t > 0.:
                 last_collisions.clear()
             move_time_forward(entities, t)
