@@ -529,6 +529,10 @@ class GeneticAgent:
         best_actions = None
         best_eval = float('inf')
 
+        # TODO - initiate some basic trajectories for the player and the opponent
+        #   The opponent strategy should be reasonnable to beat it
+        #   The player strategy should be reasonnable to improve on it
+
         scenario_count = 0
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
