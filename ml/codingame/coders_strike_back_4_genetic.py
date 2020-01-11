@@ -523,25 +523,43 @@ class GeneticAgent:
         return best_actions
 
     def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
-        best_eval = float('inf')
-        best_actions = None
-
-        nb_strand = 50
+        nb_strand = 10
         nb_action = 3
 
-        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
-        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+        best_actions = None
+        best_eval = float('inf')
 
-        for i in range(nb_strand):
-            actions = []
-            for j in range(nb_action):
-                actions.append(list(zip(thrusts[i, j], angles[i, j])))
-            simulated = entities.clone()
-            simulate_turns(self.track, simulated, actions)
-            evaluation = self._eval(simulated)
-            if evaluation < best_eval:
-                best_eval = evaluation
-                best_actions = actions[0]
+        while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
+            thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
+            angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+
+            # evaluation
+            evaluations = []
+            for i in range(nb_strand):
+                actions = []
+                for j in range(nb_action):
+                    actions.append(list(zip(thrusts[i, j], angles[i, j])))
+                simulated = entities.clone()
+                simulate_turns(self.track, simulated, actions)  # TODO - just take some vectors and not pairs
+                evaluations.append((i, self._eval(simulated)))
+
+            # mutation and selection
+            evaluations.sort(key=lambda t: t[1])
+            for i in range(nb_strand):
+                strand_index = evaluations[i][0]
+                if i == 0 and evaluations[i][1] < best_eval:
+                    best_eval = evaluations[i][1]
+                    best_actions = [(thrusts[strand_index][0][0], angles[strand_index][0][0]),
+                                    (thrusts[strand_index][0][1], angles[strand_index][0][1])]
+                if i < 3:
+                    j1 = np.random.choice(nb_action)
+                    j2 = np.random.choice(nb_action)
+                    thrusts[strand_index][j1][0] += np.random.uniform(-20., 20.)
+                    thrusts[strand_index][j2][1] += np.random.uniform(-20., 20.)
+                    # TODO - angle mutations?
+                else:
+                    thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
+                    angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, 2))
 
         return best_actions
 
