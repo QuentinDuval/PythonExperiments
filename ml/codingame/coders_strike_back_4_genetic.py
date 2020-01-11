@@ -302,13 +302,10 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     p3 = p2 + speed * dt
 
     # Quick collision check: check the distances
-    d13 = distance2(p1, p3)
-    d23 = distance2(p2, p3)
-    d12 = distance2(p1, p2)
-    if max(d12, d13) > d23:
-        return float('inf')
+    # TODO - find a way to limit the computation
 
     # Check the distance of p1 to p2-p3
+    d23 = distance2(p2, p3)
     n = normal_of(p2, p3)
     dist_to_segment = abs(np.dot(n, p1 - p2))
     sum_radius = FORCE_FIELD_RADIUS * 2
@@ -331,7 +328,8 @@ def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int
         for j in range(i + 1, n):
             if (i, j) not in last_collisions:
                 t = find_collision(entities, i, j, dt)
-                if t < low_t:
+                # TODO - some collisions are found with t < 0... should not be the case
+                if t >= 0. and t < low_t:
                     low_t = t
                     best_i = i
                     best_j = j
@@ -380,7 +378,7 @@ def simulate_round(entities: Entities, dt: float = 1.0):
             move_time_forward(entities, dt)
             dt = 0.
         else:
-            debug("Collision:", i, j, "at time", t)
+            # debug("collision:", i, j, t)
             if t > 0.:
                 last_collisions.clear()
             move_time_forward(entities, t)
@@ -524,6 +522,7 @@ class GeneticAgent:
         # TODO - replace by a loop with GA selection (Randomized Beam Search)
         for action1 in self.moves[1:]:
             for action2 in self.moves[1:]:
+                # TODO - the simulation of collision is really bad, because the opponent does not act
                 actions = [action1, action2]
                 simulated = entities.clone()
                 simulate_turns(self.track, simulated, [actions])
@@ -534,12 +533,7 @@ class GeneticAgent:
                     best_prediction = simulated
 
         for i, (thrust, angle) in enumerate(best_actions):
-            debug("action:", thrust, angle)
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
-
-        debug("PREDICTION")
-        debug(best_prediction)
-
         self.predictions = best_prediction
         return best_actions
 
@@ -560,7 +554,6 @@ class GeneticAgent:
         if self.predictions is None:
             return
 
-        # Ignore small differences
         isBad = distance2(entities.positions[:2], self.predictions.positions[:2]).sum() >= 5.
         isBad |= distance2(entities.speeds[:2], self.predictions.speeds[:2]).sum() >= 5.
         isBad |= distance2(entities.directions[:2], self.predictions.directions[:2]).sum() >= 1.
