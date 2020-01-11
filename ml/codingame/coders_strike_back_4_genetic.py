@@ -508,16 +508,23 @@ class GeneticAgent:
         self.game_state.opponent.complete_vehicles(opponent)
 
     def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
-        best_eval = float('inf')
-        best_actions = None
-        best_prediction = None
-
         entities = to_entities(player, opponent)
         debug("PLAYER ENTITIES")
         debug(entities.positions[:2])
         debug(entities.speeds[:2])
-
         self._report_bad_prediction(entities)
+
+        best_actions = self._randomized_beam_search(entities)
+        self.predictions = entities.clone()
+        simulate_turns(self.track, self.predictions, [best_actions])
+
+        for i, (thrust, angle) in enumerate(best_actions):
+            best_actions[i] = self._select_action(i, player[i], thrust, angle)
+        return best_actions
+
+    def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
+        best_eval = float('inf')
+        best_actions = None
 
         # TODO - replace by a loop with GA selection (Randomized Beam Search)
         for action1 in self.moves[1:]:
@@ -530,11 +537,6 @@ class GeneticAgent:
                 if evaluation < best_eval:
                     best_eval = evaluation
                     best_actions = actions
-                    best_prediction = simulated
-
-        for i, (thrust, angle) in enumerate(best_actions):
-            best_actions[i] = self._select_action(i, player[i], thrust, angle)
-        self.predictions = best_prediction
         return best_actions
 
     def _eval(self, entities: Entities) -> float:
