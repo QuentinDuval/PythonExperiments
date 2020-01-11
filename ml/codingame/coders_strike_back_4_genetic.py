@@ -302,7 +302,7 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     p3 = p2 + speed * dt
 
     # Quick collision check: check the distances
-    # TODO - find a way to limit the computation
+    # TODO - find a way to limit the computation (based on the direction of speed?)
 
     # Check the distance of p1 to p2-p3
     d23 = distance2(p2, p3)
