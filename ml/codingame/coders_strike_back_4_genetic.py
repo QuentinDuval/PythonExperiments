@@ -23,6 +23,7 @@ BOT_RIGHT = (WIDTH - 1, HEIGHT - 1)
 
 CHECKPOINT_RADIUS = 600
 FORCE_FIELD_RADIUS = 400
+VEHICLE_MASS = 1.0
 
 MAX_TURN_DEG = 18
 MAX_TURN_RAD = MAX_TURN_DEG / 360 * 2 * math.pi
@@ -125,6 +126,53 @@ def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
     return mod_angle(prev_angle + diff_angle)
 
 
+@dataclass(frozen=False)
+class Entities:
+    positions: np.ndarray
+    speeds: np.ndarray
+    directions: np.ndarray
+    masses: np.ndarray
+    next_checkpoint_id: np.ndarray
+    current_lap: np.ndarray
+    boost_available: np.ndarray
+
+    @classmethod
+    def empty(cls, size: int):
+        return Entities(
+            positions=np.zeros(shape=(size, 2)),
+            speeds=np.zeros(shape=(size, 2)),
+            directions=np.zeros(shape=size),
+            masses=np.zeros(shape=size),
+            next_checkpoint_id=np.zeros(shape=size, dtype=np.int64),
+            current_lap=np.zeros(shape=size, dtype=np.int64),
+            boost_available=np.zeros(shape=size, dtype=bool)
+        )
+
+    def __len__(self):
+        return self.positions.shape[0]
+
+    def __eq__(self, other):
+        return np.array_equal(self.positions, other.positions) \
+            and np.array_equal(self.speeds, other.speeds) \
+            and np.array_equal(self.directions, other.directions) \
+            and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
+            and np.array_equal(self.current_lap, other.current_lap)
+
+    def clone(self):
+        return Entities(
+            positions=self.positions.copy(),
+            speeds=self.speeds.copy(),
+            directions=self.directions.copy(),
+            masses=self.masses.copy(),
+            next_checkpoint_id=self.next_checkpoint_id.copy(),
+            current_lap=self.current_lap.copy(),
+            boost_available=self.boost_available.copy())
+
+    def __repr__(self):
+        return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
+
+
+# TODO - depreciate this
 class Vehicle(NamedTuple):
     position: Vector
     speed: Vector
@@ -141,6 +189,20 @@ class Vehicle(NamedTuple):
         next_angle = self.next_direction(diff_angle)
         return np.array([target_distance * math.cos(next_angle),
                          target_distance * math.sin(next_angle)]) + self.position
+
+
+# TODO - depreciate this
+def to_entities(player: List[Vehicle], opponent: List[Vehicle]) -> Entities:
+    entities = Entities.empty(size=4)
+    for i, v in enumerate(itertools.chain(player, opponent)):
+        entities.positions[i] = v.position
+        entities.speeds[i] = v.speed
+        entities.directions[i] = v.direction
+        entities.masses[i] = VEHICLE_MASS
+        entities.next_checkpoint_id[i] = v.next_checkpoint_id
+        entities.current_lap[i] = v.current_lap
+        entities.boost_available[i] = v.boost_available
+    return entities
 
 
 """
@@ -231,40 +293,6 @@ GAME MECHANICS (Movement & Collisions)
 """
 
 
-@dataclass(frozen=False)
-class Entities:
-    positions: np.ndarray
-    speeds: np.ndarray
-    directions: np.ndarray
-    radius: np.ndarray
-    masses: np.ndarray
-    next_checkpoint_id: np.ndarray
-    current_lap: np.ndarray
-
-    def __len__(self):
-        return self.positions.shape[0]
-
-    def __eq__(self, other):
-        return np.array_equal(self.positions, other.positions) \
-            and np.array_equal(self.speeds, other.speeds) \
-            and np.array_equal(self.directions, other.directions) \
-            and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
-            and np.array_equal(self.current_lap, other.current_lap)
-
-    def clone(self):
-        return Entities(
-            positions=self.positions.copy(),
-            speeds=self.speeds.copy(),
-            directions=self.directions.copy(),
-            radius=self.radius,
-            masses=self.masses.copy(),
-            next_checkpoint_id=self.next_checkpoint_id.copy(),
-            current_lap=self.current_lap.copy())
-
-    def __repr__(self):
-        return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
-
-
 def normal_of(p1: Vector, p2: Vector) -> Vector:
     n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
     return n / norm(n)
@@ -289,7 +317,7 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     # Check the distance of p1 to p2-p3
     n = normal_of(p2, p3)
     dist_to_segment = abs(np.dot(n, p1 - p2))
-    sum_radius = entities.radius[i1] + entities.radius[i2]
+    sum_radius = FORCE_FIELD_RADIUS * 2
     if dist_to_segment > sum_radius:
         return float('inf')
 
@@ -373,13 +401,17 @@ def simulate_round(entities: Entities, dt: float = 1.0):
 def apply_actions(entities: Entities, actions: List[Tuple[Thrust, Angle]]):
     # Assume my vehicles are the first 2 entities
     for i, (thrust, diff_angle) in enumerate(actions):
-        entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
-        dv_dt = np.array([thrust * math.cos(entities.directions[i]),
-                          thrust * math.sin(entities.directions[i])])
-        entities.speeds[i] += dv_dt * 1.0
+        if thrust > 0.:     # Movement
+            entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
+            dv_dt = np.array([thrust * math.cos(entities.directions[i]),
+                              thrust * math.sin(entities.directions[i])])
+            entities.speeds[i] += dv_dt * 1.0
+            entities.masses[i] = 1.
+        elif thrust < 0.:   # Shield
+            entities.masses[i] = 10.
 
 
-def new_next_checkpoint(track: Track, entities: Entities):
+def update_checkpoints(track: Track, entities: Entities):
     for i in range(4):
         new_current_lap = entities.current_lap[i]
         new_next_checkpoint_id = entities.next_checkpoint_id[i]
@@ -397,7 +429,7 @@ def simulate_turns(track: Track, entities: Entities, actions_by_turn: List[List[
     for actions in actions_by_turn:
         apply_actions(entities, actions)
         simulate_round(entities, dt=1.0)
-        new_next_checkpoint(track, entities)    # TODO - ideally, should be included in the collisions
+        update_checkpoints(track, entities)    # TODO - ideally, should be included in the collisions
 
 
 """
@@ -487,15 +519,7 @@ class GeneticAgent:
         best_actions = None
         best_prediction = None
 
-        entities = Entities(
-            positions=np.stack([v.position for v in itertools.chain(player, opponent)]),
-            speeds=np.stack([v.speed for v in itertools.chain(player, opponent)]),
-            directions=np.array([v.direction for v in itertools.chain(player, opponent)]),
-            radius=np.array([FORCE_FIELD_RADIUS] * 4),
-            masses=np.array([1.0] * 4),
-            next_checkpoint_id=np.array([v.next_checkpoint_id for v in itertools.chain(player, opponent)]),
-            current_lap=np.array([v.current_lap for v in itertools.chain(player, opponent)])
-        )
+        entities = to_entities(player, opponent)
         self._report_bad_prediction(entities)
 
         # TODO - replace by a loop with GA selection (Randomized Beam Search)
@@ -516,7 +540,7 @@ class GeneticAgent:
         return best_actions
 
     def _eval(self, entities: Entities) -> float:
-        player_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
+        player_dist = sum(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
                                                          entities.positions[i]) for i in range(2))
         opponent_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
                                                            entities.positions[i]) for i in range(2, 4))
@@ -532,11 +556,16 @@ class GeneticAgent:
         if self.predictions is None:
             return
 
-        isBad = entities != self.predictions
+        # Ignore small differences
+        isBad = distance2(entities.positions[:2], self.predictions.positions[:2]).sum() >= 5.
+        isBad |= distance2(entities.speeds[:2], self.predictions.speeds[:2]).sum() >= 5.
         if isBad:
             debug("BAD PREDICTION")
-            debug("predicted:", self.predictions)
-            debug("got:", entities)
+            debug("-" * 20)
+            debug("PRED positions:", self.predictions.positions[:2])
+            debug("GOT positions:", entities.positions[:2])
+            debug("PRED speeds:", self.predictions.speeds[:2])
+            debug("GOT speeds:", entities.speeds[:2])
 
 
 """
