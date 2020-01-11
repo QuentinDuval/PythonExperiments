@@ -524,12 +524,16 @@ class GeneticAgent:
 
     def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
         nb_strand = 10
-        nb_action = 3
+        nb_action = 4
 
         best_actions = None
         best_eval = float('inf')
 
+        scenario_count = 0
+
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
+            scenario_count += nb_strand
+
             thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
             angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
 
@@ -561,6 +565,7 @@ class GeneticAgent:
                     thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
                     angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, 2))
 
+        debug("count scenarios:", scenario_count)
         return best_actions
 
     def _eval(self, entities: Entities) -> float:
