@@ -526,17 +526,23 @@ class GeneticAgent:
         best_eval = float('inf')
         best_actions = None
 
-        # TODO - replace by a loop with GA selection (Randomized Beam Search)
-        for action1 in self.moves[1:]:
-            for action2 in self.moves[1:]:
-                # TODO - the simulation of collision is really bad, because the opponent does not act
-                actions = [action1, action2]
-                simulated = entities.clone()
-                simulate_turns(self.track, simulated, [actions])
-                evaluation = self._eval(simulated)
-                if evaluation < best_eval:
-                    best_eval = evaluation
-                    best_actions = actions
+        nb_strand = 50
+        nb_action = 3
+
+        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
+        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+
+        for i in range(nb_strand):
+            actions = []
+            for j in range(nb_action):
+                actions.append(list(zip(thrusts[i, j], angles[i, j])))
+            simulated = entities.clone()
+            simulate_turns(self.track, simulated, actions)
+            evaluation = self._eval(simulated)
+            if evaluation < best_eval:
+                best_eval = evaluation
+                best_actions = actions[0]
+
         return best_actions
 
     def _eval(self, entities: Entities) -> float:
