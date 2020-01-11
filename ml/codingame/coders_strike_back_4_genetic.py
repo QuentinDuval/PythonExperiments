@@ -533,6 +533,11 @@ class GeneticAgent:
         #   The opponent strategy should be reasonnable to beat it
         #   The player strategy should be reasonnable to improve on it
 
+        # TODO - alternative: do a search in depth as was done before:
+        #   Objective of first drone is to win the race
+        #   Objective of second drone is to block the opponent
+        #   The opponent should have its move generated first
+
         scenario_count = 0
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
