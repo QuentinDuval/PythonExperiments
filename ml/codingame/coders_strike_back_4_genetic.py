@@ -7,13 +7,11 @@ import time
 
 import numpy as np
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -33,7 +31,6 @@ BOOST_STRENGTH = 650
 
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
-
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -66,7 +63,6 @@ class Chronometer:
 GEOMETRY & VECTOR CALCULUS
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 Angle = float
 Vector = np.ndarray
@@ -112,7 +108,6 @@ DATA STRUCTURES
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 Checkpoint = np.ndarray
 CheckpointId = int
 Thrust = int
@@ -153,10 +148,10 @@ class Entities:
 
     def __eq__(self, other):
         return np.array_equal(self.positions, other.positions) \
-            and np.array_equal(self.speeds, other.speeds) \
-            and np.array_equal(self.directions, other.directions) \
-            and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
-            and np.array_equal(self.current_lap, other.current_lap)
+               and np.array_equal(self.speeds, other.speeds) \
+               and np.array_equal(self.directions, other.directions) \
+               and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
+               and np.array_equal(self.current_lap, other.current_lap)
 
     def clone(self):
         return Entities(
@@ -299,7 +294,6 @@ def normal_of(p1: Vector, p2: Vector) -> Vector:
 
 
 def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
-
     # Change referential to i1 => subtract speed of i1 to i2
     # The goal will be to check if p1 intersects p2-p3
     p1 = entities.positions[i1]
@@ -308,8 +302,8 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     p3 = p2 + speed * dt
 
     # Quick collision check: check the distances
-    d13 = distance2(p3, p1)
-    d23 = distance2(p3, p2)
+    d13 = distance2(p1, p3)
+    d23 = distance2(p2, p3)
     d12 = distance2(p1, p2)
     if max(d12, d13) > d23:
         return float('inf')
@@ -327,13 +321,14 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     return distance_to_intersection / norm(speed)
 
 
-def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[int, int, float]:
+def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[
+    int, int, float]:
     low_t = float('inf')
     best_i = 0
     best_j = 0
     n = len(entities)
-    for i in range(n-1):
-        for j in range(i+1, n):
+    for i in range(n - 1):
+        for j in range(i + 1, n):
             if (i, j) not in last_collisions:
                 t = find_collision(entities, i, j, dt)
                 if t < low_t:
@@ -348,7 +343,6 @@ def move_time_forward(entities: Entities, dt: float = 1.0):
 
 
 def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
-
     # Getting the masses
     m1 = entities.masses[i1]
     m2 = entities.masses[i2]
@@ -402,18 +396,18 @@ def simulate_round(entities: Entities, dt: float = 1.0):
 def apply_actions(entities: Entities, actions: List[Tuple[Thrust, Angle]]):
     # Assume my vehicles are the first 2 entities
     for i, (thrust, diff_angle) in enumerate(actions):
-        if thrust > 0.:     # Movement
+        if thrust > 0.:  # Movement
             entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
             dv_dt = np.array([thrust * math.cos(entities.directions[i]),
                               thrust * math.sin(entities.directions[i])])
             entities.speeds[i] += dv_dt * 1.0
             entities.masses[i] = 1.
-        elif thrust < 0.:   # Shield
+        elif thrust < 0.:  # Shield
             entities.masses[i] = 10.
 
 
 def update_checkpoints(track: Track, entities: Entities):
-    for i in range(4):
+    for i in range(len(entities)):
         new_current_lap = entities.current_lap[i]
         new_next_checkpoint_id = entities.next_checkpoint_id[i]
         next_total_checkpoint_id = new_next_checkpoint_id + new_current_lap * len(track.checkpoints)
@@ -430,7 +424,7 @@ def simulate_turns(track: Track, entities: Entities, actions_by_turn: List[List[
     for actions in actions_by_turn:
         apply_actions(entities, actions)
         simulate_round(entities, dt=1.0)
-        update_checkpoints(track, entities)    # TODO - ideally, should be included in the collisions
+        update_checkpoints(track, entities)  # TODO - ideally, should be included in the collisions
 
 
 """
@@ -521,6 +515,10 @@ class GeneticAgent:
         best_prediction = None
 
         entities = to_entities(player, opponent)
+        debug("PLAYER ENTITIES")
+        debug(entities.positions[:2])
+        debug(entities.speeds[:2])
+
         self._report_bad_prediction(entities)
 
         # TODO - replace by a loop with GA selection (Randomized Beam Search)
@@ -536,7 +534,12 @@ class GeneticAgent:
                     best_prediction = simulated
 
         for i, (thrust, angle) in enumerate(best_actions):
+            debug("action:", thrust, angle)
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
+
+        debug("PREDICTION")
+        debug(best_prediction)
+
         self.predictions = best_prediction
         return best_actions
 
@@ -560,6 +563,7 @@ class GeneticAgent:
         # Ignore small differences
         isBad = distance2(entities.positions[:2], self.predictions.positions[:2]).sum() >= 5.
         isBad |= distance2(entities.speeds[:2], self.predictions.speeds[:2]).sum() >= 5.
+        isBad |= distance2(entities.directions[:2], self.predictions.directions[:2]).sum() >= 1.
         if isBad:
             debug("BAD PREDICTION")
             debug("-" * 20)
@@ -567,6 +571,8 @@ class GeneticAgent:
             debug("GOT positions:", entities.positions[:2])
             debug("PRED speeds:", self.predictions.speeds[:2])
             debug("GOT speeds:", entities.speeds[:2])
+            debug("PRED angles:", self.predictions.directions[:2])
+            debug("GOT angles:", entities.directions[:2])
 
 
 """

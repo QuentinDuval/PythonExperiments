@@ -1,64 +1,139 @@
 from ml.codingame.coders_strike_back_4_genetic import *
 
 
-track = Track(checkpoints=[np.array([10336,  3367]), np.array([11173,  5410]), np.array([7281, 6642]), np.array([5443, 2814])],
-              total_laps=3)
-
-
-player = [Vehicle(position=np.array([10799.,  3177.]),
-                  speed=np.array([0., 0.]),
-                  direction=1.4048489275053915,
-                  next_checkpoint_id=1,
-                  current_lap=0,
-                  boost_available=False),
-          Vehicle(position=np.array([9873., 3557.]),
-                  speed=np.array([0., 0.]),
-                  direction=0.959020779005364,
-                  next_checkpoint_id=1,
-                  current_lap=0,
-                  boost_available=False)]
-
-
-opponent = [Vehicle(position=np.array([11724.,  2798.]),
-                    speed=np.array([0., 0.]),
-                    direction=1.7786977083244606,
-                    next_checkpoint_id=1,
-                    current_lap=0,
-                    boost_available=False),
-            Vehicle(position=np.array([8948., 3936.]),
-                    speed=np.array([0., 0.]),
-                    direction=0.5850929162378574,
-                    next_checkpoint_id=1,
-                    current_lap=0,
-                    boost_available=False)]
-
-
-next_player = [Vehicle(position=np.array([10832.,  3374.]), speed=np.array([ 28., 167.]), direction=1.413716694115407, next_checkpoint_id=1, current_lap=0, boost_available=False),
-               Vehicle(position=np.array([9988., 3721.]), speed=np.array([ 97., 139.]), direction=0.9599310885968813, next_checkpoint_id=1, current_lap=0, boost_available=False)]
-
-
-next_opponent = [Vehicle(position=np.array([11707.,  2876.]), speed=np.array([-14.,  66.]), direction=1.780235837034216, next_checkpoint_id=1, current_lap=0, boost_available=False),
-                 Vehicle(position=np.array([9015., 3980.]), speed=np.array([56., 37.]), direction=0.593411945678072, next_checkpoint_id=1, current_lap=0, boost_available=False)]
-
-
-
-entities = Entities(
-    positions=np.stack([v.position for v in itertools.chain(player, opponent)]),
-    speeds=np.stack([v.speed for v in itertools.chain(player, opponent)]),
-    directions=np.array([v.direction for v in itertools.chain(player, opponent)]),
-    radius=np.array([FORCE_FIELD_RADIUS] * 4),
-    masses=np.array([1.0] * 4),
-    next_checkpoint_id=np.array([v.next_checkpoint_id for v in itertools.chain(player, opponent)]),
-    current_lap=np.array([v.current_lap for v in itertools.chain(player, opponent)])
+track = Track(
+    checkpoints=[np.array([13595,  7615]), np.array([12460,  1373]), np.array([10555,  6003]), np.array([3601, 5155])],
+    total_laps=3
 )
 
 
-simulated = entities.clone()
-apply_actions(simulated, actions=[(200, 0), (200, 0)])
-simulate_round(simulated, dt=1.0)
-print(simulated)
+def scenario_0():
+    # TURN 105->106
+    # NO COLLISIONS (still cannot reproduce what happens in the game...)
 
-simulated = entities.clone()
-simulate_turns(track, simulated, [[(200, 0), (200, 0)]])
-print(simulated)
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[2776., 5235.]])
+    entities.speeds = np.array([[-52., -519.]])
+    entities.directions = np.array([[5.55014702]])
 
+    """
+    PLAYER ENTITIES
+    [[ 2776.  5235.]
+     [13436.  4046.]]
+    [[ -52. -519.]
+     [-521.  591.]]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.0
+    """
+
+    simulated = entities.clone()
+    apply_actions(simulated, actions=[(200.0, 0.3141592653589793)])
+    simulate_round(simulated, dt=1.0)
+    print(simulated)
+
+    simulated = entities.clone()
+    simulate_turns(track, simulated, actions_by_turn=[[(200.0, 0.3141592653589793)]])
+    print(simulated)
+
+    """
+    PLAYER ENTITIES
+    [[ 2907.  4635.]
+     [12747.  4746.]]
+    [[ 111. -510.]
+     [-585.  594.]]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.3141592653589793
+    """
+
+
+def scenario_1():
+    # TURN 127
+
+    entities = Entities.empty(size=2)
+    entities.positions = np.array([[3217., 4104.], [4056., 1865.]])
+    entities.speeds = np.array([[263., -451.], [ 358.,  297.]])
+    entities.directions = np.array([6.17846555, 1.6231562 ])
+
+    """
+    PLAYER ENTITIES
+    [[3217. 4104.]
+     [4056. 1865.]]
+    [[ 263. -451.]
+     [ 358.  297.]]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.3141592653589793
+    """
+
+    apply_actions(entities, actions=[(200.0, 0.3141592653589793), (200.0, 0.3141592653589793)])
+    simulate_round(entities, dt=1.0)
+    print(entities)
+
+    """
+    PLAYER ENTITIES
+    [[3676. 3695.]
+     [4342. 2349.]]
+    [[ 389. -348.]
+     [ 243.  411.]]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.0
+    """
+
+
+def scenario_2():
+    # TURN 128
+
+    entities = Entities.empty(size=2)
+    entities.positions = np.array([[3676., 3695.], [4342., 2349.]])
+    entities.speeds = np.array([[389., -348.], [243., 411.]])
+    entities.directions = np.array([0.20943951, 1.93731547])
+
+    """
+    PLAYER ENTITIES
+    [[3676. 3695.]
+     [4342. 2349.]]
+    [[ 389. -348.]
+     [ 243.  411.]]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.0
+    """
+
+    apply_actions(entities, actions=[(200.0, 0.3141592653589793), (200.0, 0.0)])
+    simulate_round(entities, dt=1.0)
+    print(entities)
+
+    # TODO - no detection of collisions here
+
+    """
+    PLAYER ENTITIES
+    [[4132. 3650.]
+     [4620. 2744.]]
+    [[ 110.  489.]
+     [ 512. -192.]]
+    BAD PREDICTION
+    --------------------
+    PRED positions: [[4238. 3447.]
+     [4513. 2947.]]
+    GOT positions: [[4132. 3650.]
+     [4620. 2744.]]
+    PRED speeds: [[ 477. -210.]
+     [ 145.  508.]]
+    GOT speeds: [[ 110.  489.]
+     [ 512. -192.]]
+    PRED angles: [0.52359878 1.93731547]
+    GOT angles: [0.52359878 1.93731547]
+    action: 200.0 0.3141592653589793
+    action: 200.0 0.0
+    """
+
+
+# TODO - encode this as unit tests
+
+# scenario_0()
+# print()
+# print("-" * 50)
+# print()
+scenario_1()
+print()
+print("-" * 50)
+print()
+scenario_2()
