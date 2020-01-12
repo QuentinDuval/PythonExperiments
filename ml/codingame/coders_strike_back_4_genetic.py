@@ -331,11 +331,10 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     return distance_to_intersection / d23
 
 
-def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[
-    int, int, float]:
+def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]],
+                         dt: float = 1.0) -> Tuple[int, int, float]:
     low_t = float('inf')
-    best_i = 0
-    best_j = 0
+    best_i = best_j = 0
     n = len(entities)
     for i in range(n - 1):
         for j in range(i + 1, n):

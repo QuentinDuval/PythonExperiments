@@ -70,7 +70,11 @@ def test_simulation_performance():
     for i in range(thrusts.shape[0]):
         simulated = entities.clone()
         simulate_turns(track, simulated, thrusts[i], angles[i])
-    print("time spent:", chrono.spent())
+
+    time_spent = chrono.spent()
+    print("time spent:", time_spent, "ms")
+    print("time by scenario:", time_spent / nb_scenario, "ms")
+    print("scenario by turn:", time_spent / nb_scenario * RESPONSE_TIME * 0.8)
 
 
 test_scenario_0()
