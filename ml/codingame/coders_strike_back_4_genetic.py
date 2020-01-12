@@ -520,11 +520,6 @@ class GeneticAgent:
 
     def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         entities = to_entities(player, opponent)
-
-        # debug("PLAYER ENTITIES")
-        # debug(entities.positions[:2])
-        # debug(entities.speeds[:2])
-
         self._report_bad_prediction(entities)
 
         best_actions = self._randomized_beam_search(entities)
@@ -609,6 +604,9 @@ class GeneticAgent:
         return str(action.to_output(vehicle))
 
     def _report_bad_prediction(self, entities: Entities):
+        # debug("PLAYER ENTITIES")
+        # debug(entities.positions[:2])
+        # debug(entities.speeds[:2])
         if self.predictions is None:
             return
 
