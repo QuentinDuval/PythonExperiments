@@ -74,7 +74,7 @@ def test_simulation_performance():
     time_spent = chrono.spent()
     print("time spent:", time_spent, "ms")
     print("time by scenario:", time_spent / nb_scenario, "ms")
-    print("scenario by turn:", time_spent / nb_scenario * RESPONSE_TIME * 0.8)
+    print("scenario by turn:", nb_scenario / time_spent * RESPONSE_TIME * 0.8, "(", RESPONSE_TIME * 0.8, "ms)")
 
 
 test_scenario_0()

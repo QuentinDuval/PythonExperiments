@@ -303,22 +303,16 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     # The goal will be to check if p1 intersects p2-p3
     p1 = entities.positions[i1]
     p2 = entities.positions[i2]
-    speed = entities.speeds[i2] - entities.speeds[i1]
-    p3 = p2 + speed * dt
-
-    # Quick collision check: objects are already onto each other
-    d12 = distance2(p1, p2)
-    if d12 <= FORCE_FIELD_RADIUS ** 2:
-        return 0.0
+    speed = (entities.speeds[i2] - entities.speeds[i1]) * dt
 
     # Quick collision check: no speed
-    if np.array_equal(p2, p3):
+    d23 = norm(speed)
+    if d23 == 0. and distance2(p1, p2) > FORCE_FIELD_RADIUS ** 2:
         return float('inf')
 
-    # TODO - find a way to limit the computation (based on the direction of speed?)
+    # TODO - find other ways to limit the computation (based on the direction of speed?)
 
-    # Check the distance of p1 to segment p2-p3
-    d23 = norm(speed)
+    # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
     n = normal_of(speed) / d23
     dist_to_segment = abs(np.dot(n, p1 - p2))
     sum_radius = FORCE_FIELD_RADIUS * 2
