@@ -369,7 +369,7 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     entities.speeds[i2] -= f12 / m2
 
 
-def simulate_round(entities: Entities, dt: float = 1.0):
+def simulate_movements(entities: Entities, dt: float = 1.0):
     # Run the turn to completion taking into account collisions
     last_collisions = set()
     while dt > 0.:
@@ -394,7 +394,7 @@ def simulate_round(entities: Entities, dt: float = 1.0):
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
     # SHAPE of thrusts/diff_angles should be: (nb_entities, )
     # Assume my vehicles are the first 2 entities
-    for i in range(thrusts.shape):
+    for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
         diff_angle = diff_angles[i]
         if thrust > 0.:  # Movement
@@ -426,8 +426,14 @@ def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_a
     nb_turns, _ = thrusts.shape
     for turn_id in range(nb_turns):
         apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
-        simulate_round(entities, dt=1.0)
+        simulate_movements(entities, dt=1.0)
         update_checkpoints(track, entities)  # TODO - ideally, should be included in the collisions
+
+
+def simulate_turn(track: Track, entities: Entities, actions: List[Tuple[Thrust, Angle]]):
+    simulate_turns(track, entities,
+                   thrusts=np.array([[t for t, a in actions]]),
+                   diff_angles=np.array([[a for t, a in actions]]))
 
 
 """
@@ -514,16 +520,16 @@ class GeneticAgent:
 
     def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         entities = to_entities(player, opponent)
-        debug("PLAYER ENTITIES")
-        debug(entities.positions[:2])
-        debug(entities.speeds[:2])
+
+        # debug("PLAYER ENTITIES")
+        # debug(entities.positions[:2])
+        # debug(entities.speeds[:2])
+
         self._report_bad_prediction(entities)
 
         best_actions = self._randomized_beam_search(entities)
         self.predictions = entities.clone()
-        simulate_turns(self.track, self.predictions,
-                       thrusts=np.array([t for t, a in best_actions]),
-                       diff_angles=np.array([a for t, a in best_actions]))
+        simulate_turn(self.track, self.predictions, best_actions)
 
         for i, (thrust, angle) in enumerate(best_actions):
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
@@ -531,6 +537,7 @@ class GeneticAgent:
 
     def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
         nb_strand = 10
+        nb_selected = 7
         nb_action = 4
 
         best_actions = None
@@ -568,7 +575,7 @@ class GeneticAgent:
                     best_eval = evaluations[i][1]
                     best_actions = [(thrusts[strand_index][0][0], angles[strand_index][0][0]),
                                     (thrusts[strand_index][0][1], angles[strand_index][0][1])]
-                if i < 3:
+                if i < nb_selected:
                     j1 = np.random.choice(nb_action)
                     j2 = np.random.choice(nb_action)
                     thrusts[strand_index][j1][0] += np.random.uniform(-20., 20.)
@@ -576,7 +583,8 @@ class GeneticAgent:
                     # TODO - angle mutations?
                 else:
                     thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
-                    angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, 2))
+                    angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True,
+                                                            size=(nb_action, 2))
 
         debug("count scenarios:", scenario_count)
         return best_actions

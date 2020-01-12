@@ -17,8 +17,8 @@ def test_scenario_0():
     entities.speeds = np.array([[-52., -519.]])
     entities.directions = np.array([[5.55014702]])
 
-    apply_actions(entities, actions=[(200.0, 0.3141592653589793)])
-    simulate_round(entities, dt=1.0)
+    apply_actions(entities, thrusts=np.array([200.]), diff_angles=np.array([0.3141592653589793]))
+    simulate_movements(entities, dt=1.0)
     assert np.array_equal(entities.positions, np.array([[2907., 4635.]]))
     assert np.array_equal(entities.speeds, np.array([[111., -510.]]))
 
@@ -33,8 +33,8 @@ def test_scenario_1():
     entities.speeds = np.array([[263., -451.], [ 358.,  297.]])
     entities.directions = np.array([6.17846555, 1.6231562 ])
 
-    apply_actions(entities, actions=[(200.0, 0.3141592653589793), (200.0, 0.3141592653589793)])
-    simulate_round(entities, dt=1.0)
+    apply_actions(entities, thrusts=np.array([200., 200.]), diff_angles=np.array([0.3141592653589793, 0.3141592653589793]))
+    simulate_movements(entities, dt=1.0)
     assert np.array_equal(entities.positions, np.array([[3676., 3695.], [4342., 2349.]]))
     assert np.array_equal(entities.speeds, np.array([[389., -348.], [243., 411.]]))
 
@@ -49,8 +49,8 @@ def test_scenario_2():
     entities.speeds = np.array([[389., -348.], [243., 411.]])
     entities.directions = np.array([0.20943951, 1.93731547])
 
-    apply_actions(entities, actions=[(200.0, 0.3141592653589793), (200.0, 0.0)])
-    simulate_round(entities, dt=1.0)
+    apply_actions(entities, thrusts=np.array([200., 200.]), diff_angles=np.array([0.3141592653589793, 0.]))
+    simulate_movements(entities, dt=1.0)
     assert np.array_equal(entities.positions, np.array([[4132., 3650.], [4620., 2744.]]))
     assert np.array_equal(entities.speeds, np.array([[110., 489.], [512., -192.]]))
 
