@@ -392,6 +392,7 @@ def simulate_movements(entities: Entities, dt: float = 1.0):
 
 
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
+    # TODO - take into account the shield, for it entirely destroys the simulations right now
     # SHAPE of thrusts/diff_angles should be: (nb_entities, )
     # Assume my vehicles are the first 2 entities
     for i in range(thrusts.shape[0]):
@@ -428,12 +429,6 @@ def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_a
         apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
         simulate_movements(entities, dt=1.0)
         update_checkpoints(track, entities)  # TODO - ideally, should be included in the collisions
-
-
-def simulate_turn(track: Track, entities: Entities, actions: List[Tuple[Thrust, Angle]]):
-    simulate_turns(track, entities,
-                   thrusts=np.array([[t for t, a in actions]]),
-                   diff_angles=np.array([[a for t, a in actions]]))
 
 
 """
@@ -558,20 +553,20 @@ class GeneticAgent:
         if self.previous_angle_dna is not None:
             angles[0][:-1] = self.previous_angle_dna[1:]
 
-        indices = list(range(nb_strand))
+        evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
+            np.clip(thrusts, 0., 200., out=thrusts)     # TODO - get rid of this for BOOST and SHIELD + optimize by moving to mutate
 
             # evaluation
-            evaluations = []
             for i in range(nb_strand):
                 simulated = entities.clone()
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
-                evaluations.append(self._eval(simulated))
+                evaluations[i] = self._eval(simulated)
 
             # mutation and selection
-            indices.sort(key=lambda pos: evaluations[pos])
+            indices = np.argsort(evaluations)
             thrusts_mut = np.random.uniform(-20., 20., size=(nb_selected, 2))
             angles_mut = np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_selected, 2))
 
@@ -597,11 +592,15 @@ class GeneticAgent:
         return best_solution
 
     def _eval(self, entities: Entities) -> float:
+        # TODO - optimize this
         player_dist = sum(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
                                                          entities.positions[i]) for i in range(2))
+        '''
         opponent_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
                                                            entities.positions[i]) for i in range(2, 4))
         return player_dist - opponent_dist
+        '''
+        return player_dist
 
     def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
         action = Action(angle=best_angle, thrust=best_thrust)
