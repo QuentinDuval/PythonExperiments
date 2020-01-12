@@ -126,6 +126,12 @@ def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
     return mod_angle(prev_angle + diff_angle)
 
 
+def target_point(position: Vector, prev_angle: Angle, diff_angle: Angle) -> Vector:
+    next_angle = turn_angle(prev_angle, diff_angle)
+    return np.array([5000 * math.cos(next_angle),
+                     5000 * math.sin(next_angle)]) + position
+
+
 @dataclass(frozen=False)
 class Entities:
     length: int
@@ -175,39 +181,6 @@ class Entities:
         return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
 
 
-# TODO - depreciate this
-class Vehicle(NamedTuple):
-    position: Vector
-    speed: Vector
-    direction: Angle
-    next_checkpoint_id: CheckpointId
-    current_lap: int
-    boost_available: bool
-
-    def next_direction(self, diff_angle: Angle) -> Angle:
-        return turn_angle(self.direction, diff_angle)
-
-    def target_point(self, diff_angle: Angle) -> Vector:
-        target_distance = 5000
-        next_angle = self.next_direction(diff_angle)
-        return np.array([target_distance * math.cos(next_angle),
-                         target_distance * math.sin(next_angle)]) + self.position
-
-
-# TODO - depreciate this
-def to_entities(player: List[Vehicle], opponent: List[Vehicle]) -> Entities:
-    entities = Entities.empty(size=4)
-    for i, v in enumerate(itertools.chain(player, opponent)):
-        entities.positions[i] = v.position
-        entities.speeds[i] = v.speed
-        entities.directions[i] = v.direction
-        entities.masses[i] = VEHICLE_MASS
-        entities.next_checkpoint_id[i] = v.next_checkpoint_id
-        entities.current_lap[i] = v.current_lap
-        entities.boost_available[i] = v.boost_available
-    return entities
-
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 ACTIONS
@@ -246,8 +219,8 @@ class Action(NamedTuple):
     def is_boost(self):
         return self.thrust > THRUST_STRENGTH
 
-    def to_output(self, vehicle: Vehicle):
-        return OutputAction(target=vehicle.target_point(self.angle), thrust=self.thrust)
+    def to_output(self, position: Vector, prev_angle: Angle):
+        return OutputAction(target=target_point(position, prev_angle, self.angle), thrust=self.thrust)
 
 
 """
@@ -278,8 +251,8 @@ class Track:
         checkpoint_id = self.progress_index(current_lap, next_checkpoint_id)
         return self.total_checkpoints[checkpoint_id]
 
-    def angle_next_checkpoint(self, vehicle: Vehicle) -> float:
-        to_next_checkpoint = self.total_checkpoints[vehicle.next_checkpoint_id] - vehicle.position
+    def angle_next_checkpoint(self, next_checkpoint_id: int, position: Vector) -> float:
+        to_next_checkpoint = self.total_checkpoints[next_checkpoint_id] - position
         return get_angle(to_next_checkpoint)
 
     def _pre_compute_distances_to_end(self):
@@ -446,20 +419,19 @@ GAME STATE
 """
 
 
-class PlayerState:
+class GameState:
     def __init__(self):
-        self.prev_checkpoints = np.array([1, 1])
-        self.laps = np.array([0, 0])
-        self.boost_available = np.array([True, True])
-        self.shield_timeout = np.array([0, 0])
+        self.prev_checkpoints = np.array([1] * 4)
+        self.laps = np.array([0] * 4)
+        self.boost_available = np.array([True] * 4)
+        self.shield_timeout = np.array([0] * 4)
 
-    def track_lap(self, player: List[Vehicle]):
-        for i in range(len(self.shield_timeout)):
+    def track_lap(self, entities: Entities):
+        for i in range(len(entities)):
             self.shield_timeout[i] = max(0, self.shield_timeout[i] - 1)
-        for i, vehicle in enumerate(player):
-            if vehicle.next_checkpoint_id == 0 and self.prev_checkpoints[i] > 0:
+            if entities.next_checkpoint_id[i] == 0 and self.prev_checkpoints[i] > 0:
                 self.laps[i] += 1
-            self.prev_checkpoints[i] = vehicle.next_checkpoint_id
+            self.prev_checkpoints[i] = entities.next_checkpoint_id[i]
 
     def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
@@ -467,24 +439,10 @@ class PlayerState:
     def notify_shield_used(self, vehicle_id: int):
         self.shield_timeout[vehicle_id] = 3
 
-    def complete_vehicles(self, vehicles: List[Vehicle]):
-        for vehicle_id in range(len(vehicles)):
-            vehicles[vehicle_id] = self._complete_vehicle(vehicles[vehicle_id], vehicle_id)
-
-    def _complete_vehicle(self, vehicle: Vehicle, vehicle_id: int) -> Vehicle:
-        return vehicle._replace(
-            current_lap=self.laps[vehicle_id],
-            boost_available=self.boost_available[vehicle_id])
-
-
-class GameState:
-    def __init__(self):
-        self.player = PlayerState()
-        self.opponent = PlayerState()
-
-    def track_lap(self, player: List[Vehicle], opponent: List[Vehicle]):
-        self.player.track_lap(player)
-        self.opponent.track_lap(opponent)
+    def complete_vehicles(self, entities: Entities):
+        for i in range(len(entities)):
+            entities.current_lap[i] = self.laps[i]
+            entities.boost_available[i] = self.boost_available[i]
 
 
 """
@@ -520,20 +478,18 @@ class GeneticAgent:
     #   Keep only a limited number of leaves open?
     #   Or do some kind of MCTS: explore the most favorables
 
-    def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
+    def get_action(self, entities: Entities) -> List[str]:
         self.chronometer.start()
-        self._complete_vehicles(player, opponent)
-        actions = self._find_best_actions(player, opponent)
+        self._complete_vehicles(entities)
+        actions = self._find_best_actions(entities)
         debug("Time spent:", self.chronometer.spent())
         return actions
 
-    def _complete_vehicles(self, player: List[Vehicle], opponent: List[Vehicle]):
-        self.game_state.track_lap(player, opponent)
-        self.game_state.player.complete_vehicles(player)
-        self.game_state.opponent.complete_vehicles(opponent)
+    def _complete_vehicles(self, entities: Entities):
+        self.game_state.track_lap(entities)
+        self.game_state.complete_vehicles(entities)
 
-    def _find_best_actions(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
-        entities = to_entities(player, opponent)
+    def _find_best_actions(self, entities: Entities) -> List[str]:
         self._report_bad_prediction(entities)
 
         thrust_dna, angle_dna = self._randomized_beam_search(entities)
@@ -542,7 +498,13 @@ class GeneticAgent:
 
         self.predictions = entities.clone()
         simulate_turns(self.track, self.predictions, thrust_dna[:1], angle_dna[:1])
-        return [self._select_action(i, player[i], thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
+        return [self._select_action(entities, i, thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
+
+    def _select_action(self, entities: Entities, vehicle_id: int, best_thrust: Thrust, best_angle: Angle) -> str:
+        action = Action(angle=best_angle, thrust=best_thrust)
+        if action.is_boost():
+            self.game_state.notify_boost_used(vehicle_id)
+        return str(action.to_output(entities.positions[vehicle_id], entities.directions[vehicle_id]))
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 6
@@ -640,12 +602,6 @@ class GeneticAgent:
         '''
         return player_dist
 
-    def _select_action(self, vehicle_id: int, vehicle: Vehicle, best_thrust: Thrust, best_angle: Angle) -> str:
-        action = Action(angle=best_angle, thrust=best_thrust)
-        if action.is_boost():
-            self.game_state.player.notify_boost_used(vehicle_id)
-        return str(action.to_output(vehicle))
-
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
         # debug(entities.positions[:2])
@@ -683,16 +639,20 @@ def read_checkpoints() -> List[Checkpoint]:
     return [read_checkpoint() for _ in range(checkpoint_count)]
 
 
-# TODO - completely rework this: you want the entities from the start
-def read_vehicle() -> Vehicle:
-    x, y, vx, vy, angle, next_check_point_id = [int(j) for j in input().split()]
-    return Vehicle(
-        position=np.array([x, y], dtype=np.float64),
-        speed=np.array([vx, vy], dtype=np.float64),
-        direction=angle / 360 * 2 * math.pi,
-        next_checkpoint_id=next_check_point_id,
-        current_lap=0,
-        boost_available=False)
+def read_entities(track: Track, turn_nb: int) -> Entities:
+    entities = Entities.empty(size=4)
+    for i in range(4):
+        x, y, vx, vy, angle, next_check_point_id = [int(s) for s in input().split()]
+        entities.positions[i][0] = x
+        entities.positions[i][1] = y
+        entities.speeds[i][0] = vx
+        entities.speeds[i][1] = vy
+        entities.next_checkpoint_id[i] = next_check_point_id
+        if turn_nb == 0:
+            entities.directions[i] = track.angle_next_checkpoint(entities.next_checkpoint_id[i], entities.positions[i])
+        else:
+            entities.directions[i] = angle / 360 * 2 * math.pi
+    return entities
 
 
 """
@@ -700,14 +660,6 @@ def read_vehicle() -> Vehicle:
 GAME LOOP
 ------------------------------------------------------------------------------------------------------------------------
 """
-
-
-# TODO - add the SHIELD state + use (but first add the collisions)
-
-
-def with_first_turn_orientation(track: Track, vehicle: Vehicle) -> Vehicle:
-    # For the first turn, a pod can go in any direction, here we turn it toward the goal (forbids some moves though)
-    return vehicle._replace(direction=track.angle_next_checkpoint(vehicle))
 
 
 def game_loop():
@@ -720,13 +672,8 @@ def game_loop():
     debug("checkpoints:", checkpoints)
 
     for turn_nb in itertools.count(start=0, step=1):
-        player_vehicles = [read_vehicle() for _ in range(2)]
-        opponent_vehicles = [read_vehicle() for _ in range(2)]
-        if turn_nb == 0:
-            player_vehicles = [with_first_turn_orientation(track, v) for v in player_vehicles]
-            opponent_vehicles = [with_first_turn_orientation(track, v) for v in opponent_vehicles]
-
-        actions = agent.get_action(player_vehicles, opponent_vehicles)
+        entities = read_entities(track, turn_nb)
+        actions = agent.get_action(entities)
         for action in actions:
             print(action)
 
