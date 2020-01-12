@@ -391,9 +391,12 @@ def simulate_round(entities: Entities, dt: float = 1.0):
     np.trunc(entities.speeds * 0.85, out=entities.speeds)
 
 
-def apply_actions(entities: Entities, actions: List[Tuple[Thrust, Angle]]):
+def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
+    # SHAPE of thrusts/diff_angles should be: (nb_entities, )
     # Assume my vehicles are the first 2 entities
-    for i, (thrust, diff_angle) in enumerate(actions):
+    for i in range(thrusts.shape):
+        thrust = thrusts[i]
+        diff_angle = diff_angles[i]
         if thrust > 0.:  # Movement
             entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
             dv_dt = np.array([thrust * math.cos(entities.directions[i]),
@@ -418,9 +421,11 @@ def update_checkpoints(track: Track, entities: Entities):
                 entities.current_lap[i] += 1
 
 
-def simulate_turns(track: Track, entities: Entities, actions_by_turn: List[List[Tuple[Thrust, Angle]]]):
-    for actions in actions_by_turn:
-        apply_actions(entities, actions)
+def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
+    # SHAPE of thrusts/diff_angles should be: (nb_turns, nb_entities)
+    nb_turns, _ = thrusts.shape
+    for turn_id in range(nb_turns):
+        apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
         simulate_round(entities, dt=1.0)
         update_checkpoints(track, entities)  # TODO - ideally, should be included in the collisions
 
@@ -516,7 +521,9 @@ class GeneticAgent:
 
         best_actions = self._randomized_beam_search(entities)
         self.predictions = entities.clone()
-        simulate_turns(self.track, self.predictions, [best_actions])
+        simulate_turns(self.track, self.predictions,
+                       thrusts=np.array([t for t, a in best_actions]),
+                       diff_angles=np.array([a for t, a in best_actions]))
 
         for i, (thrust, angle) in enumerate(best_actions):
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
@@ -549,11 +556,8 @@ class GeneticAgent:
             # evaluation
             evaluations = []
             for i in range(nb_strand):
-                actions = []
-                for j in range(nb_action):
-                    actions.append(list(zip(thrusts[i, j], angles[i, j])))
                 simulated = entities.clone()
-                simulate_turns(self.track, simulated, actions)  # TODO - just take some vectors and not pairs
+                simulate_turns(self.track, simulated, thrusts[i], angles[i])
                 evaluations.append((i, self._eval(simulated)))
 
             # mutation and selection
