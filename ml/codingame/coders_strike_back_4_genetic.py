@@ -569,6 +569,10 @@ class GeneticAgent:
 
             # mutation and selection
             evaluations.sort(key=lambda t: t[1])
+
+            thrusts_mut = np.random.uniform(-20., 20., size=(nb_selected, 2))
+            angles_mut = np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_selected, 2))
+
             for i in range(nb_strand):
                 strand_index = evaluations[i][0]
                 if i == 0 and evaluations[i][1] < best_eval:
@@ -576,11 +580,11 @@ class GeneticAgent:
                     best_actions = [(thrusts[strand_index][0][0], angles[strand_index][0][0]),
                                     (thrusts[strand_index][0][1], angles[strand_index][0][1])]
                 if i < nb_selected:
-                    j1 = np.random.choice(nb_action)
-                    j2 = np.random.choice(nb_action)
-                    thrusts[strand_index][j1][0] += np.random.uniform(-20., 20.)
-                    thrusts[strand_index][j2][1] += np.random.uniform(-20., 20.)
-                    # TODO - angle mutations?
+                    a1, a2 = np.random.choice(nb_action, size=2)
+                    thrusts[strand_index][a1][0] += thrusts_mut[i][0]
+                    thrusts[strand_index][a2][1] += thrusts_mut[i][1]
+                    angles[strand_index][a1][0] += angles_mut[i][0]
+                    angles[strand_index][a2][1] += angles_mut[i][1]
                 else:
                     thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
                     angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True,
