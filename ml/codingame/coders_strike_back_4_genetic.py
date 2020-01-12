@@ -505,6 +505,8 @@ class GeneticAgent:
             (0.2 * THRUST_STRENGTH, +MAX_TURN_RAD)
         ])
         self.chronometer = Chronometer()
+        self.previous_thrust_dna = None
+        self.previous_angle_dna = None
 
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.chronometer.start()
@@ -523,10 +525,11 @@ class GeneticAgent:
         self._report_bad_prediction(entities)
 
         thrust_dna, angle_dna = self._randomized_beam_search(entities)
+        self.previous_thrust_dna = thrust_dna
+        self.previous_angle_dna = angle_dna
+
         self.predictions = entities.clone()
         simulate_turns(self.track, self.predictions, thrust_dna[:1], angle_dna[:1])
-
-        # TODO - keep the previous solution as initialization of the next
         return [self._select_action(i, player[i], thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
@@ -536,6 +539,7 @@ class GeneticAgent:
 
         best_solution = None
         best_eval = float('inf')
+        scenario_count = 0
 
         # TODO - initiate some basic trajectories for the player and the opponent
         #   The opponent strategy should be reasonnable to beat it
@@ -546,13 +550,16 @@ class GeneticAgent:
         #   Objective of second drone is to block the opponent
         #   The opponent should have its move generated first
 
-        scenario_count = 0
+        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
+        if self.previous_thrust_dna is not None:
+            thrusts[0][:-1] = self.previous_thrust_dna[1:]
+
+        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+        if self.previous_angle_dna is not None:
+            angles[0][:-1] = self.previous_angle_dna[1:]
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
-
-            thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
-            angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
 
             # evaluation
             evaluations = []
@@ -579,6 +586,7 @@ class GeneticAgent:
                     angles[strand_index][a1][0] += angles_mut[i][0]
                     angles[strand_index][a2][1] += angles_mut[i][1]
                 else:
+                    # TODO - could be optimized (do it in place + do it in bulk)
                     thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
                     angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True,
                                                             size=(nb_action, 2))
