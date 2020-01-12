@@ -558,6 +558,8 @@ class GeneticAgent:
         if self.previous_angle_dna is not None:
             angles[0][:-1] = self.previous_angle_dna[1:]
 
+        indices = list(range(nb_strand))
+
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
 
@@ -566,18 +568,18 @@ class GeneticAgent:
             for i in range(nb_strand):
                 simulated = entities.clone()
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
-                evaluations.append((i, self._eval(simulated)))
+                evaluations.append(self._eval(simulated))
 
             # mutation and selection
-            evaluations.sort(key=lambda t: t[1])
-
+            indices.sort(key=lambda pos: evaluations[pos])
             thrusts_mut = np.random.uniform(-20., 20., size=(nb_selected, 2))
             angles_mut = np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_selected, 2))
 
             for i in range(nb_strand):
-                strand_index = evaluations[i][0]
-                if i == 0 and evaluations[i][1] < best_eval:
-                    best_eval = evaluations[i][1]
+                strand_index = indices[i]
+                strand_eval = evaluations[indices[i]]
+                if i == 0 and strand_eval < best_eval:
+                    best_eval = strand_eval
                     best_solution = thrusts[strand_index].copy(), angles[strand_index].copy()
                 if i < nb_selected:
                     a1, a2 = np.random.choice(nb_action, size=2)
