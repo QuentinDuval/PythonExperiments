@@ -142,7 +142,7 @@ class Entities:
             positions=np.zeros(shape=(size, 2)),
             speeds=np.zeros(shape=(size, 2)),
             directions=np.zeros(shape=size),
-            masses=np.zeros(shape=size),
+            masses=np.ones(shape=size),
             next_checkpoint_id=np.zeros(shape=size, dtype=np.int64),
             current_lap=np.zeros(shape=size, dtype=np.int64),
             boost_available=np.zeros(shape=size, dtype=bool)
@@ -295,10 +295,13 @@ GAME MECHANICS (Movement & Collisions)
 
 def normal_of(p1: Vector, p2: Vector) -> Vector:
     n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
+    if norm(n) == 0:
+        debug(p1, p2)
     return n / norm(n)
 
 
 def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
+
     # Change referential to i1 => subtract speed of i1 to i2
     # The goal will be to check if p1 intersects p2-p3
     p1 = entities.positions[i1]
@@ -306,10 +309,18 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     speed = entities.speeds[i2] - entities.speeds[i1]
     p3 = p2 + speed * dt
 
-    # Quick collision check: check the distances
+    # Quick collision check: objects are already onto each other
+    d12 = distance2(p1, p2)
+    if d12 <= FORCE_FIELD_RADIUS ** 2:
+        return 0.0
+
+    # Quick collision check: no speed
+    if np.array_equal(p2, p3):
+        return float('inf')
+
     # TODO - find a way to limit the computation (based on the direction of speed?)
 
-    # Check the distance of p1 to p2-p3
+    # Check the distance of p1 to segment p2-p3
     d23 = distance2(p2, p3)
     n = normal_of(p2, p3)
     dist_to_segment = abs(np.dot(n, p1 - p2))
