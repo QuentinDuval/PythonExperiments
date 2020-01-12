@@ -508,6 +508,15 @@ class GeneticAgent:
         self.previous_thrust_dna = None
         self.previous_angle_dna = None
 
+    # TODO - alternative: do a search in depth as was done before:
+    #   Objective of first drone is to win the race
+    #   Objective of second drone is to block the opponent
+    #   The opponent should have its move generated first
+
+    # TODO - alternative: do a beam search starting as a tree
+    #   Keep only a limited number of leaves open?
+    #   Or do some kind of MCTS: explore the most favorables
+
     def get_action(self, player: List[Vehicle], opponent: List[Vehicle]) -> List[str]:
         self.chronometer.start()
         self._complete_vehicles(player, opponent)
@@ -535,38 +544,29 @@ class GeneticAgent:
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 5
         nb_selected = 3
-        nb_action = 4
+        nb_action = 6
 
         best_solution = None
         best_eval = float('inf')
         scenario_count = 0
 
-        # TODO - initiate some basic trajectories for the player and the opponent
-        #   The opponent strategy should be reasonnable to beat it
-        #   The player strategy should be reasonnable to improve on it (GA is a local search)
-
-        # TODO - alternative: do a search in depth as was done before:
-        #   Objective of first drone is to win the race
-        #   Objective of second drone is to block the opponent
-        #   The opponent should have its move generated first
-
-        # TODO - alternative: do a beam search starting as a tree
-        #   Keep only a limited number of leaves open?
-        #   Or do some kind of MCTS: explore the most favorables
+        init_thrusts, init_angles = self._initial_solution(entities, nb_action)
 
         thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
+        thrusts[0] = init_thrusts
         if self.previous_thrust_dna is not None:
-            thrusts[0][:-1] = self.previous_thrust_dna[1:]
+            thrusts[1][:-1] = self.previous_thrust_dna[1:]
 
         angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+        angles[0] = init_angles
         if self.previous_angle_dna is not None:
-            angles[0][:-1] = self.previous_angle_dna[1:]
+            angles[1][:-1] = self.previous_angle_dna[1:]
 
         evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
-            np.clip(thrusts, 0., 200., out=thrusts)     # TODO - get rid of this for BOOST and SHIELD + optimize by moving to mutate
+            thrusts.clip(0., 200., out=thrusts)     # TODO - get rid of this for BOOST and SHIELD + optimize by moving to mutate
 
             # evaluation
             for i in range(nb_strand):
@@ -599,6 +599,31 @@ class GeneticAgent:
 
         debug("count scenarios:", scenario_count)
         return best_solution
+
+    def _initial_solution(self, entities: Entities, nb_action: int) -> Tuple[np.ndarray, np.ndarray]:
+        # Solution based on a kind of PID: improve it
+        entities = entities.clone()
+        thrusts = np.zeros(shape=(nb_action, 2))
+        diff_angles = np.zeros(shape=(nb_action, 2))
+        for d in range(nb_action):
+            for i in range(2): # TODO - do this for the opponent as well
+                p = entities.positions[i]
+                s = entities.speeds[i]
+                c = self.track.next_checkpoint(entities.current_lap[i], entities.next_checkpoint_id[i])
+                cp_angle = mod_angle(get_angle(c - p - 2 * s))
+                dir_angle = entities.directions[i]
+                diff_angle = mod_angle(cp_angle - dir_angle)
+                if diff_angle > math.pi:
+                    diff_angle = diff_angle - 2 * math.pi
+                diff_angles[d][i] = diff_angle
+                thrusts[d][i] = distance(p, c) - 3. * norm(s) # TODO - NOT good when not in the right direction
+                # debug("cp angle", cp_angle / math.pi * 180)
+                # debug("veh angle", dir_angle / math.pi * 180)
+                # debug("diff angle", diff_angle / math.pi * 180)
+            thrusts.clip(0., 200., out=thrusts)
+            diff_angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=diff_angles)
+            simulate_turns(self.track, entities, thrusts[d:d+1], diff_angles[d:d+1])
+        return thrusts, diff_angles
 
     def _eval(self, entities: Entities) -> float:
         # TODO - optimize this
