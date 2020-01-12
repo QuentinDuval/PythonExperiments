@@ -128,6 +128,7 @@ def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
 
 @dataclass(frozen=False)
 class Entities:
+    length: int
     positions: np.ndarray
     speeds: np.ndarray
     directions: np.ndarray
@@ -139,6 +140,7 @@ class Entities:
     @classmethod
     def empty(cls, size: int):
         return Entities(
+            length=size,
             positions=np.zeros(shape=(size, 2)),
             speeds=np.zeros(shape=(size, 2)),
             directions=np.zeros(shape=size),
@@ -149,7 +151,7 @@ class Entities:
         )
 
     def __len__(self):
-        return self.positions.shape[0]
+        return self.length
 
     def __eq__(self, other):
         return np.array_equal(self.positions, other.positions) \
@@ -160,6 +162,7 @@ class Entities:
 
     def clone(self):
         return Entities(
+            length=self.length,
             positions=self.positions.copy(),
             speeds=self.speeds.copy(),
             directions=self.directions.copy(),
@@ -542,68 +545,6 @@ class GeneticAgent:
         return [self._select_action(i, player[i], thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
-        nb_strand = 5
-        nb_selected = 3
-        nb_action = 6
-
-        best_solution = None
-        best_eval = float('inf')
-        scenario_count = 0
-
-        init_thrusts, init_angles = self._initial_solution(entities, nb_action)
-
-        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
-        thrusts[0] = init_thrusts
-        if self.previous_thrust_dna is not None:
-            thrusts[1][:-1] = self.previous_thrust_dna[1:]
-
-        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
-        angles[0] = init_angles
-        if self.previous_angle_dna is not None:
-            angles[1][:-1] = self.previous_angle_dna[1:]
-
-        evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
-
-        while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
-            scenario_count += nb_strand
-            thrusts.clip(0., 200., out=thrusts)                     # TODO - get rid of this for BOOST and SHIELD + optimize by moving to mutate
-            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)    # TODO - get rid of this
-
-            # evaluation
-            for i in range(nb_strand):
-                simulated = entities.clone()
-                simulate_turns(self.track, simulated, thrusts[i], angles[i])
-                evaluations[i] = self._eval(simulated)
-
-            # mutation and selection
-            indices = np.argsort(evaluations)
-            thrusts_mut = np.random.uniform(-20., 20., size=(nb_selected, 2))
-            angles_mut = np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_selected, 2))
-
-            for i in range(nb_strand):
-                strand_index = indices[i]
-                strand_eval = evaluations[indices[i]]
-                if i == 0 and strand_eval < best_eval:
-                    best_eval = strand_eval
-                    best_solution = thrusts[strand_index].copy(), angles[strand_index].copy()
-                if i < nb_selected:
-                    a1, a2 = np.random.choice(nb_action, size=2)
-                    thrusts[strand_index][a1][0] += thrusts_mut[i][0]
-                    thrusts[strand_index][a2][1] += thrusts_mut[i][1]
-                    angles[strand_index][a1][0] += angles_mut[i][0]
-                    angles[strand_index][a2][1] += angles_mut[i][1]
-                else:
-                    # TODO - could be optimized (do it in place + do it in bulk)
-                    thrusts[strand_index] = np.random.uniform(0., 200., size=(nb_action, 2))
-                    angles[strand_index] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True,
-                                                            size=(nb_action, 2))
-
-        debug("count scenarios:", scenario_count)
-        return best_solution
-
-    def _randomized_beam_search_2(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
-        # TODO - try to find a way to make it better: in practice, it does not beat the other one
-
         nb_strand = 6
         nb_action = 6
 
@@ -628,12 +569,15 @@ class GeneticAgent:
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
-            thrusts.clip(0., 200.,
-                         out=thrusts)  # TODO - get rid of this for BOOST and SHIELD + optimize by moving to mutate
+
+            # Make sure the solution are correct
+            thrusts.clip(0., 200., out=thrusts)
+            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
 
             # Evaluation of the different solutions
             for i in range(nb_strand):
                 simulated = entities.clone()
+                simulated.length = 2    # TODO - Ignore the opponents as long as we do not predict them
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
                 evaluations[i] = self._eval(simulated)
 
@@ -656,8 +600,6 @@ class GeneticAgent:
             # Random mutations for every-one
             thrusts += np.random.uniform(-20., 20., size=(nb_strand, nb_action, 2))
             angles += np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_strand, nb_action, 2))
-            thrusts.clip(0., 200., out=thrusts)
-            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
 
         debug("count scenarios:", scenario_count)
         return best_thrusts, best_angles
