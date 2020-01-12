@@ -531,13 +531,15 @@ class GeneticAgent:
         self.predictions = entities.clone()
         simulate_turn(self.track, self.predictions, best_actions)
 
+        # TODO - keep the previous solution as initialization of the next
+
         for i, (thrust, angle) in enumerate(best_actions):
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
         return best_actions
 
     def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
-        nb_strand = 10
-        nb_selected = 7
+        nb_strand = 5
+        nb_selected = 3
         nb_action = 4
 
         best_actions = None
