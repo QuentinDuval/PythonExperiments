@@ -7,11 +7,13 @@ import time
 
 import numpy as np
 
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -31,6 +33,7 @@ BOOST_STRENGTH = 650
 
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -63,6 +66,7 @@ class Chronometer:
 GEOMETRY & VECTOR CALCULUS
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 Angle = float
 Vector = np.ndarray
@@ -107,6 +111,7 @@ def mod_angle(angle: Angle) -> Angle:
 DATA STRUCTURES
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 Checkpoint = np.ndarray
 CheckpointId = int
@@ -538,12 +543,16 @@ class GeneticAgent:
 
         # TODO - initiate some basic trajectories for the player and the opponent
         #   The opponent strategy should be reasonnable to beat it
-        #   The player strategy should be reasonnable to improve on it
+        #   The player strategy should be reasonnable to improve on it (GA is a local search)
 
         # TODO - alternative: do a search in depth as was done before:
         #   Objective of first drone is to win the race
         #   Objective of second drone is to block the opponent
         #   The opponent should have its move generated first
+
+        # TODO - alternative: do a beam search starting as a tree
+        #   Keep only a limited number of leaves open?
+        #   Or do some kind of MCTS: explore the most favorables
 
         thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
         if self.previous_thrust_dna is not None:
