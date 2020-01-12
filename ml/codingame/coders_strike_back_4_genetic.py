@@ -527,13 +527,7 @@ class GeneticAgent:
         simulate_turns(self.track, self.predictions, thrust_dna[:1], angle_dna[:1])
 
         # TODO - keep the previous solution as initialization of the next
-
-        best_actions = [(thrust_dna[0][0], angle_dna[0][0]),
-                        (thrust_dna[0][1], angle_dna[0][1])]
-
-        for i, (thrust, angle) in enumerate(best_actions):
-            best_actions[i] = self._select_action(i, player[i], thrust, angle)
-        return best_actions
+        return [self._select_action(i, player[i], thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 5
