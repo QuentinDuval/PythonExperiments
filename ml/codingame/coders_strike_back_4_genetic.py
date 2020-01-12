@@ -87,7 +87,7 @@ def norm2(v) -> float:
 
 
 def norm(v) -> float:
-    return math.sqrt(norm2(v))
+    return math.sqrt(np.dot(v, v))
 
 
 def distance2(from_, to_) -> float:
@@ -293,11 +293,8 @@ GAME MECHANICS (Movement & Collisions)
 """
 
 
-def normal_of(p1: Vector, p2: Vector) -> Vector:
-    n = np.array([p1[1] - p2[1], p2[0] - p1[0]], dtype=np.float64)
-    if norm(n) == 0:
-        debug(p1, p2)
-    return n / norm(n)
+def normal_of(v: Vector) -> Vector:
+    return np.array([-v[1], v[0]], dtype=np.float64)
 
 
 def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
@@ -321,17 +318,17 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     # TODO - find a way to limit the computation (based on the direction of speed?)
 
     # Check the distance of p1 to segment p2-p3
-    d23 = distance2(p2, p3)
-    n = normal_of(p2, p3)
+    d23 = norm(speed)
+    n = normal_of(speed) / d23
     dist_to_segment = abs(np.dot(n, p1 - p2))
     sum_radius = FORCE_FIELD_RADIUS * 2
     if dist_to_segment > sum_radius:
         return float('inf')
 
     # Find the point of intersection (a bit of trigonometry and pythagoras involved)
-    distance_to_normal = np.dot(p1 - p2, p3 - p2) / math.sqrt(d23)
-    distance_to_intersection: float = distance_to_normal - math.sqrt(sum_radius ** 2 - dist_to_segment ** 2)
-    return distance_to_intersection / norm(speed)
+    distance_to_segment = np.dot(p1 - p2, speed) / d23
+    distance_to_intersection: float = distance_to_segment - math.sqrt(sum_radius ** 2 - dist_to_segment ** 2)
+    return distance_to_intersection / d23
 
 
 def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]], dt: float = 1.0) -> Tuple[
