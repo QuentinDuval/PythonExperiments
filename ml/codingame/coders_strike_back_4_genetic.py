@@ -287,6 +287,7 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
         return float('inf')
 
     # TODO - find other ways to limit the computation (based on the direction of speed?)
+    # TODO - if speed does not go in right direction: then you could find a t < 0. => forbid this
 
     # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
     n = normal_of(speed) / d23
