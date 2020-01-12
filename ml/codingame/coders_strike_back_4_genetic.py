@@ -347,6 +347,7 @@ def move_time_forward(entities: Entities, dt: float = 1.0):
 
 
 def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
+
     # Getting the masses
     m1 = entities.masses[i1]
     m2 = entities.masses[i2]
@@ -357,20 +358,19 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     dv12 = entities.speeds[i2] - entities.speeds[i1]
 
     # Computing the force
-    product = np.dot(dp12, dv12)
     d12_squared = np.dot(dp12, dp12)
-    f12 = dp12 * product / (d12_squared * mcoeff)
+    f12 = dp12 * np.dot(dp12, dv12) / (d12_squared * mcoeff)
 
-    # Apply the force (first time)
+    # Apply half the force (first time)
     entities.speeds[i1] += f12 / m1
     entities.speeds[i2] -= f12 / m2
 
-    # Minimum impulsion
+    # Minimum half-impulsion
     norm_f = norm(f12)
     if norm_f < min_impulsion:
         f12 *= min_impulsion / norm_f
 
-    # Apply the force (second time)
+    # Apply half the force (second time)
     entities.speeds[i1] += f12 / m1
     entities.speeds[i2] -= f12 / m2
 
@@ -384,7 +384,6 @@ def simulate_movements(entities: Entities, dt: float = 1.0):
             move_time_forward(entities, dt)
             dt = 0.
         else:
-            # debug("collision:", i, j, t)
             if t > 0.:
                 last_collisions.clear()
             move_time_forward(entities, t)
@@ -398,7 +397,6 @@ def simulate_movements(entities: Entities, dt: float = 1.0):
 
 
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
-    # TODO - take into account the shield, for it entirely destroys the simulations right now
     # SHAPE of thrusts/diff_angles should be: (nb_entities, )
     # Assume my vehicles are the first 2 entities
     for i in range(thrusts.shape[0]):
@@ -411,6 +409,7 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
             entities.speeds[i] += dv_dt * 1.0
             entities.masses[i] = 1.
         elif thrust < 0.:  # Shield
+            # TODO - disable the future thrusts
             entities.masses[i] = 10.
 
 
