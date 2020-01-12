@@ -522,22 +522,25 @@ class GeneticAgent:
         entities = to_entities(player, opponent)
         self._report_bad_prediction(entities)
 
-        best_actions = self._randomized_beam_search(entities)
+        thrust_dna, angle_dna = self._randomized_beam_search(entities)
         self.predictions = entities.clone()
-        simulate_turn(self.track, self.predictions, best_actions)
+        simulate_turns(self.track, self.predictions, thrust_dna[:1], angle_dna[:1])
 
         # TODO - keep the previous solution as initialization of the next
+
+        best_actions = [(thrust_dna[0][0], angle_dna[0][0]),
+                        (thrust_dna[0][1], angle_dna[0][1])]
 
         for i, (thrust, angle) in enumerate(best_actions):
             best_actions[i] = self._select_action(i, player[i], thrust, angle)
         return best_actions
 
-    def _randomized_beam_search(self, entities: Entities) -> List[Tuple[Thrust, Angle]]:
+    def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 5
         nb_selected = 3
         nb_action = 4
 
-        best_actions = None
+        best_solution = None
         best_eval = float('inf')
 
         # TODO - initiate some basic trajectories for the player and the opponent
@@ -574,8 +577,7 @@ class GeneticAgent:
                 strand_index = evaluations[i][0]
                 if i == 0 and evaluations[i][1] < best_eval:
                     best_eval = evaluations[i][1]
-                    best_actions = [(thrusts[strand_index][0][0], angles[strand_index][0][0]),
-                                    (thrusts[strand_index][0][1], angles[strand_index][0][1])]
+                    best_solution = thrusts[strand_index].copy(), angles[strand_index].copy()
                 if i < nb_selected:
                     a1, a2 = np.random.choice(nb_action, size=2)
                     thrusts[strand_index][a1][0] += thrusts_mut[i][0]
@@ -588,7 +590,7 @@ class GeneticAgent:
                                                             size=(nb_action, 2))
 
         debug("count scenarios:", scenario_count)
-        return best_actions
+        return best_solution
 
     def _eval(self, entities: Entities) -> float:
         player_dist = sum(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
