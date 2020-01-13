@@ -266,25 +266,21 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) ->
     You should change referential before calling this procedure
     """
 
-    # TODO - some collisions are found with t < 0... should not be the case
-
-    # Quick collision check: no speed
-    d23 = norm(speed2)
-    if d23 == 0. and distance2(p1, p2) > VEHICLE_RADIUS ** 2:
+    # Quick collision check: speed in wrong direction
+    v12 = p1 - p2
+    if np.dot(speed2, v12) <= 0. and norm2(v12) >= sum_radius ** 2:
         return float('inf')
 
-    # TODO - find other ways to limit the computation (based on the direction of speed?)
-    # TODO - if speed does not go in right direction: then you could find a t < 0. => forbid this
-
     # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
+    d23 = norm(speed2)
     n = normal_of(speed2) / d23
-    dist_to_segment = abs(np.dot(n, p1 - p2))
-    if dist_to_segment > sum_radius:
+    dist_to_segment_2 = np.dot(n, v12) ** 2
+    if dist_to_segment_2 >= sum_radius ** 2:
         return float('inf')
 
     # Find the point of intersection (a bit of trigonometry and pythagoras involved)
-    distance_to_segment = np.dot(p1 - p2, speed2) / d23
-    distance_to_intersection: float = distance_to_segment - math.sqrt(sum_radius ** 2 - dist_to_segment ** 2)
+    distance_to_segment = np.dot(v12, speed2) / d23
+    distance_to_intersection: float = distance_to_segment - math.sqrt(sum_radius ** 2 - dist_to_segment_2)
     return distance_to_intersection / d23
 
 
@@ -308,7 +304,7 @@ def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> floa
 def find_first_collision(track: Track, entities: Entities,
                          last_collisions: Set[Tuple[int, int]],
                          dt: float = 1.0) -> Tuple[int, int, float]:
-    low_t = float('inf')
+    low_t = dt * 1.1
     best_i = best_j = 0
     n = len(entities)
     for i in range(n):

@@ -64,16 +64,47 @@ def test_scenario_3():
             np.array([2000., 0.])],
         total_laps=3)
 
+    # Going toward the checkpoint
     entities = Entities.empty(size=1)
     entities.positions = np.array([[0., 0.]])
     entities.speeds = np.array([[2000., 0.]])
     entities.directions = np.array([0.])
     entities.next_progress_id[0] = 0
+    assert 0.2 == find_cp_collision(track, entities, 0, dt=1.0)
 
-    t = find_cp_collision(track, entities, 0, dt=1.0)
-    assert t == 0.2
-    move_time_forward(entities, t)
-    assert entities.positions[0][0] == 400.
+    # Going away from the checkpoint
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[3000., 0.]])
+    entities.speeds = np.array([[2000., 0.]])
+    entities.directions = np.array([0.])
+    entities.next_progress_id[0] = 0
+    assert float('inf') == find_cp_collision(track, entities, 0, dt=1.0)
+
+    # Starting inside the checkpoint
+    '''
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[600., 0.]])
+    entities.speeds = np.array([[2000., 0.]])
+    entities.directions = np.array([0.])
+    entities.next_progress_id[0] = 0
+    assert 0.0 == find_cp_collision(track, entities, 0, dt=1.0)
+    '''
+
+    # Going very close outside the checkpoint
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[0., 600.]])
+    entities.speeds = np.array([[2000., 0.]])
+    entities.directions = np.array([0.])
+    entities.next_progress_id[0] = 0
+    assert float('inf') == find_cp_collision(track, entities, 0, dt=1.0)
+
+    # Going very close inside the checkpoint
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[0., 599.]])
+    entities.speeds = np.array([[2000., 0.]])
+    entities.directions = np.array([0.])
+    entities.next_progress_id[0] = 0
+    assert float('inf') != find_cp_collision(track, entities, 0, dt=1.0)
 
 
 def test_full_game():
