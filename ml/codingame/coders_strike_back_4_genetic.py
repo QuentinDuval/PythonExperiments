@@ -511,9 +511,6 @@ class GeneticAgent:
             # Evaluation of the different solutions
             for i in range(nb_strand):
                 simulated = entities.clone()
-
-                # TODO - bug here: we cannot even see their real distance to their goal!
-                simulated.length = 2  # TODO - Ignore the opponents as long as we do not predict them
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
                 evaluations[i] = self._eval(simulated)
 
@@ -570,13 +567,14 @@ class GeneticAgent:
         for i in range(len(remaining_distances)):
             remaining_distances[i] = self.track.remaining_distance2(entities.next_progress_id[i], entities.positions[i])
 
+        # TODO - move this identification at the beginning of the round (at least for MY runner)
         my_runner = np.argmin(remaining_distances[:2])
         my_perturbator = 1 - my_runner
         his_runner = 2 + np.argmin(remaining_distances[2:])
 
         my_dist = remaining_distances[my_runner]
         his_dist = remaining_distances[his_runner]
-        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[his_runner])
+        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[his_runner]) # TODO - move to snd next checkpoint
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         return my_dist - his_dist + 0.15 * closing_dist
 
