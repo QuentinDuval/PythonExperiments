@@ -7,13 +7,11 @@ import time
 
 import numpy as np
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -33,7 +31,6 @@ BOOST_STRENGTH = 650
 
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
-
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -66,7 +63,6 @@ class Chronometer:
 GEOMETRY & VECTOR CALCULUS
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 Angle = float
 Vector = np.ndarray
@@ -111,7 +107,6 @@ def mod_angle(angle: Angle) -> Angle:
 DATA STRUCTURES
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 Checkpoint = np.ndarray
 CheckpointId = int
@@ -260,7 +255,6 @@ def normal_of(v: Vector) -> Vector:
 
 
 def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
-
     # Change referential to i1 => subtract speed of i1 to i2
     # The goal will be to check if p1 intersects p2-p3
     p1 = entities.positions[i1]
@@ -310,7 +304,6 @@ def move_time_forward(entities: Entities, dt: float = 1.0):
 
 
 def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
-
     # Getting the masses
     m1 = entities.masses[i1]
     m2 = entities.masses[i2]
@@ -498,7 +491,7 @@ class GeneticAgent:
 
         best_thrusts = None
         best_angles = None
-        best_eval = float('inf')
+        min_eval = float('inf')
         scenario_count = 0
 
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)
@@ -525,15 +518,15 @@ class GeneticAgent:
             # Evaluation of the different solutions
             for i in range(nb_strand):
                 simulated = entities.clone()
-                simulated.length = 2    # TODO - Ignore the opponents as long as we do not predict them
+                simulated.length = 2  # TODO - Ignore the opponents as long as we do not predict them
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
                 evaluations[i] = self._eval(simulated)
 
             # Keeping track of the best overall solution
             indices = np.argsort(evaluations)
             best_index = indices[0]
-            if evaluations[best_index] < best_eval:
-                best_eval = evaluations[best_index]
+            if evaluations[best_index] < min_eval:
+                min_eval = evaluations[best_index]
                 best_thrusts = thrusts[best_index].copy()
                 best_angles = angles[best_index].copy()
 
@@ -558,7 +551,7 @@ class GeneticAgent:
         thrusts = np.zeros(shape=(nb_action, 2))
         diff_angles = np.zeros(shape=(nb_action, 2))
         for d in range(nb_action):
-            for i in range(2): # TODO - do this for the opponent as well
+            for i in range(2):  # TODO - do this for the opponent as well
                 p = entities.positions[i]
                 s = entities.speeds[i]
                 c = self.track.next_checkpoint(entities.current_lap[i], entities.next_checkpoint_id[i])
@@ -568,25 +561,32 @@ class GeneticAgent:
                 if diff_angle > math.pi:
                     diff_angle = diff_angle - 2 * math.pi
                 diff_angles[d][i] = diff_angle
-                thrusts[d][i] = distance(p, c) - 3. * norm(s) # TODO - NOT good when not in the right direction
+                thrusts[d][i] = distance(p, c) - 3. * norm(s)  # TODO - NOT good when not in the right direction
                 # debug("cp angle", cp_angle / math.pi * 180)
                 # debug("veh angle", dir_angle / math.pi * 180)
                 # debug("diff angle", diff_angle / math.pi * 180)
             thrusts.clip(0., 200., out=thrusts)
             diff_angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=diff_angles)
-            simulate_turns(self.track, entities, thrusts[d:d+1], diff_angles[d:d+1])
+            simulate_turns(self.track, entities, thrusts[d:d + 1], diff_angles[d:d + 1])
         return thrusts, diff_angles
 
     def _eval(self, entities: Entities) -> float:
-        # TODO - optimize this
-        player_dist = sum(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
-                                                         entities.positions[i]) for i in range(2))
-        '''
-        opponent_dist = min(self.track.remaining_distance2(entities.current_lap[i], entities.next_checkpoint_id[i],
-                                                           entities.positions[i]) for i in range(2, 4))
-        return player_dist - opponent_dist
-        '''
-        return player_dist
+        remaining_distances = np.array([0.] * 4)
+        for i in range(len(remaining_distances)):
+            current_lap = entities.current_lap[i]
+            next_cp_id = entities.next_checkpoint_id[i]
+            position = entities.positions[i]
+            remaining_distances[i] = self.track.remaining_distance2(current_lap, next_cp_id, position)
+
+        my_runner = np.argmin(remaining_distances[:2])
+        my_perturbator = np.argmax(remaining_distances[:2])
+        his_runner = 2 + np.argmin(remaining_distances[2:])
+
+        my_dist = remaining_distances[my_runner]
+        his_dist = remaining_distances[his_runner]
+        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[his_runner])
+        # TODO - add a term to encourage aggressive attacks (shocks at high speed)
+        return my_dist - his_dist + 0.15 * closing_dist
 
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
