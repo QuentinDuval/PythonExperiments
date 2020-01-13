@@ -577,10 +577,12 @@ class GeneticAgent:
         my_perturbator = 1 - self.runner_id
         my_dist = self.track.remaining_distance2(entities.next_progress_id[self.runner_id], entities.positions[self.runner_id])
         his_dist = self.track.remaining_distance2(entities.next_progress_id[self.opponent_runner_id], entities.positions[self.opponent_runner_id])
-        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
+        closing_dist = distance2(entities.positions[my_perturbator],
+                                 self.track.next_checkpoint(entities.next_progress_id[self.opponent_runner_id] + 1))
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner
-        return my_dist - his_dist + 0.15 * closing_dist
+        # TODO - encourage to make sure the opponent does not get close to HIS next cp?
+        return my_dist - his_dist + 0.1 * closing_dist
 
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
