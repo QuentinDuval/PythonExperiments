@@ -384,12 +384,12 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
     for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
         diff_angle = diff_angles[i]
-        entities.shield_timeout[i] -= 1
+        entities.shield_timeout[i] = max(0, entities.shield_timeout[i] - 1)
+        entities.directions[i] = mod_angle(entities.directions[i] + diff_angle)
         if thrust > 0.:  # Movement
-            # TODO - disable the thrust if the timeout is positive
-            entities.directions[i] = mod_angle(entities.directions[i] + diff_angle)
-            entities.speeds[i][0] += thrust * math.cos(entities.directions[i])
-            entities.speeds[i][1] += thrust * math.sin(entities.directions[i])
+            if entities.shield_timeout[i] == 0:  # No thrusts in case of shield
+                entities.speeds[i][0] += thrust * math.cos(entities.directions[i])
+                entities.speeds[i][1] += thrust * math.sin(entities.directions[i])
         elif thrust < 0.:  # Shield
             entities.shield_timeout[i] = 3
 
