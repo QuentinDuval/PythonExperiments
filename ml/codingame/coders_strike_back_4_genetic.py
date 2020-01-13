@@ -509,7 +509,7 @@ class GeneticAgent:
 
         # TODO - The GA algorithm is too timid (slows down when it should not)
 
-        init_thrusts, init_angles = self._initial_solution(entities, nb_action)
+        init_thrusts, init_angles = self._initial_solution(entities, nb_action)  # TODO - to improve
 
         thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, nb_entities))  # TODO - encourage fast speeds
         thrusts[0] = init_thrusts
@@ -605,8 +605,8 @@ class GeneticAgent:
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner
         # TODO - encourage to make sure the opponent does not get close to HIS next cp?
-        go_fast = norm2(entities.speeds[self.runner_id])
-        return my_dist - his_dist + 0.1 * closing_dist + go_fast
+        go_slow = norm2(entities.speeds[self.runner_id])    # TODO - improves the results: this is not normal...
+        return my_dist - his_dist + 0.1 * closing_dist + go_slow
 
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
