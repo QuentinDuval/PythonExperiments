@@ -261,6 +261,8 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) ->
     You should change referential before calling this procedure
     """
 
+    # TODO - some collisions are found with t < 0... should not be the case
+
     # Quick collision check: no speed
     d23 = norm(speed2)
     if d23 == 0. and distance2(p1, p2) > VEHICLE_RADIUS ** 2:
@@ -301,7 +303,6 @@ def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> floa
 def find_first_collision(track: Track, entities: Entities,
                          last_collisions: Set[Tuple[int, int]],
                          dt: float = 1.0) -> Tuple[int, int, float]:
-    # TODO - some collisions are found with t < 0... should not be the case
     low_t = float('inf')
     best_i = best_j = 0
     n = len(entities)
