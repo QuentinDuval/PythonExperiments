@@ -252,15 +252,14 @@ def normal_of(v: Vector) -> Vector:
     return np.array([-v[1], v[0]], dtype=np.float64)
 
 
-def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
-    # Change referential to i1 => subtract speed of i1 to i2
-    # The goal will be to check if p1 intersects p2-p3
-    p1 = entities.positions[i1]
-    p2 = entities.positions[i2]
-    speed = (entities.speeds[i2] - entities.speeds[i1]) * dt
+def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) -> float:
+    """
+    Check if there is an intersection between fixed point p1, and moving point p2
+    You should change referential before calling this procedure
+    """
 
     # Quick collision check: no speed
-    d23 = norm(speed)
+    d23 = norm(speed2)
     if d23 == 0. and distance2(p1, p2) > FORCE_FIELD_RADIUS ** 2:
         return float('inf')
 
@@ -268,30 +267,49 @@ def find_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
     # TODO - if speed does not go in right direction: then you could find a t < 0. => forbid this
 
     # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
-    n = normal_of(speed) / d23
+    n = normal_of(speed2) / d23
     dist_to_segment = abs(np.dot(n, p1 - p2))
-    sum_radius = FORCE_FIELD_RADIUS * 2
     if dist_to_segment > sum_radius:
         return float('inf')
 
     # Find the point of intersection (a bit of trigonometry and pythagoras involved)
-    distance_to_segment = np.dot(p1 - p2, speed) / d23
+    distance_to_segment = np.dot(p1 - p2, speed2) / d23
     distance_to_intersection: float = distance_to_segment - math.sqrt(sum_radius ** 2 - dist_to_segment ** 2)
     return distance_to_intersection / d23
 
 
-def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int]],
+def find_cp_collision(track: Track, entities: Entities, i: int, dt: float) -> float:
+    p1 = track.next_checkpoint(entities.next_progress_id[i])
+    p2 = entities.positions[i]
+    speed2 = entities.speeds[i] * dt
+    return find_collision(p1, p2, speed2, sum_radius=CHECKPOINT_RADIUS)
+
+
+def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
+    # Change referential to i1 => subtract speed of i1 to i2 (the goal will be to check if p1 intersects p2-p3)
+    p1 = entities.positions[i1]
+    p2 = entities.positions[i2]
+    speed2 = (entities.speeds[i2] - entities.speeds[i1]) * dt
+    return find_collision(p1, p2, speed2, sum_radius=FORCE_FIELD_RADIUS * 2)
+
+
+def find_first_collision(track: Track, entities: Entities,
+                         last_collisions: Set[Tuple[int, int]],
                          dt: float = 1.0) -> Tuple[int, int, float]:
+    # TODO - some collisions are found with t < 0... should not be the case
     low_t = float('inf')
     best_i = best_j = 0
     n = len(entities)
-    for i in range(n - 1):
-        # TODO - just check the collision with YOUR checkpoint - would limit the amount of impacts on performance
+    for i in range(n):
+        t = find_cp_collision(track, entities, i, dt)
+        if 0. <= t < low_t:
+            low_t = t
+            best_i = i
+            best_j = -1     # Indicates checkpoint
         for j in range(i + 1, n):
             if (i, j) not in last_collisions:
-                t = find_collision(entities, i, j, dt)
-                # TODO - some collisions are found with t < 0... should not be the case
-                if t >= 0. and t < low_t:
+                t = find_unit_collision(entities, i, j, dt)
+                if 0. <= t < low_t:
                     low_t = t
                     best_i = i
                     best_j = j
@@ -330,11 +348,11 @@ def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     entities.speeds[i2] -= f12 / m2
 
 
-def simulate_movements(entities: Entities, dt: float = 1.0):
+def simulate_movements(track: Track, entities: Entities, dt: float = 1.0):
     # Run the turn to completion taking into account collisions
     last_collisions = set()
     while dt > 0.:
-        i, j, t = find_first_collision(entities, last_collisions, dt)
+        i, j, t = find_first_collision(track, entities, last_collisions, dt)
         if t > dt:
             move_time_forward(entities, dt)
             dt = 0.
@@ -342,7 +360,10 @@ def simulate_movements(entities: Entities, dt: float = 1.0):
             if t > 0.:
                 last_collisions.clear()
             move_time_forward(entities, t)
-            bounce(entities, i, j, min_impulsion=120.)
+            if j >= 0:
+                bounce(entities, i, j, min_impulsion=120.)  # Collision with unit
+            else:
+                entities.next_progress_id[i] += 1           # Collision with checkpoint
             last_collisions.add((i, j))
             dt -= t
 
@@ -367,22 +388,12 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
             entities.shield_timeout[i] = 3
 
 
-def update_checkpoints(track: Track, entities: Entities):
-    for i in range(len(entities)):
-        cp_progress_id = entities.next_progress_id[i]
-        next_checkpoint = track.next_checkpoint(cp_progress_id)
-        distance_to_checkpoint = distance2(entities.positions[i], next_checkpoint)
-        if distance_to_checkpoint < CHECKPOINT_RADIUS ** 2:
-            entities.next_progress_id[i] += 1
-
-
 def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
     # SHAPE of thrusts/diff_angles should be: (nb_turns, nb_entities)
     nb_turns, _ = thrusts.shape
     for turn_id in range(nb_turns):
         apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
-        simulate_movements(entities, dt=1.0)
-        update_checkpoints(track, entities)  # TODO - ideally, should be included each time there is a collision: agent too cautious now
+        simulate_movements(track, entities, dt=1.0)
 
 
 """
@@ -500,6 +511,8 @@ class GeneticAgent:
             # Evaluation of the different solutions
             for i in range(nb_strand):
                 simulated = entities.clone()
+
+                # TODO - bug here: we cannot even see their real distance to their goal!
                 simulated.length = 2  # TODO - Ignore the opponents as long as we do not predict them
                 simulate_turns(self.track, simulated, thrusts[i], angles[i])
                 evaluations[i] = self._eval(simulated)
