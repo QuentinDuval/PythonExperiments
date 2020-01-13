@@ -451,6 +451,8 @@ class GeneticAgent:
         self.chronometer = Chronometer()
         self.previous_thrust_dna = None
         self.previous_angle_dna = None
+        self.runner_id: int = 0
+        self.opponent_runner_id: int = 2
 
     # TODO - alternative: do a search in depth as was done before:
     #   Objective of first drone is to win the race
@@ -463,9 +465,18 @@ class GeneticAgent:
 
     def get_action(self, entities: Entities) -> List[Action]:
         self.chronometer.start()
+        self._identify_roles(entities)
         actions = self._find_best_actions(entities)
         debug("Time spent:", self.chronometer.spent())
         return actions
+
+    def _identify_roles(self, entities: Entities):
+        # TODO - try to classify the IA of the opponent in here
+        remaining_distances = np.array([0.] * 4)
+        for i in range(len(remaining_distances)):
+            remaining_distances[i] = self.track.remaining_distance2(entities.next_progress_id[i], entities.positions[i])
+        self.runner_id = np.argmin(remaining_distances[:2])
+        self.opponent_runner_id = 2 + np.argmin(remaining_distances[2:])
 
     def _find_best_actions(self, entities: Entities) -> List[Action]:
         self._report_bad_prediction(entities)
@@ -563,19 +574,12 @@ class GeneticAgent:
         return thrusts, diff_angles
 
     def _eval(self, entities: Entities) -> float:
-        remaining_distances = np.array([0.] * 4)
-        for i in range(len(remaining_distances)):
-            remaining_distances[i] = self.track.remaining_distance2(entities.next_progress_id[i], entities.positions[i])
-
-        # TODO - move this identification at the beginning of the round (at least for MY runner)
-        my_runner = np.argmin(remaining_distances[:2])
-        my_perturbator = 1 - my_runner
-        his_runner = 2 + np.argmin(remaining_distances[2:])
-
-        my_dist = remaining_distances[my_runner]
-        his_dist = remaining_distances[his_runner]
-        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[his_runner]) # TODO - move to snd next checkpoint
+        my_perturbator = 1 - self.runner_id
+        my_dist = self.track.remaining_distance2(entities.next_progress_id[self.runner_id], entities.positions[self.runner_id])
+        his_dist = self.track.remaining_distance2(entities.next_progress_id[self.opponent_runner_id], entities.positions[self.opponent_runner_id])
+        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
+        # TODO - encourage to move the next checkpoint of HIS runner
         return my_dist - his_dist + 0.15 * closing_dist
 
     def _report_bad_prediction(self, entities: Entities):
