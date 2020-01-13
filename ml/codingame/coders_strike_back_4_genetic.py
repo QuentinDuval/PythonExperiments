@@ -387,7 +387,7 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
         entities.shield_timeout[i] -= 1
         if thrust > 0.:  # Movement
             # TODO - disable the thrust if the timeout is positive
-            entities.directions[i] = turn_angle(entities.directions[i], diff_angle) # TODO - clip already done? Then drop the "if" in turn_angle
+            entities.directions[i] = mod_angle(entities.directions[i] + diff_angle)
             entities.speeds[i][0] += thrust * math.cos(entities.directions[i])
             entities.speeds[i][1] += thrust * math.sin(entities.directions[i])
         elif thrust < 0.:  # Shield
