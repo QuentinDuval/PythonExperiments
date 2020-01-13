@@ -436,7 +436,6 @@ AGENT
 class GeneticAgent:
     def __init__(self, track: Track):
         self.track = track
-        self.game_state = GameState()
         self.predictions: Entities = None
         self.moves = np.array([
             (BOOST_STRENGTH, 0),
@@ -459,14 +458,13 @@ class GeneticAgent:
     #   Keep only a limited number of leaves open?
     #   Or do some kind of MCTS: explore the most favorables
 
-    def get_action(self, entities: Entities) -> List[str]:
+    def get_action(self, entities: Entities) -> List[Action]:
         self.chronometer.start()
-        self.game_state.complete_vehicles(entities)
         actions = self._find_best_actions(entities)
         debug("Time spent:", self.chronometer.spent())
         return actions
 
-    def _find_best_actions(self, entities: Entities) -> List[str]:
+    def _find_best_actions(self, entities: Entities) -> List[Action]:
         self._report_bad_prediction(entities)
 
         thrust_dna, angle_dna = self._randomized_beam_search(entities)
@@ -475,15 +473,7 @@ class GeneticAgent:
 
         self.predictions = entities.clone()
         simulate_turns(self.track, self.predictions, thrust_dna[:1], angle_dna[:1])
-        return [self._select_action(entities, i, thrust_dna[0][i], angle_dna[0][i]) for i in range(2)]
-
-    def _select_action(self, entities: Entities, vehicle_id: int, best_thrust: Thrust, best_angle: Angle) -> str:
-        action = Action(angle=best_angle, thrust=best_thrust)
-        if action.is_boost():
-            self.game_state.notify_boost_used(vehicle_id)
-        elif action.is_shield():
-            self.game_state.notify_shield_used(vehicle_id)
-        return action.to_str(entities.positions[vehicle_id], entities.directions[vehicle_id])
+        return [Action(angle=angle_dna[0][i], thrust=thrust_dna[0][i]) for i in range(2)]
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 6
@@ -648,20 +638,31 @@ GAME LOOP
 """
 
 
+def serialize_action(game_state: GameState, entities: Entities, vehicle_id: int, action: Action) -> str:
+    if action.is_boost():
+        game_state.notify_boost_used(vehicle_id)
+    elif action.is_shield():
+        game_state.notify_shield_used(vehicle_id)
+    return action.to_str(entities.positions[vehicle_id], entities.directions[vehicle_id])
+
+
 def game_loop():
     total_laps = int(input())
     checkpoints = read_checkpoints()
-    track = Track(checkpoints, total_laps=total_laps)
-    agent = GeneticAgent(track)
 
     debug("laps", total_laps)
     debug("checkpoints:", checkpoints)
 
+    track = Track(checkpoints, total_laps=total_laps)
+    game_state = GameState()
+    agent = GeneticAgent(track)
+
     for turn_nb in itertools.count(start=0, step=1):
         entities = read_entities(track, turn_nb)
+        game_state.complete_vehicles(entities)
         actions = agent.get_action(entities)
-        for action in actions:
-            print(action)
+        for vehicle_id, action in enumerate(actions):
+            print(serialize_action(game_state, entities, vehicle_id, action))
 
 
 if __name__ == '__main__':
