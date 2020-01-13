@@ -7,11 +7,13 @@ import time
 
 import numpy as np
 
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -31,6 +33,7 @@ BOOST_STRENGTH = 650
 
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -63,6 +66,7 @@ class Chronometer:
 GEOMETRY & VECTOR CALCULUS
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 Angle = float
 Vector = np.ndarray
@@ -107,6 +111,7 @@ def mod_angle(angle: Angle) -> Angle:
 DATA STRUCTURES
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 Checkpoint = np.ndarray
 CheckpointId = int
@@ -216,17 +221,17 @@ class Track:
     def __len__(self):
         return len(self.checkpoints)
 
-    def get_progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
+    def get_progress_id(self, current_lap: int, next_checkpoint_id: int) -> int:
         return next_checkpoint_id + current_lap * len(self.checkpoints)
 
-    def remaining_distance2(self, progress_index: int, position: Vector) -> float:
-        return distance2(position, self.total_checkpoints[progress_index]) + self.distances[progress_index]
+    def remaining_distance2(self, progress_id: int, position: Vector) -> float:
+        return distance2(position, self.total_checkpoints[progress_id]) + self.distances[progress_id]
 
-    def next_checkpoint(self, progress_index: int) -> Checkpoint:
-        return self.total_checkpoints[progress_index]
+    def next_checkpoint(self, progress_id: int) -> Checkpoint:
+        return self.total_checkpoints[progress_id]
 
-    def angle_next_checkpoint(self, progress_index: int, position: Vector) -> float:
-        to_next_checkpoint = self.total_checkpoints[progress_index] - position
+    def angle_next_checkpoint(self, progress_id: int, position: Vector) -> float:
+        to_next_checkpoint = self.total_checkpoints[progress_id] - position
         return get_angle(to_next_checkpoint)
 
     def _pre_compute_distances_to_end(self):
@@ -402,7 +407,7 @@ class GameState:
 
     def complete_vehicles(self, entities: Entities, track: Track):
         for i in range(len(entities)):
-            entities.next_progress_id[i] = track.get_progress_index(self.laps[i], self.prev_checkpoint_id[i])
+            entities.next_progress_id[i] = track.get_progress_id(self.laps[i], self.prev_checkpoint_id[i])
             entities.boost_available[i] = self.boost_available[i]
             entities.shield_timeout[i] = self.shield_timeout[i]
 
@@ -550,8 +555,7 @@ class GeneticAgent:
     def _eval(self, entities: Entities) -> float:
         remaining_distances = np.array([0.] * 4)
         for i in range(len(remaining_distances)):
-            progress_index = entities.next_progress_id[i]
-            remaining_distances[i] = self.track.remaining_distance2(progress_index, entities.positions[i])
+            remaining_distances[i] = self.track.remaining_distance2(entities.next_progress_id[i], entities.positions[i])
 
         my_runner = np.argmin(remaining_distances[:2])
         my_perturbator = 1 - my_runner
