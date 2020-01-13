@@ -123,8 +123,8 @@ def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
 
 def target_point(position: Vector, prev_angle: Angle, diff_angle: Angle) -> Vector:
     next_angle = turn_angle(prev_angle, diff_angle)
-    return np.array([5000 * math.cos(next_angle),
-                     5000 * math.sin(next_angle)]) + position
+    return np.array([position[0] + 2000 * math.cos(next_angle),
+                     position[1] + 2000 * math.sin(next_angle)])
 
 
 @dataclass(frozen=False)
