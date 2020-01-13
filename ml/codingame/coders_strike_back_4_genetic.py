@@ -507,8 +507,7 @@ class GeneticAgent:
         min_eval = float('inf')
         scenario_count = 0
 
-        # TODO - the GA algorithm tries to target the center of the checkpoint, WHY?
-        #   => the GA algorithm is too timid (slows down when it should not)
+        # TODO - The GA algorithm is too timid (slows down when it should not)
 
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)
 
@@ -517,7 +516,7 @@ class GeneticAgent:
         if self.previous_thrust_dna is not None:
             thrusts[1][:-1] = self.previous_thrust_dna[1:]
 
-        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, nb_entities))
+        angles = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_strand, nb_action, nb_entities))
         angles[0] = init_angles
         if self.previous_angle_dna is not None:
             angles[1][:-1] = self.previous_angle_dna[1:]
@@ -526,10 +525,6 @@ class GeneticAgent:
 
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
-
-            # Make sure the solution are correct
-            thrusts.clip(0., 200., out=thrusts)
-            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
 
             # Evaluation of the different solutions
             for i in range(nb_strand):
@@ -551,11 +546,15 @@ class GeneticAgent:
             thrusts[indices[5]] = np.random.uniform(0., 200., size=(nb_action, nb_entities))
             angles[indices[3]] = angles[indices[0]]
             angles[indices[4]] = best_angles
-            angles[indices[5]] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, nb_entities))
+            angles[indices[5]] = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_action, nb_entities))
 
             # Random mutations for every-one
-            thrusts += np.random.uniform(-20., 20., size=(nb_strand, nb_action, nb_entities))
-            angles += np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_strand, nb_action, nb_entities))
+            thrusts += np.random.normal(-10., 10., size=(nb_strand, nb_action, nb_entities))
+            angles += np.random.normal(-MAX_TURN_RAD * 0.1, MAX_TURN_RAD * 0.1, size=(nb_strand, nb_action, nb_entities))
+
+            # Make sure the solution are correct
+            thrusts.clip(0., 200., out=thrusts)
+            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
 
         debug("count scenarios:", scenario_count)
         return best_thrusts, best_angles
