@@ -22,14 +22,17 @@ TOP_LEFT = (0, 0)
 BOT_RIGHT = (WIDTH - 1, HEIGHT - 1)
 
 CHECKPOINT_RADIUS = 600
-FORCE_FIELD_RADIUS = 400
+
+VEHICLE_RADIUS = 400
 VEHICLE_MASS = 1.0
+VEHICLE_FRICTION = 0.85
+VEHICLE_MAX_THRUST = 200
+VEHICLE_BOOST_STRENGTH = 650
+
+MAX_VEHICLE_SPEED = (1 - VEHICLE_FRICTION) * VEHICLE_MAX_THRUST    # Solve fixed point max_thrust + friction * x = x
 
 MAX_TURN_DEG = 18
 MAX_TURN_RAD = MAX_TURN_DEG / 360 * 2 * math.pi
-
-THRUST_STRENGTH = 200
-BOOST_STRENGTH = 650
 
 FIRST_RESPONSE_TIME = 1000
 RESPONSE_TIME = 75
@@ -191,7 +194,7 @@ class Action(NamedTuple):
         return self.thrust < 0
 
     def is_boost(self):
-        return self.thrust > THRUST_STRENGTH
+        return self.thrust > VEHICLE_MAX_THRUST
 
     def to_str(self, position: Vector, prev_angle: Angle) -> str:
         x, y = target_point(position, prev_angle, self.angle)
@@ -260,7 +263,7 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) ->
 
     # Quick collision check: no speed
     d23 = norm(speed2)
-    if d23 == 0. and distance2(p1, p2) > FORCE_FIELD_RADIUS ** 2:
+    if d23 == 0. and distance2(p1, p2) > VEHICLE_RADIUS ** 2:
         return float('inf')
 
     # TODO - find other ways to limit the computation (based on the direction of speed?)
@@ -282,6 +285,8 @@ def find_cp_collision(track: Track, entities: Entities, i: int, dt: float) -> fl
     p1 = track.next_checkpoint(entities.next_progress_id[i])
     p2 = entities.positions[i]
     speed2 = entities.speeds[i] * dt
+    if distance2(p1, p2) > MAX_VEHICLE_SPEED ** 2:  # Useful optimization
+        return float('inf')
     return find_collision(p1, p2, speed2, sum_radius=CHECKPOINT_RADIUS)
 
 
@@ -290,7 +295,7 @@ def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> floa
     p1 = entities.positions[i1]
     p2 = entities.positions[i2]
     speed2 = (entities.speeds[i2] - entities.speeds[i1]) * dt
-    return find_collision(p1, p2, speed2, sum_radius=FORCE_FIELD_RADIUS * 2)
+    return find_collision(p1, p2, speed2, sum_radius=VEHICLE_RADIUS * 2)
 
 
 def find_first_collision(track: Track, entities: Entities,
@@ -369,7 +374,7 @@ def simulate_movements(track: Track, entities: Entities, dt: float = 1.0):
 
     # Rounding of the positions & speeds
     np.round(entities.positions, out=entities.positions)
-    np.trunc(entities.speeds * 0.85, out=entities.speeds)
+    np.trunc(entities.speeds * VEHICLE_FRICTION, out=entities.speeds)
 
 
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
@@ -441,12 +446,12 @@ class GeneticAgent:
         self.track = track
         self.predictions: Entities = None
         self.moves = np.array([
-            (BOOST_STRENGTH, 0),
-            (THRUST_STRENGTH, 0),
-            (THRUST_STRENGTH, -MAX_TURN_RAD),
-            (THRUST_STRENGTH, +MAX_TURN_RAD),
-            (0.2 * THRUST_STRENGTH, -MAX_TURN_RAD),
-            (0.2 * THRUST_STRENGTH, +MAX_TURN_RAD)
+            (VEHICLE_BOOST_STRENGTH, 0),
+            (VEHICLE_MAX_THRUST, 0),
+            (VEHICLE_MAX_THRUST, -MAX_TURN_RAD),
+            (VEHICLE_MAX_THRUST, +MAX_TURN_RAD),
+            (0.2 * VEHICLE_MAX_THRUST, -MAX_TURN_RAD),
+            (0.2 * VEHICLE_MAX_THRUST, +MAX_TURN_RAD)
         ])
         self.chronometer = Chronometer()
         self.previous_thrust_dna = None
