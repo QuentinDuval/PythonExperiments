@@ -114,10 +114,10 @@ Thrust = int
 
 
 def turn_angle(prev_angle: Angle, diff_angle: Angle) -> Angle:
-    if diff_angle > 0:
-        diff_angle = min(MAX_TURN_RAD, diff_angle)
-    elif diff_angle < 0:
-        diff_angle = max(-MAX_TURN_RAD, diff_angle)
+    if diff_angle > MAX_TURN_RAD:
+        diff_angle = MAX_TURN_RAD
+    elif diff_angle < -MAX_TURN_RAD:
+        diff_angle = -MAX_TURN_RAD
     return mod_angle(prev_angle + diff_angle)
 
 
@@ -132,9 +132,9 @@ class Entities:
     length: int
     positions: np.ndarray
     speeds: np.ndarray
+    shield_timeout: np.ndarray      # Include the notion of mass for PODs
     directions: np.ndarray
-    masses: np.ndarray
-    next_checkpoint_id: np.ndarray
+    next_checkpoint_id: np.ndarray  # TODO - combine this with progress_index (optimization)
     current_lap: np.ndarray
     boost_available: np.ndarray
 
@@ -144,12 +144,11 @@ class Entities:
             length=size,
             positions=np.zeros(shape=(size, 2)),
             speeds=np.zeros(shape=(size, 2)),
+            shield_timeout=np.zeros(shape=size, dtype=np.int64),
             directions=np.zeros(shape=size),
-            masses=np.ones(shape=size),
             next_checkpoint_id=np.zeros(shape=size, dtype=np.int64),
             current_lap=np.zeros(shape=size, dtype=np.int64),
-            boost_available=np.zeros(shape=size, dtype=bool)
-        )
+            boost_available=np.zeros(shape=size, dtype=bool))
 
     def __len__(self):
         return self.length
@@ -167,10 +166,10 @@ class Entities:
             positions=self.positions.copy(),
             speeds=self.speeds.copy(),
             directions=self.directions.copy(),
-            masses=self.masses.copy(),
             next_checkpoint_id=self.next_checkpoint_id.copy(),
             current_lap=self.current_lap.copy(),
-            boost_available=self.boost_available.copy())
+            boost_available=self.boost_available.copy(),
+            shield_timeout=self.shield_timeout.copy())
 
     def __repr__(self):
         return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
@@ -306,8 +305,8 @@ def move_time_forward(entities: Entities, dt: float = 1.0):
 
 def bounce(entities: Entities, i1: int, i2: int, min_impulsion: float):
     # Getting the masses
-    m1 = entities.masses[i1]
-    m2 = entities.masses[i2]
+    m1 = 1. if entities.shield_timeout[i1] < 3 else 10.
+    m2 = 1. if entities.shield_timeout[i2] < 3 else 10.
     mcoeff = (m1 + m2) / (m1 * m2)
 
     # Difference of position and speeds
@@ -359,15 +358,15 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
     for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
         diff_angle = diff_angles[i]
+        entities.shield_timeout[i] -= 1
         if thrust > 0.:  # Movement
+            # TODO - disable the thrust if the timeout is positive
             entities.directions[i] = turn_angle(entities.directions[i], diff_angle)
             dv_dt = np.array([thrust * math.cos(entities.directions[i]),
                               thrust * math.sin(entities.directions[i])])
             entities.speeds[i] += dv_dt * 1.0
-            entities.masses[i] = 1.
         elif thrust < 0.:  # Shield
-            # TODO - disable the future thrusts
-            entities.masses[i] = 10.
+            entities.shield_timeout[i] = 3
 
 
 def update_checkpoints(track: Track, entities: Entities):
@@ -418,6 +417,7 @@ class GameState:
         for i in range(len(entities)):
             entities.current_lap[i] = self.laps[i]
             entities.boost_available[i] = self.boost_available[i]
+            entities.shield_timeout[i] = self.shield_timeout[i]
 
     def _track_lap(self, entities: Entities):
         for i in range(len(entities)):
