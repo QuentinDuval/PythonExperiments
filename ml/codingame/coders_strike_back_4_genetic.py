@@ -603,7 +603,8 @@ class GeneticAgent:
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner
         # TODO - encourage to make sure the opponent does not get close to HIS next cp?
-        return my_dist - his_dist + 0.1 * closing_dist
+        go_fast = norm2(entities.speeds[self.runner_id])
+        return my_dist - his_dist + 0.1 * closing_dist + go_fast
 
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
