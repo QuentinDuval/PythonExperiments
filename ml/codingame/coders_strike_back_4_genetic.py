@@ -511,7 +511,7 @@ class GeneticAgent:
 
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)
 
-        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, nb_entities))
+        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, nb_entities))  # TODO - encourage fast speeds
         thrusts[0] = init_thrusts
         if self.previous_thrust_dna is not None:
             thrusts[1][:-1] = self.previous_thrust_dna[1:]
