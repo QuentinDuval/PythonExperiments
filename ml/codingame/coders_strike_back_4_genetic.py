@@ -288,6 +288,7 @@ def find_first_collision(entities: Entities, last_collisions: Set[Tuple[int, int
     best_i = best_j = 0
     n = len(entities)
     for i in range(n - 1):
+        # TODO - just check the collision with YOUR checkpoint - would limit the amount of impacts on performance
         for j in range(i + 1, n):
             if (i, j) not in last_collisions:
                 t = find_collision(entities, i, j, dt)
