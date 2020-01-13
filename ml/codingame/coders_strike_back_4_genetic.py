@@ -188,27 +188,6 @@ ACTIONS
 """
 
 
-class OutputAction(NamedTuple):
-    target: Vector
-    thrust: Thrust
-
-    def is_shield(self):
-        return self.thrust < 0
-
-    def is_boost(self):
-        return self.thrust > THRUST_STRENGTH
-
-    def __repr__(self):
-        x, y = self.target
-        if self.is_shield():
-            thrust = "SHIELD"
-        elif self.is_boost():
-            thrust = "BOOST"
-        else:
-            thrust = str(int(self.thrust))
-        return str(int(x)) + " " + str(int(y)) + " " + thrust
-
-
 class Action(NamedTuple):
     angle: Angle
     thrust: Thrust
@@ -219,8 +198,15 @@ class Action(NamedTuple):
     def is_boost(self):
         return self.thrust > THRUST_STRENGTH
 
-    def to_output(self, position: Vector, prev_angle: Angle):
-        return OutputAction(target=target_point(position, prev_angle, self.angle), thrust=self.thrust)
+    def to_str(self, position: Vector, prev_angle: Angle) -> str:
+        x, y = target_point(position, prev_angle, self.angle)
+        if self.is_shield():
+            thrust = "SHIELD"
+        elif self.is_boost():
+            thrust = "BOOST"
+        else:
+            thrust = str(int(self.thrust))
+        return str(int(x)) + " " + str(int(y)) + " " + thrust
 
 
 """
@@ -240,20 +226,20 @@ class Track:
     def __len__(self):
         return len(self.checkpoints)
 
-    def progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
-        return next_checkpoint_id + current_lap * len(self.checkpoints)
-
     def remaining_distance2(self, current_lap: int, next_checkpoint_id: int, position: Vector) -> float:
-        checkpoint_id = self.progress_index(current_lap, next_checkpoint_id)
+        checkpoint_id = self._progress_index(current_lap, next_checkpoint_id)
         return distance2(position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
 
     def next_checkpoint(self, current_lap: int, next_checkpoint_id: int) -> Checkpoint:
-        checkpoint_id = self.progress_index(current_lap, next_checkpoint_id)
+        checkpoint_id = self._progress_index(current_lap, next_checkpoint_id)
         return self.total_checkpoints[checkpoint_id]
 
     def angle_next_checkpoint(self, next_checkpoint_id: int, position: Vector) -> float:
         to_next_checkpoint = self.total_checkpoints[next_checkpoint_id] - position
         return get_angle(to_next_checkpoint)
+
+    def _progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
+        return next_checkpoint_id + current_lap * len(self.checkpoints)
 
     def _pre_compute_distances_to_end(self):
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
@@ -502,7 +488,9 @@ class GeneticAgent:
         action = Action(angle=best_angle, thrust=best_thrust)
         if action.is_boost():
             self.game_state.notify_boost_used(vehicle_id)
-        return str(action.to_output(entities.positions[vehicle_id], entities.directions[vehicle_id]))
+        elif action.is_shield():
+            self.game_state.notify_shield_used(vehicle_id)
+        return action.to_str(entities.positions[vehicle_id], entities.directions[vehicle_id])
 
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 6
