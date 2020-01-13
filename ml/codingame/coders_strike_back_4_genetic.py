@@ -134,8 +134,7 @@ class Entities:
     speeds: np.ndarray
     shield_timeout: np.ndarray      # Include the notion of mass for PODs
     directions: np.ndarray
-    next_checkpoint_id: np.ndarray  # TODO - combine this with progress_index (optimization)
-    current_lap: np.ndarray
+    next_progress_id: np.ndarray
     boost_available: np.ndarray
 
     @classmethod
@@ -146,8 +145,7 @@ class Entities:
             speeds=np.zeros(shape=(size, 2)),
             shield_timeout=np.zeros(shape=size, dtype=np.int64),
             directions=np.zeros(shape=size),
-            next_checkpoint_id=np.zeros(shape=size, dtype=np.int64),
-            current_lap=np.zeros(shape=size, dtype=np.int64),
+            next_progress_id=np.zeros(shape=size, dtype=np.int64),
             boost_available=np.zeros(shape=size, dtype=bool))
 
     def __len__(self):
@@ -157,8 +155,7 @@ class Entities:
         return np.array_equal(self.positions, other.positions) \
                and np.array_equal(self.speeds, other.speeds) \
                and np.array_equal(self.directions, other.directions) \
-               and np.array_equal(self.next_checkpoint_id, other.next_checkpoint_id) \
-               and np.array_equal(self.current_lap, other.current_lap)
+               and np.array_equal(self.next_progress_id, other.next_progress_id)
 
     def clone(self):
         return Entities(
@@ -166,8 +163,7 @@ class Entities:
             positions=self.positions.copy(),
             speeds=self.speeds.copy(),
             directions=self.directions.copy(),
-            next_checkpoint_id=self.next_checkpoint_id.copy(),
-            current_lap=self.current_lap.copy(),
+            next_progress_id=self.next_progress_id.copy(),
             boost_available=self.boost_available.copy(),
             shield_timeout=self.shield_timeout.copy())
 
@@ -220,20 +216,18 @@ class Track:
     def __len__(self):
         return len(self.checkpoints)
 
-    def remaining_distance2(self, current_lap: int, next_checkpoint_id: int, position: Vector) -> float:
-        checkpoint_id = self._progress_index(current_lap, next_checkpoint_id)
-        return distance2(position, self.total_checkpoints[checkpoint_id]) + self.distances[checkpoint_id]
-
-    def next_checkpoint(self, current_lap: int, next_checkpoint_id: int) -> Checkpoint:
-        checkpoint_id = self._progress_index(current_lap, next_checkpoint_id)
-        return self.total_checkpoints[checkpoint_id]
-
-    def angle_next_checkpoint(self, next_checkpoint_id: int, position: Vector) -> float:
-        to_next_checkpoint = self.total_checkpoints[next_checkpoint_id] - position
-        return get_angle(to_next_checkpoint)
-
-    def _progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
+    def get_progress_index(self, current_lap: int, next_checkpoint_id: int) -> int:
         return next_checkpoint_id + current_lap * len(self.checkpoints)
+
+    def remaining_distance2(self, progress_index: int, position: Vector) -> float:
+        return distance2(position, self.total_checkpoints[progress_index]) + self.distances[progress_index]
+
+    def next_checkpoint(self, progress_index: int) -> Checkpoint:
+        return self.total_checkpoints[progress_index]
+
+    def angle_next_checkpoint(self, progress_index: int, position: Vector) -> float:
+        to_next_checkpoint = self.total_checkpoints[progress_index] - position
+        return get_angle(to_next_checkpoint)
 
     def _pre_compute_distances_to_end(self):
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
@@ -370,16 +364,11 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
 
 def update_checkpoints(track: Track, entities: Entities):
     for i in range(len(entities)):
-        new_current_lap = entities.current_lap[i]
-        new_next_checkpoint_id = entities.next_checkpoint_id[i]
-        next_total_checkpoint_id = new_next_checkpoint_id + new_current_lap * len(track.checkpoints)
-        next_checkpoint = track.total_checkpoints[next_total_checkpoint_id]
+        cp_progress_id = entities.next_progress_id[i]
+        next_checkpoint = track.next_checkpoint(cp_progress_id)
         distance_to_checkpoint = distance2(entities.positions[i], next_checkpoint)
         if distance_to_checkpoint < CHECKPOINT_RADIUS ** 2:
-            new_next_checkpoint_id += 1
-            if new_next_checkpoint_id >= len(track.checkpoints):
-                entities.next_checkpoint_id[i] = 0
-                entities.current_lap[i] += 1
+            entities.next_progress_id[i] += 1
 
 
 def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
@@ -400,30 +389,28 @@ GAME STATE
 
 class GameState:
     def __init__(self):
-        self.prev_checkpoints = np.array([1] * 4)
+        self.prev_checkpoint_id = np.array([1] * 4)
         self.laps = np.array([0] * 4)
         self.boost_available = np.array([True] * 4)
         self.shield_timeout = np.array([0] * 4)
+
+    def track_lap(self, vehicle_id: int, next_checkpoint_id: int):
+        self.shield_timeout[vehicle_id] = max(0, self.shield_timeout[vehicle_id] - 1)
+        if next_checkpoint_id == 0 and self.prev_checkpoint_id[vehicle_id] > 0:
+            self.laps[vehicle_id] += 1
+        self.prev_checkpoint_id[vehicle_id] = next_checkpoint_id
+
+    def complete_vehicles(self, entities: Entities, track: Track):
+        for i in range(len(entities)):
+            entities.next_progress_id[i] = track.get_progress_index(self.laps[i], self.prev_checkpoint_id[i])
+            entities.boost_available[i] = self.boost_available[i]
+            entities.shield_timeout[i] = self.shield_timeout[i]
 
     def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
 
     def notify_shield_used(self, vehicle_id: int):
         self.shield_timeout[vehicle_id] = 3
-
-    def complete_vehicles(self, entities: Entities):
-        self._track_lap(entities)
-        for i in range(len(entities)):
-            entities.current_lap[i] = self.laps[i]
-            entities.boost_available[i] = self.boost_available[i]
-            entities.shield_timeout[i] = self.shield_timeout[i]
-
-    def _track_lap(self, entities: Entities):
-        for i in range(len(entities)):
-            self.shield_timeout[i] = max(0, self.shield_timeout[i] - 1)
-            if entities.next_checkpoint_id[i] == 0 and self.prev_checkpoints[i] > 0:
-                self.laps[i] += 1
-            self.prev_checkpoints[i] = entities.next_checkpoint_id[i]
 
 
 """
@@ -544,7 +531,7 @@ class GeneticAgent:
             for i in range(2):  # TODO - do this for the opponent as well
                 p = entities.positions[i]
                 s = entities.speeds[i]
-                c = self.track.next_checkpoint(entities.current_lap[i], entities.next_checkpoint_id[i])
+                c = self.track.next_checkpoint(entities.next_progress_id[i])
                 cp_angle = mod_angle(get_angle(c - p - 2 * s))
                 dir_angle = entities.directions[i]
                 diff_angle = mod_angle(cp_angle - dir_angle)
@@ -563,10 +550,8 @@ class GeneticAgent:
     def _eval(self, entities: Entities) -> float:
         remaining_distances = np.array([0.] * 4)
         for i in range(len(remaining_distances)):
-            current_lap = entities.current_lap[i]
-            next_cp_id = entities.next_checkpoint_id[i]
-            position = entities.positions[i]
-            remaining_distances[i] = self.track.remaining_distance2(current_lap, next_cp_id, position)
+            progress_index = entities.next_progress_id[i]
+            remaining_distances[i] = self.track.remaining_distance2(progress_index, entities.positions[i])
 
         my_runner = np.argmin(remaining_distances[:2])
         my_perturbator = 1 - my_runner
@@ -615,19 +600,20 @@ def read_checkpoints() -> List[Checkpoint]:
     return [read_checkpoint() for _ in range(checkpoint_count)]
 
 
-def read_entities(track: Track, turn_nb: int) -> Entities:
+def read_entities(game_state: GameState, track: Track, turn_nb: int) -> Entities:
     entities = Entities.empty(size=4)
-    for i in range(4):
+    for vehicle_id in range(4):
         x, y, vx, vy, angle, next_check_point_id = [int(s) for s in input().split()]
-        entities.positions[i][0] = x
-        entities.positions[i][1] = y
-        entities.speeds[i][0] = vx
-        entities.speeds[i][1] = vy
-        entities.next_checkpoint_id[i] = next_check_point_id
+        game_state.track_lap(vehicle_id, next_check_point_id)
+        entities.positions[vehicle_id][0] = x
+        entities.positions[vehicle_id][1] = y
+        entities.speeds[vehicle_id][0] = vx
+        entities.speeds[vehicle_id][1] = vy
         if turn_nb == 0:
-            entities.directions[i] = track.angle_next_checkpoint(entities.next_checkpoint_id[i], entities.positions[i])
+            entities.directions[vehicle_id] = track.angle_next_checkpoint(next_check_point_id, entities.positions[vehicle_id])
         else:
-            entities.directions[i] = angle / 360 * 2 * math.pi
+            entities.directions[vehicle_id] = angle / 360 * 2 * math.pi
+    game_state.complete_vehicles(entities, track)
     return entities
 
 
@@ -658,8 +644,7 @@ def game_loop():
     agent = GeneticAgent(track)
 
     for turn_nb in itertools.count(start=0, step=1):
-        entities = read_entities(track, turn_nb)
-        game_state.complete_vehicles(entities)
+        entities = read_entities(game_state, track, turn_nb)
         actions = agent.get_action(entities)
         for vehicle_id, action in enumerate(actions):
             print(serialize_action(game_state, entities, vehicle_id, action))
