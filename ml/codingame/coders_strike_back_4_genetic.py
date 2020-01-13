@@ -29,7 +29,7 @@ VEHICLE_FRICTION = 0.85
 VEHICLE_MAX_THRUST = 200
 VEHICLE_BOOST_STRENGTH = 650
 
-MAX_VEHICLE_SPEED = (1 - VEHICLE_FRICTION) * VEHICLE_MAX_THRUST    # Solve fixed point max_thrust + friction * x = x
+MAX_VEHICLE_SPEED = VEHICLE_MAX_THRUST / (1 - VEHICLE_FRICTION)    # Solve fixed point max_thrust + friction * x = x
 
 MAX_TURN_DEG = 18
 MAX_TURN_RAD = MAX_TURN_DEG / 360 * 2 * math.pi
@@ -176,7 +176,10 @@ class Entities:
             shield_timeout=self.shield_timeout.copy())
 
     def __repr__(self):
-        return "positions:\n" + repr(self.positions) + "\nspeeds:\n" + repr(self.speeds) + "\n"
+        return "positions:\n" + repr(self.positions) \
+             + "\nspeeds:\n" + repr(self.speeds) \
+             + "\ndirections:\n" + repr(self.directions) \
+             + "\nnext_progress_id:\n" + repr(self.next_progress_id) + "\n"
 
 
 """
@@ -218,7 +221,7 @@ class Track:
     def __init__(self, checkpoints: List[Checkpoint], total_laps: int):
         self.checkpoints = checkpoints
         self.total_checkpoints = checkpoints * (total_laps + 1)  # TODO - Hack - due to starting to CP 1!
-        self.distances = np.zeros(len(self.total_checkpoints))
+        self.squared_distances = np.zeros(len(self.total_checkpoints))
         self._pre_compute_distances_to_end()
 
     def __len__(self):
@@ -230,7 +233,7 @@ class Track:
     def remaining_distance2(self, entities: Entities, vehicle_id: int) -> float:
         position = entities.positions[vehicle_id]
         progress_id = entities.next_progress_id[vehicle_id]
-        return distance2(position, self.total_checkpoints[progress_id]) + self.distances[progress_id]
+        return distance2(position, self.total_checkpoints[progress_id]) + self.squared_distances[progress_id]
 
     def next_checkpoint(self, progress_id: int) -> Checkpoint:
         return self.total_checkpoints[progress_id]
@@ -243,7 +246,7 @@ class Track:
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             distance_to_next = distance2(self.total_checkpoints[i], self.total_checkpoints[i + 1])
-            self.distances[i] = self.distances[i + 1] + distance_to_next
+            self.squared_distances[i] = self.squared_distances[i + 1] + distance_to_next
 
 
 """
@@ -480,11 +483,12 @@ class GeneticAgent:
 
     def _identify_roles(self, entities: Entities):
         # TODO - try to classify the IA of the opponent in here
-        remaining_distances = np.array([0.] * 4)
+        remaining_distances = np.array([0.] * len(entities))
         for i in range(len(remaining_distances)):
             remaining_distances[i] = self.track.remaining_distance2(entities, i)
         self.runner_id = np.argmin(remaining_distances[:2])
-        self.opponent_runner_id = 2 + np.argmin(remaining_distances[2:])
+        if len(entities) > 2: # TODO - hack for my own simulations
+            self.opponent_runner_id = 2 + np.argmin(remaining_distances[2:])
 
     def _find_best_actions(self, entities: Entities) -> List[Action]:
         self._report_bad_prediction(entities)
@@ -500,20 +504,24 @@ class GeneticAgent:
     def _randomized_beam_search(self, entities: Entities) -> Tuple[np.ndarray, np.ndarray]:
         nb_strand = 6
         nb_action = 6
+        nb_entities = 2
 
         best_thrusts = None
         best_angles = None
         min_eval = float('inf')
         scenario_count = 0
 
+        # TODO - the GA algorithm tries to target the center of the checkpoint, WHY?
+        #   => the GA algorithm is too timid (slows down when it should not)
+
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)
 
-        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, 2))
+        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, nb_entities))
         thrusts[0] = init_thrusts
         if self.previous_thrust_dna is not None:
             thrusts[1][:-1] = self.previous_thrust_dna[1:]
 
-        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, 2))
+        angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_strand, nb_action, nb_entities))
         angles[0] = init_angles
         if self.previous_angle_dna is not None:
             angles[1][:-1] = self.previous_angle_dna[1:]
@@ -544,25 +552,26 @@ class GeneticAgent:
             # Selections of the best + re-injection of the current best so far
             thrusts[indices[3]] = thrusts[indices[0]]
             thrusts[indices[4]] = best_thrusts
-            thrusts[indices[5]] = np.random.uniform(0., 200., size=(nb_action, 2))
+            thrusts[indices[5]] = np.random.uniform(0., 200., size=(nb_action, nb_entities))
             angles[indices[3]] = angles[indices[0]]
             angles[indices[4]] = best_angles
-            angles[indices[5]] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, 2))
+            angles[indices[5]] = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_action, nb_entities))
 
             # Random mutations for every-one
-            thrusts += np.random.uniform(-20., 20., size=(nb_strand, nb_action, 2))
-            angles += np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_strand, nb_action, 2))
+            thrusts += np.random.uniform(-20., 20., size=(nb_strand, nb_action, nb_entities))
+            angles += np.random.uniform(-MAX_TURN_RAD * 0.2, MAX_TURN_RAD * 0.2, size=(nb_strand, nb_action, nb_entities))
 
         debug("count scenarios:", scenario_count)
         return best_thrusts, best_angles
 
     def _initial_solution(self, entities: Entities, nb_action: int) -> Tuple[np.ndarray, np.ndarray]:
         # Solution based on a kind of PID: improve it
+        nb_entities = 2
         entities = entities.clone()
-        thrusts = np.zeros(shape=(nb_action, 2))
-        diff_angles = np.zeros(shape=(nb_action, 2))
+        thrusts = np.zeros(shape=(nb_action, nb_entities))
+        diff_angles = np.zeros(shape=(nb_action, nb_entities))
         for d in range(nb_action):
-            for i in range(2):  # TODO - do this for the opponent as well
+            for i in range(nb_entities):  # TODO - do this for the opponent as well
                 p = entities.positions[i]
                 s = entities.speeds[i]
                 c = self.track.next_checkpoint(entities.next_progress_id[i])
@@ -584,14 +593,17 @@ class GeneticAgent:
     def _eval(self, entities: Entities) -> float:
         my_perturbator = 1 - self.runner_id
         my_dist = self.track.remaining_distance2(entities, self.runner_id)
-        his_dist = self.track.remaining_distance2(entities, self.opponent_runner_id)
+        if len(entities) > self.opponent_runner_id: # TODO - hack for my own simulation
+            his_dist = self.track.remaining_distance2(entities, self.opponent_runner_id)
+            closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
+        else:
+            his_dist = 0
+            closing_dist = 0
 
         '''
         closing_dist = distance2(entities.positions[my_perturbator],
                                  self.track.next_checkpoint(entities.next_progress_id[self.opponent_runner_id] + 1))
         '''
-
-        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
 
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner

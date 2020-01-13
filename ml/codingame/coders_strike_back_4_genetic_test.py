@@ -54,7 +54,59 @@ def test_scenario_2():
     apply_actions(entities, thrusts=np.array([200., 200.]), diff_angles=np.array([0.3141592653589793, 0.]))
     simulate_movements(track, entities, dt=1.0)
     assert np.array_equal(entities.positions, np.array([[4132., 3650.], [4620., 2744.]]))
-    assert np.array_equal(entities.speeds, np.array([[110., 489.], [512., -192.]]))
+    assert np.array
+
+
+def test_scenario_3():
+    track = Track(
+        checkpoints=[
+            np.array([1000.,  0.]),
+            np.array([2000., 0.])],
+        total_laps=3)
+
+    entities = Entities.empty(size=1)
+    entities.positions = np.array([[0., 0.]])
+    entities.speeds = np.array([[2000., 0.]])
+    entities.directions = np.array([0.])
+    entities.next_progress_id[0] = 0
+
+    t = find_cp_collision(track, entities, 0, dt=1.0)
+    assert t == 0.2
+    move_time_forward(entities, t)
+    assert entities.positions[0][0] == 400.
+
+
+def test_full_game():
+    """
+    Simulation of one unit, trying to find the best path on a track
+    """
+
+    track = Track(
+        checkpoints=[
+            np.array([10214,  4913]),
+            np.array([6081, 2227]),
+            np.array([3032, 5200]),
+            np.array([6273, 7759]),
+            np.array([14122,  7741]),
+            np.array([13853,  1220])],
+        total_laps=3)
+
+    entities = Entities.empty(size=2)
+    entities.positions = np.array([[9942., 5332.], [10486.,  4494.]])
+    entities.speeds = np.array([[0., 0.], [0., 0.]])
+    entities.directions = np.array([3.81888678, 3.61688549])
+    entities.next_progress_id = np.array([1, 1])
+
+    agent = GeneticAgent(track)
+    total_turns = 0
+    while entities.next_progress_id.max() < len(track) * 3 + 1 and total_turns < 300:    # 2 full turns completed
+        total_turns += 1
+        actions = agent.get_action(entities)
+        simulate_turns(track, entities,
+                       thrusts=np.array([[actions[i].thrust for i in range(2)]]),
+                       diff_angles=np.array([[actions[i].angle for i in range(2)]]))
+    print("turns:", total_turns)
+    print("progress:", entities.next_progress_id[0], entities.next_progress_id[1])
 
 
 def test_simulation_performance():
@@ -85,4 +137,7 @@ def test_simulation_performance():
 test_scenario_0()
 test_scenario_1()
 test_scenario_2()
+test_scenario_3()
+
+test_full_game()
 test_simulation_performance()
