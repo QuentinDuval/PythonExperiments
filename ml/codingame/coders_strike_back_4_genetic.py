@@ -523,6 +523,8 @@ class GeneticAgent:
 
         evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
 
+        # TODO - decreasing amplitude each time we beat a record
+
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
 
