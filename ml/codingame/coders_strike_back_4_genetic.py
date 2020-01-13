@@ -227,7 +227,9 @@ class Track:
     def get_progress_id(self, current_lap: int, next_checkpoint_id: int) -> int:
         return next_checkpoint_id + current_lap * len(self.checkpoints)
 
-    def remaining_distance2(self, progress_id: int, position: Vector) -> float:
+    def remaining_distance2(self, entities: Entities, vehicle_id: int) -> float:
+        position = entities.positions[vehicle_id]
+        progress_id = entities.next_progress_id[vehicle_id]
         return distance2(position, self.total_checkpoints[progress_id]) + self.distances[progress_id]
 
     def next_checkpoint(self, progress_id: int) -> Checkpoint:
@@ -480,7 +482,7 @@ class GeneticAgent:
         # TODO - try to classify the IA of the opponent in here
         remaining_distances = np.array([0.] * 4)
         for i in range(len(remaining_distances)):
-            remaining_distances[i] = self.track.remaining_distance2(entities.next_progress_id[i], entities.positions[i])
+            remaining_distances[i] = self.track.remaining_distance2(entities, i)
         self.runner_id = np.argmin(remaining_distances[:2])
         self.opponent_runner_id = 2 + np.argmin(remaining_distances[2:])
 
@@ -581,10 +583,16 @@ class GeneticAgent:
 
     def _eval(self, entities: Entities) -> float:
         my_perturbator = 1 - self.runner_id
-        my_dist = self.track.remaining_distance2(entities.next_progress_id[self.runner_id], entities.positions[self.runner_id])
-        his_dist = self.track.remaining_distance2(entities.next_progress_id[self.opponent_runner_id], entities.positions[self.opponent_runner_id])
+        my_dist = self.track.remaining_distance2(entities, self.runner_id)
+        his_dist = self.track.remaining_distance2(entities, self.opponent_runner_id)
+
+        '''
         closing_dist = distance2(entities.positions[my_perturbator],
                                  self.track.next_checkpoint(entities.next_progress_id[self.opponent_runner_id] + 1))
+        '''
+
+        closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
+
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner
         # TODO - encourage to make sure the opponent does not get close to HIS next cp?
