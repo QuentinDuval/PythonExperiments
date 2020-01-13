@@ -427,13 +427,6 @@ class GameState:
         self.boost_available = np.array([True] * 4)
         self.shield_timeout = np.array([0] * 4)
 
-    def track_lap(self, entities: Entities):
-        for i in range(len(entities)):
-            self.shield_timeout[i] = max(0, self.shield_timeout[i] - 1)
-            if entities.next_checkpoint_id[i] == 0 and self.prev_checkpoints[i] > 0:
-                self.laps[i] += 1
-            self.prev_checkpoints[i] = entities.next_checkpoint_id[i]
-
     def notify_boost_used(self, vehicle_id: int):
         self.boost_available[vehicle_id] = False
 
@@ -441,9 +434,17 @@ class GameState:
         self.shield_timeout[vehicle_id] = 3
 
     def complete_vehicles(self, entities: Entities):
+        self._track_lap(entities)
         for i in range(len(entities)):
             entities.current_lap[i] = self.laps[i]
             entities.boost_available[i] = self.boost_available[i]
+
+    def _track_lap(self, entities: Entities):
+        for i in range(len(entities)):
+            self.shield_timeout[i] = max(0, self.shield_timeout[i] - 1)
+            if entities.next_checkpoint_id[i] == 0 and self.prev_checkpoints[i] > 0:
+                self.laps[i] += 1
+            self.prev_checkpoints[i] = entities.next_checkpoint_id[i]
 
 
 """
@@ -481,14 +482,10 @@ class GeneticAgent:
 
     def get_action(self, entities: Entities) -> List[str]:
         self.chronometer.start()
-        self._complete_vehicles(entities)
+        self.game_state.complete_vehicles(entities)
         actions = self._find_best_actions(entities)
         debug("Time spent:", self.chronometer.spent())
         return actions
-
-    def _complete_vehicles(self, entities: Entities):
-        self.game_state.track_lap(entities)
-        self.game_state.complete_vehicles(entities)
 
     def _find_best_actions(self, entities: Entities) -> List[str]:
         self._report_bad_prediction(entities)
