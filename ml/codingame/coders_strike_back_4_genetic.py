@@ -389,7 +389,7 @@ def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_a
     for turn_id in range(nb_turns):
         apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
         simulate_movements(entities, dt=1.0)
-        update_checkpoints(track, entities)  # TODO - ideally, should be included in the collisions
+        update_checkpoints(track, entities)  # TODO - ideally, should be included each time there is a collision: agent too cautious now
 
 
 """
@@ -579,7 +579,7 @@ class GeneticAgent:
             remaining_distances[i] = self.track.remaining_distance2(current_lap, next_cp_id, position)
 
         my_runner = np.argmin(remaining_distances[:2])
-        my_perturbator = np.argmax(remaining_distances[:2])
+        my_perturbator = 1 - my_runner
         his_runner = 2 + np.argmin(remaining_distances[2:])
 
         my_dist = remaining_distances[my_runner]
