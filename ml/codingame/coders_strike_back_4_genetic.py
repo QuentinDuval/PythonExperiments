@@ -380,9 +380,8 @@ def simulate_movements(track: Track, entities: Entities, dt: float = 1.0):
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
     # SHAPE of thrusts/diff_angles should be: (nb_entities,) & assume my vehicles are the first 2 entities
     entities.shield_timeout -= 1
-    entities.directions += diff_angles
     for i in range(thrusts.shape[0]):
-        entities.directions[i] = mod_angle(entities.directions[i])
+        entities.directions[i] = mod_angle(entities.directions[i] + diff_angles[i])
     for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
         if thrust > 0.:  # Movement
