@@ -217,7 +217,7 @@ TRACK
 class Track:
     def __init__(self, checkpoints: List[Checkpoint], total_laps: int):
         self.checkpoints = checkpoints
-        self.total_checkpoints = checkpoints * (total_laps + 1)  # TODO - Hack - due to starting to CP 1!
+        self.total_checkpoints = checkpoints * (total_laps + 1)  # TODO - Hack due to starting to checkpoint start at 1!
         self.squared_distances = np.zeros(len(self.total_checkpoints))
         self._pre_compute_distances_to_end()
 
@@ -246,7 +246,7 @@ class Track:
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             distance_to_next = distance(self.total_checkpoints[i], self.total_checkpoints[i + 1])
             # If we overshoot the CP, we want to accelerate still and not stall - TODO: replace by angle alignment?
-            bonus_to_pass_cp = CHECKPOINT_RADIUS * 5
+            bonus_to_pass_cp = CHECKPOINT_RADIUS * 5  # TODO - still not enough to encourage to finish quickly
             self.squared_distances[i] = self.squared_distances[i + 1] + distance_to_next + bonus_to_pass_cp
 
 
