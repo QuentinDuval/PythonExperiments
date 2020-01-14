@@ -285,8 +285,8 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius_squared: f
 def find_cp_collision(track: Track, entities: Entities, i: int, dt: float) -> float:
     p1 = track.next_checkpoint(entities.next_progress_id[i])
     p2 = entities.positions[i]
-    speed2 = entities.speeds[i] * dt
-    if distance2(p1, p2) > MAX_VEHICLE_SPEED ** 2:  # Useful optimization
+    speed2 = entities.speeds[i]
+    if distance2(p1, p2) > (MAX_VEHICLE_SPEED * dt + CHECKPOINT_RADIUS) ** 2:  # Useful optimization
         return float('inf')
     return find_collision(p1, p2, speed2, sum_radius_squared=CHECKPOINT_RADIUS ** 2)
 
@@ -295,7 +295,7 @@ def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> floa
     # Change referential to i1 => subtract speed of i1 to i2 (the goal will be to check if p1 intersects p2-p3)
     p1 = entities.positions[i1]
     p2 = entities.positions[i2]
-    speed2 = (entities.speeds[i2] - entities.speeds[i1]) * dt
+    speed2 = (entities.speeds[i2] - entities.speeds[i1])
     return find_collision(p1, p2, speed2, sum_radius_squared=(VEHICLE_RADIUS * 2)**2)
 
 
