@@ -247,7 +247,7 @@ class Track:
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             distance_to_next = distance(self.total_checkpoints[i], self.total_checkpoints[i + 1])
             # If we overshoot the CP, we want to accelerate still and not stall - TODO: replace by angle alignment?
-            bonus_to_pass_cp = CHECKPOINT_RADIUS * 3
+            bonus_to_pass_cp = CHECKPOINT_RADIUS * 5
             self.squared_distances[i] = self.squared_distances[i + 1] + distance_to_next + bonus_to_pass_cp
 
 
@@ -511,7 +511,7 @@ class GeneticAgent:
 
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)  # TODO - to improve
 
-        thrusts = np.random.uniform(0., 200., size=(nb_strand, nb_action, nb_entities))  # TODO - encourage fast speeds
+        thrusts = np.random.uniform(0., 300., size=(nb_strand, nb_action, nb_entities))  # Encourage fast speeds
         thrusts[0] = init_thrusts
         if self.previous_thrust_dna is not None:
             thrusts[1][:-1] = self.previous_thrust_dna[1:]
@@ -525,8 +525,15 @@ class GeneticAgent:
 
         # TODO - decreasing amplitude each time we beat a record
 
+        temperature = 0.2
+        temperature_decay = 0.9
+
         while self.chronometer.spent() < 0.8 * RESPONSE_TIME:
             scenario_count += nb_strand
+
+            # Make sure the solution are correct
+            thrusts.clip(0., 200., out=thrusts)
+            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
 
             # Evaluation of the different solutions
             for i in range(nb_strand):
@@ -541,6 +548,7 @@ class GeneticAgent:
                 min_eval = evaluations[best_index]
                 best_thrusts = thrusts[best_index].copy()
                 best_angles = angles[best_index].copy()
+                temperature *= temperature_decay
 
             # Selections of the best + re-injection of the current best so far
             thrusts[indices[3]] = thrusts[indices[0]]
@@ -550,13 +558,9 @@ class GeneticAgent:
             angles[indices[4]] = best_angles
             angles[indices[5]] = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_action, nb_entities))
 
-            # Random mutations for every-one
-            thrusts += np.random.normal(-10., 10., size=(nb_strand, nb_action, nb_entities))
-            angles += np.random.normal(-MAX_TURN_RAD * 0.1, MAX_TURN_RAD * 0.1, size=(nb_strand, nb_action, nb_entities))
-
-            # Make sure the solution are correct
-            thrusts.clip(0., 200., out=thrusts)
-            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
+            # Random mutations for everyone!
+            thrusts += np.random.normal(loc=0., scale=VEHICLE_MAX_THRUST * temperature, size=(nb_strand, nb_action, nb_entities))
+            angles += np.random.normal(loc=0., scale=MAX_TURN_RAD * temperature, size=(nb_strand, nb_action, nb_entities))
 
         debug("count scenarios:", scenario_count)
         return best_thrusts, best_angles
