@@ -86,19 +86,19 @@ def get_angle(v: Vector) -> Angle:
 
 
 def norm2(v) -> float:
-    return np.dot(v, v)
+    return v[0] ** 2 + v[1] ** 2
 
 
 def norm(v) -> float:
-    return math.sqrt(np.dot(v, v))
+    return math.sqrt(v[0] ** 2 + v[1] ** 2)
 
 
 def distance2(from_, to_) -> float:
-    return norm2(to_ - from_)
+    return (to_[0] - from_[0]) ** 2 + (to_[1] - from_[1]) ** 2
 
 
 def distance(from_, to_) -> float:
-    return norm(to_ - from_)
+    return math.sqrt(distance2(from_, to_))
 
 
 def mod_angle(angle: Angle) -> Angle:
@@ -260,7 +260,7 @@ GAME MECHANICS (Movement & Collisions)
 """
 
 
-def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) -> float:
+def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius_squared: float) -> float:
     """
     Check if there is an intersection between fixed point p1, and moving point p2
     You should change referential before calling this procedure
@@ -269,18 +269,19 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) ->
     # Quick collision check: speed in wrong direction
     v12 = p1 - p2
     speed2_dot_v12 = speed2[0] * v12[0] + speed2[1] * v12[1]
-    if speed2_dot_v12 <= 0. and norm2(v12) >= sum_radius ** 2:
+    if speed2_dot_v12 <= 0. and v12[0] ** 2 + v12[1] ** 2 >= sum_radius_squared:
         return float('inf')
 
     # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
-    d23 = norm(speed2)
     # Optimization of: dist_to_segment_2 = np.dot(normal of speed2, v12) ** 2
-    dist_to_segment_2 = ((-speed2[1] * v12[0] + speed2[0] * v12[1]) / d23) ** 2
-    if dist_to_segment_2 >= sum_radius ** 2:
+    d23_squared = speed2[0] ** 2 + speed2[1] ** 2
+    dist_to_segment_2 = (-speed2[1] * v12[0] + speed2[0] * v12[1]) ** 2 / d23_squared
+    if dist_to_segment_2 >= sum_radius_squared:
         return float('inf')
 
     # Find the point of intersection (a bit of trigonometry and pythagoras involved)
-    dist_to_intersection = speed2_dot_v12 / d23 - math.sqrt(sum_radius ** 2 - dist_to_segment_2)
+    d23 = math.sqrt(d23_squared)
+    dist_to_intersection = speed2_dot_v12 / d23 - math.sqrt(sum_radius_squared - dist_to_segment_2)
     return dist_to_intersection / d23
 
 
@@ -290,7 +291,7 @@ def find_cp_collision(track: Track, entities: Entities, i: int, dt: float) -> fl
     speed2 = entities.speeds[i] * dt
     if distance2(p1, p2) > MAX_VEHICLE_SPEED ** 2:  # Useful optimization
         return float('inf')
-    return find_collision(p1, p2, speed2, sum_radius=CHECKPOINT_RADIUS)
+    return find_collision(p1, p2, speed2, sum_radius_squared=CHECKPOINT_RADIUS ** 2)
 
 
 def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> float:
@@ -298,7 +299,7 @@ def find_unit_collision(entities: Entities, i1: int, i2: int, dt: float) -> floa
     p1 = entities.positions[i1]
     p2 = entities.positions[i2]
     speed2 = (entities.speeds[i2] - entities.speeds[i1]) * dt
-    return find_collision(p1, p2, speed2, sum_radius=VEHICLE_RADIUS * 2)
+    return find_collision(p1, p2, speed2, sum_radius_squared=(VEHICLE_RADIUS * 2)**2)
 
 
 def find_first_collision(track: Track, entities: Entities,
