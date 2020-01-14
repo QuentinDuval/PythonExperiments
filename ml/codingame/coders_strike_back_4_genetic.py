@@ -243,6 +243,7 @@ class Track:
 
     def _pre_compute_distances_to_end(self):
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
+        # TODO - put a negative distance past the last real checkpoint in order to force the IA to cross fast
         for i in reversed(range(len(self.total_checkpoints) - 1)):
             distance_to_next = distance(self.total_checkpoints[i], self.total_checkpoints[i + 1])
             # If we overshoot the CP, we want to accelerate still and not stall - TODO: replace by angle alignment?
