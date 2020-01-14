@@ -137,7 +137,6 @@ def target_point(position: Vector, prev_angle: Angle, diff_angle: Angle) -> Vect
 
 @dataclass(frozen=False)
 class Entities:
-    length: int
     positions: np.ndarray
     speeds: np.ndarray
     shield_timeout: np.ndarray      # Include the notion of mass for PODs
@@ -148,7 +147,6 @@ class Entities:
     @classmethod
     def empty(cls, size: int):
         return Entities(
-            length=size,
             positions=np.zeros(shape=(size, 2)),
             speeds=np.zeros(shape=(size, 2)),
             shield_timeout=np.zeros(shape=size, dtype=np.int64),
@@ -157,7 +155,7 @@ class Entities:
             boost_available=np.zeros(shape=size, dtype=bool))
 
     def __len__(self):
-        return self.length
+        return self.positions.shape[0]
 
     def __eq__(self, other):
         return np.array_equal(self.positions, other.positions) \
@@ -167,7 +165,6 @@ class Entities:
 
     def clone(self):
         return Entities(
-            length=self.length,
             positions=self.positions.copy(),
             speeds=self.speeds.copy(),
             directions=self.directions.copy(),
@@ -381,13 +378,13 @@ def simulate_movements(track: Track, entities: Entities, dt: float = 1.0):
 
 
 def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
-    # SHAPE of thrusts/diff_angles should be: (nb_entities, )
-    # Assume my vehicles are the first 2 entities
+    # SHAPE of thrusts/diff_angles should be: (nb_entities,) & assume my vehicles are the first 2 entities
+    entities.shield_timeout -= 1
+    entities.directions += diff_angles
+    for i in range(thrusts.shape[0]):
+        entities.directions[i] = mod_angle(entities.directions[i])
     for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
-        diff_angle = diff_angles[i]
-        entities.shield_timeout[i] -= 1
-        entities.directions[i] = mod_angle(entities.directions[i] + diff_angle)
         if thrust > 0.:  # Movement
             if entities.shield_timeout[i] <= 0:  # Thrusts in case of no shield
                 entities.speeds[i][0] += thrust * math.cos(entities.directions[i])
@@ -398,8 +395,7 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
 
 def simulate_turns(track: Track, entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarray):
     # SHAPE of thrusts/diff_angles should be: (nb_turns, nb_entities)
-    nb_turns, _ = thrusts.shape
-    for turn_id in range(nb_turns):
+    for turn_id in range(thrusts.shape[0]):
         apply_actions(entities, thrusts[turn_id], diff_angles[turn_id])
         simulate_movements(track, entities, dt=1.0)
 
@@ -448,14 +444,6 @@ class GeneticAgent:
     def __init__(self, track: Track):
         self.track = track
         self.predictions: Entities = None
-        self.moves = np.array([
-            (VEHICLE_BOOST_STRENGTH, 0),
-            (VEHICLE_MAX_THRUST, 0),
-            (VEHICLE_MAX_THRUST, -MAX_TURN_RAD),
-            (VEHICLE_MAX_THRUST, +MAX_TURN_RAD),
-            (0.2 * VEHICLE_MAX_THRUST, -MAX_TURN_RAD),
-            (0.2 * VEHICLE_MAX_THRUST, +MAX_TURN_RAD)
-        ])
         self.chronometer = Chronometer()
         self.previous_thrust_dna = None
         self.previous_angle_dna = None
@@ -521,8 +509,6 @@ class GeneticAgent:
             my_angles[1][:-1] = self.previous_angle_dna[1:]
 
         evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
-
-        # TODO - decreasing amplitude each time we beat a record
 
         temperature = 0.2
         temperature_decay = 0.9
