@@ -35,7 +35,9 @@ def test_scenario_1():
     entities.speeds = np.array([[263., -451.], [ 358.,  297.]])
     entities.directions = np.array([6.17846555, 1.6231562 ])
 
-    apply_actions(entities, thrusts=np.array([200., 200.]), diff_angles=np.array([0.3141592653589793, 0.3141592653589793]))
+    apply_actions(entities,
+                  thrusts=np.array([200., 200.]),
+                  diff_angles=np.array([0.3141592653589793, 0.3141592653589793]))
     simulate_movements(track, entities, dt=1.0)
     assert np.array_equal(entities.positions, np.array([[3676., 3695.], [4342., 2349.]]))
     assert np.array_equal(entities.speeds, np.array([[389., -348.], [243., 411.]]))
@@ -145,8 +147,8 @@ def test_simulation_performance():
     nb_action = 4
 
     np.random.seed(1)
-    thrusts = np.random.uniform(0., 200., size=(nb_scenario, nb_action, 2))
-    angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_scenario, nb_action, 2))
+    thrusts = np.random.uniform(0., 200., size=(nb_scenario, nb_action, 4))
+    angles = np.random.choice([-MAX_TURN_RAD, 0, MAX_TURN_RAD], replace=True, size=(nb_scenario, nb_action, 4))
 
     entities = Entities.empty(size=4)
     entities.positions = np.array([[3676., 3695.], [4342., 2349.], [3217., 4104.], [4056., 1865.]])
@@ -155,6 +157,7 @@ def test_simulation_performance():
 
     chrono = Chronometer()
     chrono.start()
+
     for i in range(thrusts.shape[0]):
         simulated = entities.clone()
         simulate_turns(track, simulated, thrusts[i], angles[i])
