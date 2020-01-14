@@ -230,6 +230,8 @@ class Track:
     def get_progress_id(self, current_lap: int, next_checkpoint_id: int) -> int:
         return next_checkpoint_id + current_lap * len(self.checkpoints)
 
+    # TODO - remaining checkpoints (would avoid to compute a distance if no equality)
+
     def remaining_distance(self, entities: Entities, vehicle_id: int) -> float:
         position = entities.positions[vehicle_id]
         progress_id = entities.next_progress_id[vehicle_id]
@@ -258,10 +260,6 @@ GAME MECHANICS (Movement & Collisions)
 """
 
 
-def normal_of(v: Vector) -> Vector:
-    return np.array([-v[1], v[0]], dtype=np.float64)
-
-
 def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) -> float:
     """
     Check if there is an intersection between fixed point p1, and moving point p2
@@ -270,20 +268,20 @@ def find_collision(p1: Vector, p2: Vector, speed2: Vector, sum_radius: float) ->
 
     # Quick collision check: speed in wrong direction
     v12 = p1 - p2
-    if np.dot(speed2, v12) <= 0. and norm2(v12) >= sum_radius ** 2:
+    speed2_dot_v12 = speed2[0] * v12[0] + speed2[1] * v12[1]
+    if speed2_dot_v12 <= 0. and norm2(v12) >= sum_radius ** 2:
         return float('inf')
 
     # Check the distance of p1 to segment p2-p3 (where p3 is p2 + speed)
     d23 = norm(speed2)
-    n = normal_of(speed2) / d23
-    dist_to_segment_2 = np.dot(n, v12) ** 2
+    # Optimization of: dist_to_segment_2 = np.dot(normal of speed2, v12) ** 2
+    dist_to_segment_2 = ((-speed2[1] * v12[0] + speed2[0] * v12[1]) / d23) ** 2
     if dist_to_segment_2 >= sum_radius ** 2:
         return float('inf')
 
     # Find the point of intersection (a bit of trigonometry and pythagoras involved)
-    distance_to_segment = np.dot(v12, speed2) / d23
-    distance_to_intersection: float = distance_to_segment - math.sqrt(sum_radius ** 2 - dist_to_segment_2)
-    return distance_to_intersection / d23
+    dist_to_intersection = speed2_dot_v12 / d23 - math.sqrt(sum_radius ** 2 - dist_to_segment_2)
+    return dist_to_intersection / d23
 
 
 def find_cp_collision(track: Track, entities: Entities, i: int, dt: float) -> float:
@@ -387,10 +385,10 @@ def apply_actions(entities: Entities, thrusts: np.ndarray, diff_angles: np.ndarr
     for i in range(thrusts.shape[0]):
         thrust = thrusts[i]
         diff_angle = diff_angles[i]
-        entities.shield_timeout[i] = max(0, entities.shield_timeout[i] - 1)
+        entities.shield_timeout[i] -= 1
         entities.directions[i] = mod_angle(entities.directions[i] + diff_angle)
         if thrust > 0.:  # Movement
-            if entities.shield_timeout[i] == 0:  # No thrusts in case of shield
+            if entities.shield_timeout[i] <= 0:  # Thrusts in case of no shield
                 entities.speeds[i][0] += thrust * math.cos(entities.directions[i])
                 entities.speeds[i][1] += thrust * math.sin(entities.directions[i])
         elif thrust < 0.:  # Shield
@@ -509,17 +507,17 @@ class GeneticAgent:
         min_eval = float('inf')
         scenario_count = 0
 
-        init_thrusts, init_angles = self._initial_solution(entities, nb_action)  # TODO - to improve
+        all_thrusts, all_angles = self._initial_solution(entities, nb_action)
 
-        thrusts = np.random.uniform(0., 300., size=(nb_strand, nb_action, nb_entities))  # Encourage fast speeds
-        thrusts[0] = init_thrusts
+        my_thrusts = np.random.uniform(0., 300., size=(nb_strand, nb_action, nb_entities))  # Encourage fast speeds
+        my_thrusts[0] = all_thrusts[:,:2]
         if self.previous_thrust_dna is not None:
-            thrusts[1][:-1] = self.previous_thrust_dna[1:]
+            my_thrusts[1][:-1] = self.previous_thrust_dna[1:]
 
-        angles = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_strand, nb_action, nb_entities))
-        angles[0] = init_angles
+        my_angles = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_strand, nb_action, nb_entities)) # TODO - encourage big angles
+        my_angles[0] = all_angles[:,:2]
         if self.previous_angle_dna is not None:
-            angles[1][:-1] = self.previous_angle_dna[1:]
+            my_angles[1][:-1] = self.previous_angle_dna[1:]
 
         evaluations = np.zeros(shape=nb_strand, dtype=np.float64)
 
@@ -532,13 +530,15 @@ class GeneticAgent:
             scenario_count += nb_strand
 
             # Make sure the solution are correct
-            thrusts.clip(0., 200., out=thrusts)
-            angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=angles)
+            my_thrusts.clip(0., 200., out=my_thrusts)
+            my_angles.clip(-MAX_TURN_RAD, MAX_TURN_RAD, out=my_angles)
 
             # Evaluation of the different solutions
             for i in range(nb_strand):
-                simulated = entities.clone()
-                simulate_turns(self.track, simulated, thrusts[i], angles[i])
+                simulated = entities.clone()        # TODO - just do a single clone (avoid allocation) but reassign
+                all_thrusts[:,:2] = my_thrusts[i]   # TODO - optimize this and the apply_action: I lost a lot of speed
+                all_angles[:,:2] = my_angles[i]
+                simulate_turns(self.track, simulated, all_thrusts, all_angles)
                 evaluations[i] = self._eval(simulated)
 
             # Keeping track of the best overall solution
@@ -546,33 +546,33 @@ class GeneticAgent:
             best_index = indices[0]
             if evaluations[best_index] < min_eval:
                 min_eval = evaluations[best_index]
-                best_thrusts = thrusts[best_index].copy()
-                best_angles = angles[best_index].copy()
+                best_thrusts = my_thrusts[best_index].copy()
+                best_angles = my_angles[best_index].copy()
                 temperature *= temperature_decay
 
             # Selections of the best + re-injection of the current best so far
-            thrusts[indices[3]] = thrusts[indices[0]]
-            thrusts[indices[4]] = best_thrusts
-            thrusts[indices[5]] = np.random.uniform(0., 200., size=(nb_action, nb_entities))
-            angles[indices[3]] = angles[indices[0]]
-            angles[indices[4]] = best_angles
-            angles[indices[5]] = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_action, nb_entities))
+            my_thrusts[indices[3]] = my_thrusts[indices[0]]
+            my_thrusts[indices[4]] = best_thrusts
+            my_thrusts[indices[5]] = np.random.uniform(0., 200., size=(nb_action, nb_entities))
+            my_angles[indices[3]] = my_angles[indices[0]]
+            my_angles[indices[4]] = best_angles
+            my_angles[indices[5]] = np.random.uniform(-MAX_TURN_RAD, MAX_TURN_RAD, size=(nb_action, nb_entities))
 
             # Random mutations for everyone!
-            thrusts += np.random.normal(loc=0., scale=VEHICLE_MAX_THRUST * temperature, size=(nb_strand, nb_action, nb_entities))
-            angles += np.random.normal(loc=0., scale=MAX_TURN_RAD * temperature, size=(nb_strand, nb_action, nb_entities))
+            my_thrusts += np.random.normal(loc=0., scale=VEHICLE_MAX_THRUST * temperature, size=(nb_strand, nb_action, nb_entities))
+            my_angles += np.random.normal(loc=0., scale=MAX_TURN_RAD * temperature, size=(nb_strand, nb_action, nb_entities))
 
         debug("count scenarios:", scenario_count)
         return best_thrusts, best_angles
 
     def _initial_solution(self, entities: Entities, nb_action: int) -> Tuple[np.ndarray, np.ndarray]:
         # Solution based on a kind of PID: improve it
-        nb_entities = 2
+        nb_entities = len(entities)
         entities = entities.clone()
         thrusts = np.zeros(shape=(nb_action, nb_entities))
         diff_angles = np.zeros(shape=(nb_action, nb_entities))
         for d in range(nb_action):
-            for i in range(nb_entities):  # TODO - do this for the opponent as well
+            for i in range(nb_entities):
                 p = entities.positions[i]
                 s = entities.speeds[i]
                 c = self.track.next_checkpoint(entities.next_progress_id[i])
