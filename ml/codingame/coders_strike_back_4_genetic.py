@@ -230,10 +230,10 @@ class Track:
     def get_progress_id(self, current_lap: int, next_checkpoint_id: int) -> int:
         return next_checkpoint_id + current_lap * len(self.checkpoints)
 
-    def remaining_distance2(self, entities: Entities, vehicle_id: int) -> float:
+    def remaining_distance(self, entities: Entities, vehicle_id: int) -> float:
         position = entities.positions[vehicle_id]
         progress_id = entities.next_progress_id[vehicle_id]
-        return distance2(position, self.total_checkpoints[progress_id]) + self.squared_distances[progress_id]
+        return distance(position, self.total_checkpoints[progress_id]) + self.squared_distances[progress_id]
 
     def next_checkpoint(self, progress_id: int) -> Checkpoint:
         return self.total_checkpoints[progress_id]
@@ -245,8 +245,10 @@ class Track:
     def _pre_compute_distances_to_end(self):
         # Compute the distance to the end: you cannot just compute to next else IA might refuse to cross a checkpoint
         for i in reversed(range(len(self.total_checkpoints) - 1)):
-            distance_to_next = distance2(self.total_checkpoints[i], self.total_checkpoints[i + 1])
-            self.squared_distances[i] = self.squared_distances[i + 1] + distance_to_next
+            distance_to_next = distance(self.total_checkpoints[i], self.total_checkpoints[i + 1])
+            # If we overshoot the CP, we want to accelerate still and not stall - TODO: replace by angle alignment?
+            bonus_to_pass_cp = CHECKPOINT_RADIUS * 3
+            self.squared_distances[i] = self.squared_distances[i + 1] + distance_to_next + bonus_to_pass_cp
 
 
 """
@@ -481,7 +483,7 @@ class GeneticAgent:
         # TODO - try to classify the IA of the opponent in here
         remaining_distances = np.array([0.] * len(entities))
         for i in range(len(remaining_distances)):
-            remaining_distances[i] = self.track.remaining_distance2(entities, i)
+            remaining_distances[i] = self.track.remaining_distance(entities, i)
         self.runner_id = np.argmin(remaining_distances[:2])
         if len(entities) > 2: # TODO - hack for my own simulations
             self.opponent_runner_id = 2 + np.argmin(remaining_distances[2:])
@@ -506,8 +508,6 @@ class GeneticAgent:
         best_angles = None
         min_eval = float('inf')
         scenario_count = 0
-
-        # TODO - The GA algorithm is too timid (slows down when it should not)
 
         init_thrusts, init_angles = self._initial_solution(entities, nb_action)  # TODO - to improve
 
@@ -589,10 +589,10 @@ class GeneticAgent:
 
     def _eval(self, entities: Entities) -> float:
         my_perturbator = 1 - self.runner_id
-        my_dist = self.track.remaining_distance2(entities, self.runner_id)
+        my_dist = self.track.remaining_distance(entities, self.runner_id)
         if len(entities) > self.opponent_runner_id: # TODO - hack for my own simulation
-            his_dist = self.track.remaining_distance2(entities, self.opponent_runner_id)
-            closing_dist = distance2(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
+            his_dist = self.track.remaining_distance(entities, self.opponent_runner_id)
+            closing_dist = distance(entities.positions[my_perturbator], entities.positions[self.opponent_runner_id])
         else:
             his_dist = 0
             closing_dist = 0
@@ -605,8 +605,7 @@ class GeneticAgent:
         # TODO - add a term to encourage aggressive attacks (shocks at high speed)
         # TODO - encourage to move the next checkpoint of HIS runner
         # TODO - encourage to make sure the opponent does not get close to HIS next cp?
-        go_slow = norm2(entities.speeds[self.runner_id])    # TODO - improves the results: this is not normal...
-        return my_dist - his_dist + 0.1 * closing_dist + go_slow
+        return my_dist - his_dist + 0.1 * closing_dist
 
     def _report_bad_prediction(self, entities: Entities):
         # debug("PLAYER ENTITIES")
