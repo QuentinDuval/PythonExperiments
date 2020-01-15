@@ -1,5 +1,7 @@
 from ml.codingame.coders_strike_back_4_genetic import *
 
+import cProfile
+
 
 track = Track(
         checkpoints=[np.array([13595, 7615]),
@@ -132,7 +134,7 @@ def test_full_game():
 
     agent = GeneticAgent(track)
     total_turns = 0
-    while entities.next_progress_id.max() < len(track) * 3 + 1 and total_turns < 300:    # 2 full turns completed
+    while entities.next_progress_id.max() < len(track) * 3 + 1 and total_turns < 400:    # 2 full turns completed
         total_turns += 1
         actions = agent.get_action(entities)
         simulate_turns(track, entities,
@@ -142,7 +144,7 @@ def test_full_game():
     print("progress:", entities.next_progress_id[0], entities.next_progress_id[1])
 
 
-def test_simulation_performance():
+def test_simulation_performance(profiler: bool):
     nb_scenario = 1000
     nb_action = 4
 
@@ -155,17 +157,23 @@ def test_simulation_performance():
     entities.speeds = np.array([[389., -348.], [243., 411.], [263., -451.], [ 358.,  297.]])
     entities.directions = np.array([0.20943951, 1.93731547, 6.17846555, 1.6231562 ])
 
-    chrono = Chronometer()
-    chrono.start()
+    def test_loop():
+        for i in range(thrusts.shape[0]):
+            simulated = entities.clone()
+            simulate_turns(track, simulated, thrusts[i], angles[i])
 
-    for i in range(thrusts.shape[0]):
-        simulated = entities.clone()
-        simulate_turns(track, simulated, thrusts[i], angles[i])
-
-    time_spent = chrono.spent()
-    print("time spent:", time_spent, "ms")
-    print("time by scenario:", time_spent / nb_scenario, "ms")
-    print("scenario by turn:", nb_scenario / time_spent * RESPONSE_TIME * 0.8, "(", RESPONSE_TIME * 0.8, "ms)")
+    if profiler:
+        profiler = cProfile.Profile()
+        profiler.runcall(test_loop)
+        profiler.print_stats(sort=1)
+    else:
+        chrono = Chronometer()
+        chrono.start()
+        test_loop()
+        time_spent = chrono.spent()
+        print("time spent:", time_spent, "ms")
+        print("time by scenario:", time_spent / nb_scenario, "ms")
+        print("scenario by turn:", nb_scenario / time_spent * RESPONSE_TIME * 0.8, "(", RESPONSE_TIME * 0.8, "ms)")
 
 
 test_scenario_0()
@@ -173,5 +181,5 @@ test_scenario_1()
 test_scenario_2()
 test_scenario_3()
 
-test_full_game()
-test_simulation_performance()
+# test_full_game()
+test_simulation_performance(profiler=True)
