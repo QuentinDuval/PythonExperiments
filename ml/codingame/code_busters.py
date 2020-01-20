@@ -141,28 +141,56 @@ AGENT
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-AREA_SPOTS = np.array([
-    [WIDTH / 2, HEIGHT / 2],
-    [WIDTH / 2, 0.],
-    [WIDTH / 2, HEIGHT]
-], dtype=np.float32)
+
+class Territory:
+    w = 15
+    h = 10
+
+    def __init__(self):
+        self.unvisited = set()
+        self.cell_width = WIDTH / self.w
+        self.cell_height = HEIGHT / self.h
+        self.cell_dist2 = norm2([self.cell_width, self.cell_height]) / 2
+        for i in range(self.w):
+            for j in range(self.h):
+                x = self.cell_width / 2 + self.cell_width * i
+                y = self.cell_height / 2 + self.cell_height * j
+                self.unvisited.add((x, y))
+        self.on_track = set()
+
+    def __len__(self):
+        return len(self.unvisited)
+
+    def shortest_point_to(self, position: np.ndarray) -> np.ndarray:
+        closest = None
+        min_dist = float('inf')
+        for pos in self.unvisited:
+            if pos not in self.on_track:
+                if distance2(pos, position) < min_dist:
+                    min_dist = distance2(pos, position) + np.random.uniform(0, 3000) ** 2
+                    closest = pos
+        x, y = closest
+        self.on_track.add(closest)
+        return np.array([x, y])
+
+    def remove_position(self, position: np.ndarray):
+        x, y = position
+        self.unvisited.discard((x, y)) # does not crash if key is not there
 
 
 class Agent:
     def __init__(self):
-        pass
+        self.territory = Territory()
+        self.assignment = {}
 
     def get_actions(self, entities: Entities) -> List[str]:
         # Possible actions: MOVE x y | BUST id | RELEASE
 
+        self.territory.on_track.clear()
         ghost_ids = self.get_ghost_ids(entities)
         player_ids = self.get_player_ids(entities)
-        invisible_ids = self.get_invisible_area_ids(entities, player_ids)
-
-        debug(entities)
         debug("player ids:", player_ids)
         debug("ghost ids:", ghost_ids)
-        debug("invisible ids:", invisible_ids)
 
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
@@ -189,12 +217,24 @@ class Agent:
                     x, y = entities.ghost_position[closest_id]
                     yield "MOVE " + str(int(x)) + " " + str(int(y))
 
+            # If the player has some area to explore
+            elif player_id in self.assignment:
+                debug("following assignment", player_id)
+                point = self.assignment[player_id]
+                if distance2(point, player_pos) < self.territory.cell_dist2:
+                    del self.assignment[player_id]
+                    self.territory.remove_position(point)
+                x, y = point
+                yield "MOVE " + str(int(x)) + " " + str(int(y))
+
             # Try to find some ghosts
-            elif invisible_ids:
-                debug("searching for ghosts", player_id)
-                closest_id = min(invisible_ids, key=lambda aid: distance2(AREA_SPOTS[aid], player_pos))
-                x, y = AREA_SPOTS[closest_id]
-                invisible_ids.remove(closest_id)
+            elif self.territory:
+                # TODO - ideally, explore again - or at least maintain some position counter (not found ghosts?)
+                # TODO - ideally, track the cells explored before
+                debug("exploring territory", player_id)
+                point = self.territory.shortest_point_to(entities.buster_position[player_id])
+                x, y = point
+                self.assignment[player_id] = point
                 yield "MOVE " + str(int(x)) + " " + str(int(y))
 
             # Do nothing...
@@ -216,14 +256,6 @@ class Agent:
                 ids.add(i)
         return ids
 
-    def get_invisible_area_ids(self, entities: Entities, player_ids: List[int]) -> Set[int]:
-        invisible_ids = set(range(len(AREA_SPOTS)))
-        for player_id in player_ids:
-            for invisible_id in list(invisible_ids):
-                if distance2(entities.buster_position[player_id], AREA_SPOTS[invisible_id]) < RADIUS_SIGHT ** 2:
-                    invisible_ids.remove(invisible_id)
-        return invisible_ids
-
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -241,7 +273,6 @@ def read_entities(entities: Entities):
         # state: For busters: 0=idle, 1=carrying a ghost.
         # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
         entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
-        debug(entity_id, x, y, entity_type, state, value)
         if entity_type == -1:
             entities.ghost_position[entity_id][0] = x
             entities.ghost_position[entity_id][1] = y
