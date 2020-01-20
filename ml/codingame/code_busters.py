@@ -106,12 +106,12 @@ class Entities:
     ghost_count: int
 
     buster_position: np.ndarray
-    buster_team: np.ndarray     # 0 for team 0, 1 for team 1
-    buster_ghost: np.ndarray    # ID of the ghost being carried, -1 if no ghost carried
+    buster_team: np.ndarray  # 0 for team 0, 1 for team 1
+    buster_ghost: np.ndarray  # ID of the ghost being carried, -1 if no ghost carried
 
     ghost_position: np.ndarray
-    ghost_attempt: np.ndarray   # For ghosts: number of busters attempting to trap this ghost.
-    ghost_valid: np.ndarray     # Whether a ghost is on the map - TODO: have a probability
+    ghost_attempt: np.ndarray  # For ghosts: number of busters attempting to trap this ghost.
+    ghost_valid: np.ndarray  # Whether a ghost is on the map - TODO: have a probability
 
     @property
     def his_team(self):
@@ -125,9 +125,9 @@ class Entities:
             busters_per_player=busters_per_player,
             ghost_count=ghost_count,
 
-            buster_position=np.zeros(shape=(busters_per_player*2, 2), dtype=np.float32),
-            buster_team=np.full(shape=busters_per_player*2, fill_value=-1, dtype=np.int8),
-            buster_ghost=np.full(shape=busters_per_player*2, fill_value=-1, dtype=np.int8),
+            buster_position=np.zeros(shape=(busters_per_player * 2, 2), dtype=np.float32),
+            buster_team=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
+            buster_ghost=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
 
             ghost_position=np.zeros(shape=(ghost_count, 2), dtype=np.float32),
             ghost_attempt=np.zeros(shape=ghost_count, dtype=np.int8),
@@ -175,7 +175,10 @@ class Territory:
 
     def remove_position(self, position: np.ndarray):
         x, y = position
-        self.unvisited.discard((x, y)) # does not crash if key is not there
+        self.unvisited.discard((x, y))  # does not crash if key is not there
+
+    def new_turn(self):
+        self.on_track.clear()
 
 
 class Agent:
@@ -186,7 +189,7 @@ class Agent:
     def get_actions(self, entities: Entities) -> List[str]:
         # Possible actions: MOVE x y | BUST id | RELEASE
 
-        self.territory.on_track.clear()
+        self.territory.new_turn()
         ghost_ids = self.get_ghost_ids(entities)
         player_ids = self.get_player_ids(entities)
         debug("player ids:", player_ids)
@@ -194,6 +197,8 @@ class Agent:
 
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
+
+            # TODO - remove from the territory the positions we are IN
 
             # If buster has a ghost => go to base to release it
             if entities.buster_ghost[player_id] >= 0:
@@ -204,6 +209,9 @@ class Agent:
                     yield "RELEASE"
                 else:
                     yield "MOVE " + str(int(player_corner[0])) + " " + str(int(player_corner[1]))
+
+            # Look for opportunities to STUNs opponents
+            # TODO - and store the cooldowns (and status of opponent)
 
             # Go fetch the closest ghost
             elif ghost_ids:
