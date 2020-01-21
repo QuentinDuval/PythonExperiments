@@ -105,11 +105,15 @@ class Entities:
     ghost_count: int
 
     buster_position: np.ndarray
-    buster_team: np.ndarray  # 0 for team 0, 1 for team 1
-    buster_ghost: np.ndarray  # ID of the ghost being carried, -1 if no ghost carried
+    buster_team: np.ndarray     # 0 for team 0, 1 for team 1
+    buster_ghost: np.ndarray    # ID of the ghost being carried, -1 if no ghost carried
+    buster_stunned: np.ndarray
+    buster_busting: np.ndarray
+    buster_cooldown: np.ndarray
 
     ghost_position: np.ndarray
-    ghost_attempt: np.ndarray  # For ghosts: number of busters attempting to trap this ghost.
+    ghost_attempt: np.ndarray   # Number of busters attempting to trap this ghost.
+    ghost_endurance: np.ndarray
     ghost_valid: np.ndarray  # Whether a ghost is on the map - TODO: have a probability
 
     @property
@@ -118,7 +122,6 @@ class Entities:
 
     @classmethod
     def empty(cls, my_team: int, busters_per_player: int, ghost_count: int):
-        size = busters_per_player * 2 + ghost_count
         return Entities(
             my_team=my_team,
             busters_per_player=busters_per_player,
@@ -127,10 +130,14 @@ class Entities:
             buster_position=np.zeros(shape=(busters_per_player * 2, 2), dtype=np.float32),
             buster_team=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
             buster_ghost=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
+            buster_stunned=np.full(shape=busters_per_player * 2, fill_value=False, dtype=bool),
+            buster_busting=np.full(shape=busters_per_player * 2, fill_value=False, dtype=bool),
+            buster_cooldown=np.zeros(shape=busters_per_player * 2, dtype=np.int8),
 
             ghost_position=np.zeros(shape=(ghost_count, 2), dtype=np.float32),
             ghost_attempt=np.zeros(shape=ghost_count, dtype=np.int8),
-            ghost_valid=np.full(shape=size, fill_value=False, dtype=bool)
+            ghost_endurance=np.zeros(shape=ghost_count, dtype=np.int8),
+            ghost_valid=np.full(shape=ghost_count, fill_value=False, dtype=bool)
         )
 
     def get_player_ids(self) -> List[int]:
@@ -279,7 +286,7 @@ class Agent:
 
         self.territory.track_explored(entities, player_ids)
 
-        # TODO - Look for opportunities to STUNs opponents - and store cooldown + status of opponent
+        # TODO - Look for opportunities to STUNs opponents - and store cooldown
         # TODO - separate in several phases (to avoid conflicts and priority of busters)
         self.if_has_ghost_go_to_base(entities, player_ids)
         self.go_fetch_closest_ghosts(entities, player_ids)
@@ -355,19 +362,26 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int):
         # entity_id: buster id or ghost id
         # x, y: position of this buster / ghost
         # entity_type: the team id if it is a buster, -1 if it is a ghost.
-        # state: For busters: 0=idle, 1=carrying a ghost.
-        # value: For busters: Ghost id being carried. For ghosts: number of busters attempting to trap this ghost.
-        entity_id, x, y, entity_type, state, value = [int(j) for j in input().split()]
+        # state:
+        #   For busters: 0=idle, 1=carrying a ghost, 2=stunned, 3=busting
+        #   For ghosts: endurance
+        # value:
+        #   For busters: Ghost id being carried.
+        #   For ghosts: number of busters attempting to trap this ghost.
+        identity, x, y, entity_type, state, value = [int(j) for j in input().split()]
         if entity_type == -1:
-            entities.ghost_position[entity_id][0] = x
-            entities.ghost_position[entity_id][1] = y
-            entities.ghost_attempt[entity_id] = value
-            entities.ghost_valid[entity_id] = True
+            entities.ghost_position[identity][0] = x
+            entities.ghost_position[identity][1] = y
+            entities.ghost_endurance[identity] = state
+            entities.ghost_attempt[identity] = value
+            entities.ghost_valid[identity] = True
         else:
-            entities.buster_position[entity_id][0] = x
-            entities.buster_position[entity_id][1] = y
-            entities.buster_team[entity_id] = entity_type
-            entities.buster_ghost[entity_id] = -1 if state == 0 else value
+            entities.buster_position[identity][0] = x
+            entities.buster_position[identity][1] = y
+            entities.buster_team[identity] = entity_type
+            entities.buster_ghost[identity] = value if state == 1 else -1
+            entities.buster_stunned[identity] = state == 2
+            entities.buster_busting[identity] = state == 3
     return entities
 
 
