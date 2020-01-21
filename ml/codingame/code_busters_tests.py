@@ -7,7 +7,7 @@ def show_territory(territory: Territory):
     plt.imshow(territory.heat)
     for i in range(territory.w):
         for j in range(territory.h):
-            h = round(territory.heat[i, j] * 100) / 100
+            h = round(territory.heat[i, j] * 10) / 10
             plt.text(j, i, h, ha="center", va="center", color="w")
     plt.show()
 

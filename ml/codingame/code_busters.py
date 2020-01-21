@@ -268,11 +268,10 @@ TERRITORY - TO GUIDE EXPLORATION
 
 
 class Territory:
-    w = 15
-    h = 10
-
-    def __init__(self):
+    def __init__(self, w=15, h=10):
         self.unvisited = set()
+        self.w = w
+        self.h = h
         self.cell_width = WIDTH / self.w
         self.cell_height = HEIGHT / self.h
         self.cell_dist2 = norm2([self.cell_width, self.cell_height]) / 2
@@ -281,12 +280,12 @@ class Territory:
                 x = self.cell_width / 2 + self.cell_width * i
                 y = self.cell_height / 2 + self.cell_height * j
                 self.unvisited.add((x, y))
+
+        center = (self.w / 2, self.h / 2)
         self.heat = np.ones(shape=(self.w, self.h), dtype=np.float32)  # TODO: use better encoding of territory (array?)
         for i in range(self.w):
             for j in range(self.h):
-                self.heat[(i, j)] = 10 / (1 + math.sqrt((i - (self.w / 2)) ** 2 + (j - (self.h / 2)) ** 2))
-        # TODO - BUG: the heat is not symmetric
-        # TODO - this heat is not necessarily enough (distance are squared in the loop below)
+                self.heat[(i, j)] = 10 / (1 + distance((i, j), center))
 
     def __len__(self):
         return len(self.unvisited)
@@ -302,7 +301,7 @@ class Territory:
                 d = distance2(point, player_pos)
                 x, y = point
                 h = self.heat[int(x / self.cell_width), int(y // self.cell_height)]
-                heapq.heappush(heap, (d * h, player_id, point))
+                heapq.heappush(heap, (d / h, player_id, point))
 
         assignments = {}
         taken = set()
