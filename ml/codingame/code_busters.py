@@ -194,11 +194,11 @@ class Entities:
                 ids.append(i)
         return ids
 
-    def get_ghost_ids(self) -> Set[int]:
-        ids = set()
+    def get_ghost_ids(self) -> List[int]:
+        ids = []
         for i in range(self.ghost_count):
             if self.ghost_valid[i]:
-                ids.add(i)
+                ids.append(i)
         return ids
 
 
@@ -336,8 +336,6 @@ class Agent:
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
 
-        # TODO - prioritize the ghosts with low endurance
-        # TODO - several busters by ghost for ghosts with high endurance
         # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
         # TODO - stick around opponent busters to steal their ghosts
         # TODO - have busters that are there to ANNOY and STEAL
@@ -379,6 +377,9 @@ class Agent:
         if not ghost_ids:
             return
 
+        # Prioritize the ghosts with low endurance
+        ghost_ids.sort(key=lambda gid: entities.ghost_endurance[gid])
+
         player_ids = list(player_ids)
         for ghost_id in ghost_ids:
             ghost_pos = entities.ghost_position[ghost_id]
@@ -390,7 +391,10 @@ class Agent:
                         self.actions[player_id] = Bust(ghost_id)
                     else:
                         self.actions[player_id] = Move(ghost_pos)
-                    break
+
+                    # Do not put too many busters on a weak ghost
+                    if entities.ghost_endurance[ghost_id] <= 5:
+                        break
 
     def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
         opponent_ids = entities.get_opponent_ids()
