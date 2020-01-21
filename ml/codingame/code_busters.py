@@ -212,6 +212,18 @@ class Territory:
                 x = self.cell_width / 2 + self.cell_width * i
                 y = self.cell_height / 2 + self.cell_height * j
                 self.unvisited.add((x, y))
+        self.heat = np.ones(shape=(self.w, self.h),
+                            dtype=np.float32)  # TODO - use better encoding of territory (array?)
+        for i in range(self.w):
+            for j in range(self.h):
+                self.heat[(i, j)] = 10 / (1 + math.sqrt((i - (self.w / 2)) ** 2 + (j - (self.h / 2)) ** 2))
+        # TODO - BUG: the heat is not symmetric
+        # TODO - this heat is not necessarily enough (distance are squared in the loop below)
+
+        debug("HEAT MAP")
+        debug(self.heat)
+        debug("* min", self.heat.min())
+        debug("* max", self.heat.max())
 
     def __len__(self):
         return len(self.unvisited)
@@ -225,7 +237,9 @@ class Territory:
             player_pos = entities.buster_position[player_id]
             for point in self.unvisited:
                 d = distance2(point, player_pos)
-                heapq.heappush(heap, (d, player_id, point))
+                x, y = point
+                h = self.heat[int(x / self.cell_width), int(y // self.cell_height)]
+                heapq.heappush(heap, (d * h, player_id, point))
 
         assignments = {}
         taken = set()
