@@ -288,11 +288,6 @@ class Territory:
         # TODO - BUG: the heat is not symmetric
         # TODO - this heat is not necessarily enough (distance are squared in the loop below)
 
-        debug("HEAT MAP")
-        debug(self.heat)
-        debug("* min", self.heat.min())
-        debug("* max", self.heat.max())
-
     def __len__(self):
         return len(self.unvisited)
 
