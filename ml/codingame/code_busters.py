@@ -96,9 +96,6 @@ MAX_BUST_DISTANCE = 1760
 TEAM_CORNERS = np.array([[0, 0], [WIDTH, HEIGHT]], dtype=np.float32)
 
 
-# TODO - player and ghosts can have the SAME IDs
-
-
 @dataclass(frozen=False)
 class Entities:
     my_team: int
@@ -133,6 +130,36 @@ class Entities:
             ghost_attempt=np.zeros(shape=ghost_count, dtype=np.int8),
             ghost_valid=np.full(shape=size, fill_value=False, dtype=bool)
         )
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+ACTION
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+class Move(NamedTuple):
+    position: np.ndarray
+
+    def __repr__(self):
+        x, y = self.position
+        return "MOVE " + str(int(x)) + " " + str(int(y))
+
+
+class Bust(NamedTuple):
+    ghost_id: int
+
+    def __repr__(self):
+        return "BUST " + str(self.ghost_id)
+
+
+class Release:
+    def __repr__(self):
+        return "RELEASE"
+
+
+Action = Union[Move, Bust, Release]
 
 
 """
@@ -186,8 +213,8 @@ class Agent:
         self.territory = Territory()
         self.assignment = {}
 
-    def get_actions(self, entities: Entities) -> List[str]:
-        # Possible actions: MOVE x y | BUST id | RELEASE
+    def get_actions(self, entities: Entities) -> List[Action]:
+        # TODO - keep track of previous state
 
         self.territory.new_turn()
         ghost_ids = self.get_ghost_ids(entities)
@@ -209,9 +236,9 @@ class Agent:
                 player_corner = TEAM_CORNERS[entities.my_team]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
                     entities.ghost_valid[entities.buster_ghost[player_id]] = False
-                    yield "RELEASE"
+                    yield Release()
                 else:
-                    yield "MOVE " + str(int(player_corner[0])) + " " + str(int(player_corner[1]))
+                    yield Move(player_corner)
 
             # Look for opportunities to STUNs opponents
             # TODO - and store the cooldowns (and status of opponent)
@@ -223,10 +250,9 @@ class Agent:
                 closest_dist2 = distance2(player_pos, entities.ghost_position[closest_id])
                 ghost_ids.remove(closest_id)
                 if closest_dist2 < MAX_BUST_DISTANCE ** 2:
-                    yield "BUST " + str(closest_id)
+                    yield Bust(closest_id)
                 else:
-                    x, y = entities.ghost_position[closest_id]
-                    yield "MOVE " + str(int(x)) + " " + str(int(y))
+                    yield Move(entities.ghost_position[closest_id])
 
             # If the player has some area to explore
             elif player_id in self.assignment:
@@ -235,8 +261,7 @@ class Agent:
                 if distance2(point, player_pos) < self.territory.cell_dist2:
                     del self.assignment[player_id]
                     self.territory.remove_position(point)
-                x, y = point
-                yield "MOVE " + str(int(x)) + " " + str(int(y))
+                yield Move(point)
 
             # Try to find some ghosts
             elif self.territory:
@@ -244,14 +269,12 @@ class Agent:
                 # TODO - ideally, track the cells explored before
                 debug("exploring territory", player_id)
                 point = self.territory.shortest_point_to(entities.buster_position[player_id])
-                x, y = point
                 self.assignment[player_id] = point
-                yield "MOVE " + str(int(x)) + " " + str(int(y))
+                yield Move(point)
 
             # Do nothing...
             else:
-                debug("wandering", player_id)
-                yield "MOVE 8000 4500"
+                yield Move(np.ndarray([8000, 4500]))
 
     def get_player_ids(self, entities: Entities) -> List[int]:
         ids = []
@@ -275,7 +298,8 @@ GAME LOOP
 """
 
 
-def read_entities(entities: Entities):
+def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int):
+    entities = Entities.empty(my_team=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
     n = int(input())
     for i in range(n):
         # entity_id: buster id or ghost id
@@ -294,6 +318,7 @@ def read_entities(entities: Entities):
             entities.buster_position[entity_id][1] = y
             entities.buster_team[entity_id] = entity_type
             entities.buster_ghost[entity_id] = -1 if state == 0 else value
+    return entities
 
 
 def game_loop():
@@ -305,10 +330,9 @@ def game_loop():
     debug("ghost count: ", ghost_count)
     debug("my team id: ", my_team_id)
 
-    entities = Entities.empty(my_team=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
     agent = Agent()
     while True:
-        read_entities(entities)
+        entities = read_entities(my_team_id=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
         for action in agent.get_actions(entities):
             print(action)
 
