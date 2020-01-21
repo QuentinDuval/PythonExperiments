@@ -80,9 +80,47 @@ def mod_angle(angle: Angle) -> Angle:
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-MAIN DATA STRUCTURE
+ACTION
 ------------------------------------------------------------------------------------------------------------------------
 """
+
+
+class Move(NamedTuple):
+    position: np.ndarray
+
+    def __repr__(self):
+        x, y = self.position
+        return "MOVE " + str(int(x)) + " " + str(int(y))
+
+
+class Bust(NamedTuple):
+    ghost_id: int
+
+    def __repr__(self):
+        return "BUST " + str(self.ghost_id)
+
+
+class Release:
+    def __repr__(self):
+        return "RELEASE"
+
+
+class Stun(NamedTuple):
+    buster_id: int
+
+    def __repr__(self):
+        return "STUN " + str(self.buster_id)
+
+
+Action = Union[Move, Bust, Release, Stun]
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+MAIN DATA STRUCTURE to keep STATE
+------------------------------------------------------------------------------------------------------------------------
+"""
+
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -94,6 +132,8 @@ MAX_MOVE_DISTANCE = 800
 MIN_BUST_DISTANCE = 900
 MAX_BUST_DISTANCE = 1760
 MAX_STUN_DISTANCE = 1760
+
+STUN_COOLDOWN = 20
 
 TEAM_CORNERS = np.array([[0, 0], [WIDTH, HEIGHT]], dtype=np.float32)
 
@@ -130,7 +170,7 @@ class Entities:
             buster_position=np.zeros(shape=(busters_per_player * 2, 2), dtype=np.float32),
             buster_team=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
             buster_ghost=np.full(shape=busters_per_player * 2, fill_value=-1, dtype=np.int8),
-            buster_stunned=np.full(shape=busters_per_player * 2, fill_value=False, dtype=bool),
+            buster_stunned=np.zeros(shape=busters_per_player * 2, dtype=np.int8),
             buster_busting=np.full(shape=busters_per_player * 2, fill_value=False, dtype=bool),
             buster_cooldown=np.zeros(shape=busters_per_player * 2, dtype=np.int8),
 
@@ -162,45 +202,67 @@ class Entities:
         return ids
 
 
-"""
-------------------------------------------------------------------------------------------------------------------------
-ACTION
-------------------------------------------------------------------------------------------------------------------------
-"""
+def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int):
+    entities = Entities.empty(my_team=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
+    n = int(input())
+    for i in range(n):
+        # entity_id: buster id or ghost id
+        # x, y: position of this buster / ghost
+        # entity_type: the team id if it is a buster, -1 if it is a ghost.
+        # state:
+        #   For busters: 0=idle, 1=carrying a ghost, 2=stunned, 3=busting
+        #   For ghosts: endurance
+        # value:
+        #   For busters: Ghost id being carried.
+        #   For ghosts: number of busters attempting to trap this ghost.
+        identity, x, y, entity_type, state, value = [int(j) for j in input().split()]
+        if entity_type == -1:
+            entities.ghost_position[identity][0] = x
+            entities.ghost_position[identity][1] = y
+            entities.ghost_endurance[identity] = state
+            entities.ghost_attempt[identity] = value
+            entities.ghost_valid[identity] = True
+        else:
+            entities.buster_position[identity][0] = x
+            entities.buster_position[identity][1] = y
+            entities.buster_team[identity] = entity_type
+            entities.buster_ghost[identity] = value if state == 1 else -1
+            entities.buster_stunned[identity] = value if state == 2 else 0
+            entities.buster_busting[identity] = state == 3
+    return entities
 
-
-class Move(NamedTuple):
-    position: np.ndarray
-
-    def __repr__(self):
-        x, y = self.position
-        return "MOVE " + str(int(x)) + " " + str(int(y))
-
-
-class Bust(NamedTuple):
-    ghost_id: int
-
-    def __repr__(self):
-        return "BUST " + str(self.ghost_id)
-
-
-class Release:
-    def __repr__(self):
-        return "RELEASE"
-
-
-class Stun(NamedTuple):
-    buster_id: int
-
-    def __repr__(self):
-        return "STUN " + str(self.buster_id)
-
-
-Action = Union[Move, Bust, Release, Stun]
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-AGENT
+TRACKING GAME STATE between turns
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
+@dataclass(frozen=False)
+class GameState:
+    stun_cooldown: Dict[int, int] = field(default_factory=dict)
+
+    def new_turn(self):
+        for player_id, cooldown in list(self.stun_cooldown.items()):
+            if cooldown > 1:
+                self.stun_cooldown[player_id] = cooldown - 1
+            else:
+                del self.stun_cooldown[player_id]
+
+    def enrich_state(self, entities: Entities):
+        for player_id, cooldown in self.stun_cooldown.items():
+            entities.buster_cooldown[player_id] = cooldown
+
+    def on_actions(self, entities: Entities, actions: List[Action]):
+        for player_id, action in zip(entities.get_player_ids(), actions):
+            if isinstance(action, Stun):
+                self.stun_cooldown[player_id] = STUN_COOLDOWN + 1
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+TERRITORY - TO GUIDE EXPLORATION
 ------------------------------------------------------------------------------------------------------------------------
 """
 
@@ -219,8 +281,7 @@ class Territory:
                 x = self.cell_width / 2 + self.cell_width * i
                 y = self.cell_height / 2 + self.cell_height * j
                 self.unvisited.add((x, y))
-        self.heat = np.ones(shape=(self.w, self.h),
-                            dtype=np.float32)  # TODO - use better encoding of territory (array?)
+        self.heat = np.ones(shape=(self.w, self.h), dtype=np.float32)  # TODO: use better encoding of territory (array?)
         for i in range(self.w):
             for j in range(self.h):
                 self.heat[(i, j)] = 10 / (1 + math.sqrt((i - (self.w / 2)) ** 2 + (j - (self.h / 2)) ** 2))
@@ -266,6 +327,13 @@ class Territory:
                     self.unvisited.discard(point)
 
 
+"""
+------------------------------------------------------------------------------------------------------------------------
+AGENT
+------------------------------------------------------------------------------------------------------------------------
+"""
+
+
 class Agent:
     def __init__(self):
         self.territory = Territory()
@@ -278,21 +346,19 @@ class Agent:
 
         self.chrono.start()
         self.actions.clear()
-
         ghost_ids = entities.get_ghost_ids()
         player_ids = entities.get_player_ids()
+        self.territory.track_explored(entities, player_ids)
+
         debug("player ids:", player_ids)
         debug("ghost ids:", ghost_ids)
 
-        self.territory.track_explored(entities, player_ids)
-
-        # TODO - Look for opportunities to STUNs opponents - and store cooldown
-        # TODO - separate in several phases (to avoid conflicts and priority of busters)
         self.if_has_ghost_go_to_base(entities, player_ids)
         self.go_fetch_closest_ghosts(entities, player_ids)
         self.stun_closest_opponents(entities, player_ids)
         self.go_explore_territory(entities, player_ids)
         self.go_to_middle(entities, player_ids)
+
         debug("Time spent:", self.chrono.spent())
         return [self.actions[player_id] for player_id in player_ids]
 
@@ -331,7 +397,7 @@ class Agent:
         for opponent_id in opponent_ids:
             opponent_pos = entities.buster_position[opponent_id]
             for player_id in player_ids:
-                if player_id not in self.actions:
+                if player_id not in self.actions and entities.buster_cooldown[player_id] <= 0:
                     player_pos = entities.buster_position[player_id]
                     if distance2(player_pos, opponent_pos) < MAX_STUN_DISTANCE ** 2:
                         self.actions[player_id] = Stun(opponent_id)
@@ -355,36 +421,6 @@ GAME LOOP
 """
 
 
-def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int):
-    entities = Entities.empty(my_team=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
-    n = int(input())
-    for i in range(n):
-        # entity_id: buster id or ghost id
-        # x, y: position of this buster / ghost
-        # entity_type: the team id if it is a buster, -1 if it is a ghost.
-        # state:
-        #   For busters: 0=idle, 1=carrying a ghost, 2=stunned, 3=busting
-        #   For ghosts: endurance
-        # value:
-        #   For busters: Ghost id being carried.
-        #   For ghosts: number of busters attempting to trap this ghost.
-        identity, x, y, entity_type, state, value = [int(j) for j in input().split()]
-        if entity_type == -1:
-            entities.ghost_position[identity][0] = x
-            entities.ghost_position[identity][1] = y
-            entities.ghost_endurance[identity] = state
-            entities.ghost_attempt[identity] = value
-            entities.ghost_valid[identity] = True
-        else:
-            entities.buster_position[identity][0] = x
-            entities.buster_position[identity][1] = y
-            entities.buster_team[identity] = entity_type
-            entities.buster_ghost[identity] = value if state == 1 else -1
-            entities.buster_stunned[identity] = state == 2
-            entities.buster_busting[identity] = state == 3
-    return entities
-
-
 def game_loop():
     busters_per_player = int(input())
     ghost_count = int(input())
@@ -395,9 +431,14 @@ def game_loop():
     debug("my team id: ", my_team_id)
 
     agent = Agent()
+    game_state = GameState()
     while True:
+        game_state.new_turn()
         entities = read_entities(my_team_id=my_team_id, busters_per_player=busters_per_player, ghost_count=ghost_count)
-        for action in agent.get_actions(entities):
+        game_state.enrich_state(entities)
+        actions = agent.get_actions(entities)
+        game_state.on_actions(entities, actions)
+        for action in actions:
             print(action)
 
 
