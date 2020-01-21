@@ -203,6 +203,9 @@ class Territory:
         return len(self.unvisited)
 
     def assign_destinations(self, entities: Entities, player_ids: List[int]) -> Dict[int, np.ndarray]:
+        # TODO - there is a notion of "not so useful to explore territory" => heat map to do
+        # TODO - there is a notion of "point of interest" that should impact the heat map (ex: probable ghost here)
+
         heap = []
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
