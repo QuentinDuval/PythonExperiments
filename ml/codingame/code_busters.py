@@ -232,19 +232,17 @@ class Agent:
         self.assignment = {}
 
     def get_actions(self, entities: Entities) -> List[Action]:
-        # TODO - keep track of previous state
+        # TODO - keep track of previous state to enrich current (and track ghosts moves)
 
         ghost_ids = entities.get_ghost_ids()
         player_ids = entities.get_player_ids()
-        self.territory.track_explored(entities, player_ids)
-        actions: List[Action] = [None] * len(player_ids)
-
         debug("player ids:", player_ids)
         debug("ghost ids:", ghost_ids)
 
-        # Look for opportunities to STUNs opponents
-        # TODO - and store the cooldowns (and status of opponent)
+        self.territory.track_explored(entities, player_ids)
+        actions: List[Action] = [None] * len(player_ids)
 
+        # TODO - Look for opportunities to STUNs opponents - and store cooldown + status of opponent
         # TODO - separate in several phases (to avoid conflicts and priority of busters)
         self.if_has_ghost_go_to_base(entities, player_ids, actions)
         self.go_fetch_closest_ghosts(entities, player_ids, actions)
@@ -294,8 +292,6 @@ class Agent:
 
                 # Try to find some ghosts
                 elif self.territory:
-                    # TODO - ideally, explore again - or at least maintain some position counter (not found ghosts?)
-                    # TODO - ideally, track the cells explored before
                     debug("exploring territory", player_id)
                     point = self.territory.shortest_point_to(entities.buster_position[player_id])
                     self.assignment[player_id] = point
