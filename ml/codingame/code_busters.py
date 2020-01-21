@@ -93,6 +93,7 @@ RADIUS_SIGHT = 2200
 MAX_MOVE_DISTANCE = 800
 MIN_BUST_DISTANCE = 900
 MAX_BUST_DISTANCE = 1760
+MAX_STUN_DISTANCE = 1760
 
 TEAM_CORNERS = np.array([[0, 0], [WIDTH, HEIGHT]], dtype=np.float32)
 
@@ -139,6 +140,13 @@ class Entities:
                 ids.append(i)
         return ids
 
+    def get_opponent_ids(self) -> List[int]:
+        ids = []
+        for i in range(self.buster_team.shape[0]):
+            if self.buster_team[i] >= 0 and self.buster_team[i] != self.my_team:
+                ids.append(i)
+        return ids
+
     def get_ghost_ids(self) -> Set[int]:
         ids = set()
         for i in range(self.ghost_count):
@@ -174,7 +182,14 @@ class Release:
         return "RELEASE"
 
 
-Action = Union[Move, Bust, Release]
+class Stun(NamedTuple):
+    buster_id: int
+
+    def __repr__(self):
+        return "STUN " + str(self.buster_id)
+
+
+Action = Union[Move, Bust, Release, Stun]
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -254,6 +269,7 @@ class Agent:
         # TODO - separate in several phases (to avoid conflicts and priority of busters)
         self.if_has_ghost_go_to_base(entities, player_ids)
         self.go_fetch_closest_ghosts(entities, player_ids)
+        self.stun_closest_opponents(entities, player_ids)
         self.go_explore_territory(entities, player_ids)
         self.go_to_middle(entities, player_ids)
         debug("Time spent:", self.chrono.spent())
@@ -287,6 +303,17 @@ class Agent:
                     else:
                         self.actions[player_id] = Move(ghost_pos)
                     break
+
+    def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
+        # TODO - consider going for a stun if the opponent carries a ghost - pursing him, etc
+        opponent_ids = entities.get_opponent_ids()
+        for opponent_id in opponent_ids:
+            opponent_pos = entities.buster_position[opponent_id]
+            for player_id in player_ids:
+                if player_id not in self.actions:
+                    player_pos = entities.buster_position[player_id]
+                    if distance2(player_pos, opponent_pos) < MAX_STUN_DISTANCE ** 2:
+                        self.actions[player_id] = Stun(opponent_id)
 
     def go_explore_territory(self, entities: Entities, player_ids: List[int]):
         player_ids = [player_id for player_id in player_ids if player_id not in self.actions]
