@@ -195,6 +195,9 @@ class Agent:
         debug("player ids:", player_ids)
         debug("ghost ids:", ghost_ids)
 
+        # TODO - once a ghost is captured by opponent, my bot is confused
+        # TODO - separate in several phases (to avoid conflits and priority of busters)
+
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
 
