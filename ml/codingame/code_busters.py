@@ -341,8 +341,14 @@ class Agent:
         self.chrono = Chronometer()
 
     def get_actions(self, entities: Entities) -> List[Action]:
+        # TODO - several busters by ghost for ghosts with high endurance
+        # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
+        # TODO - stick around opponent busters to steal their ghosts
+        # TODO - have busters that are there to ANNOY and STEAL
+
         # TODO - keep track of previous state to enrich current (and track ghosts moves to help find them)
         # TODO - when you find a ghost for the first time (requires tracking): add a "point of interest" to map
+        # TODO - consider going for a stun if the opponent carries a ghost - pursing him, etc
 
         self.chrono.start()
         self.actions.clear()
@@ -368,7 +374,6 @@ class Agent:
                 player_corner = TEAM_CORNERS[entities.my_team]
                 player_pos = entities.buster_position[player_id]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
-                    entities.ghost_valid[entities.buster_ghost[player_id]] = False  # TODO - rework the tracking
                     self.actions[player_id] = Release()
                 else:
                     self.actions[player_id] = Move(player_corner)
@@ -392,7 +397,6 @@ class Agent:
                     break
 
     def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
-        # TODO - consider going for a stun if the opponent carries a ghost - pursing him, etc
         opponent_ids = entities.get_opponent_ids()
         for opponent_id in opponent_ids:
             opponent_pos = entities.buster_position[opponent_id]
