@@ -4,6 +4,7 @@ import sys
 import itertools
 from typing import *
 import time
+import heapq
 
 import numpy as np
 
@@ -201,9 +202,25 @@ class Territory:
     def __len__(self):
         return len(self.unvisited)
 
-    def assign_destinations(self, entities: Entities, player_ids: List[int]) -> List[np.ndarray]:
-        pass
+    def assign_destinations(self, entities: Entities, player_ids: List[int]) -> Dict[int, np.ndarray]:
+        heap = []
+        for player_id in player_ids:
+            player_pos = entities.buster_position[player_id]
+            for point in self.unvisited:
+                d = distance2(point, player_pos)
+                heapq.heappush(heap, (d, player_id, point))
 
+        assignments = {}
+        taken = set()
+        while heap and len(assignments) < len(player_ids):
+            d, player_id, point = heapq.heappop(heap)
+            if player_id not in assignments:
+                if point not in taken:
+                    assignments[player_id] = point
+                    taken.add(point)
+        return assignments
+
+    '''
     def shortest_point_to(self, position: np.ndarray) -> np.ndarray:
         closest = None
         min_dist = float('inf')
@@ -213,6 +230,7 @@ class Territory:
                 closest = pos
         x, y = closest
         return np.array([x, y])
+    '''
 
     def track_explored(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
@@ -229,7 +247,6 @@ class Territory:
 class Agent:
     def __init__(self):
         self.territory = Territory()
-        self.assignment = {}
         self.actions = {}
 
     def get_actions(self, entities: Entities) -> List[Action]:
@@ -248,6 +265,7 @@ class Agent:
         self.if_has_ghost_go_to_base(entities, player_ids)
         self.go_fetch_closest_ghosts(entities, player_ids)
         self.go_explore_territory(entities, player_ids)
+        self.go_to_middle(entities, player_ids)
         return [self.actions[player_id] for player_id in player_ids]
 
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int]):
@@ -280,30 +298,16 @@ class Agent:
                     break
 
     def go_explore_territory(self, entities: Entities, player_ids: List[int]):
+        player_ids = [player_id for player_id in player_ids if player_id not in self.actions]
+        assignments = self.territory.assign_destinations(entities, player_ids)
+        for player_id, point in assignments.items():
+            self.actions[player_id] = Move(point)
+
+    def go_to_middle(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
             if player_id not in self.actions:
+                self.actions[player_id] = Move(np.ndarray([8000, 4500]))
 
-                player_pos = entities.buster_position[player_id]
-
-                # If the player has some area to explore
-                if player_id in self.assignment:
-                    debug("following assignment", player_id)
-                    point = self.assignment[player_id]
-                    if distance2(point, player_pos) < self.territory.cell_dist2:
-                        del self.assignment[player_id]
-                        self.territory.remove_position(point)
-                    self.actions[player_id] = Move(point)
-
-                # Try to find some ghosts
-                elif self.territory:
-                    debug("exploring territory", player_id)
-                    point = self.territory.shortest_point_to(entities.buster_position[player_id])
-                    self.assignment[player_id] = point
-                    self.actions[player_id] = Move(point)
-
-                # Do nothing...
-                else:
-                    self.actions[player_id] = Move(np.ndarray([8000, 4500]))
 
 """
 ------------------------------------------------------------------------------------------------------------------------
