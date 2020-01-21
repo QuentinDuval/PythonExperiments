@@ -128,7 +128,9 @@ HEIGHT = 9000
 RADIUS_BASE = 1600
 RADIUS_SIGHT = 2200
 
+GHOST_MOVE_DISTANCE = 400
 MAX_MOVE_DISTANCE = 800
+
 MIN_BUST_DISTANCE = 900
 MAX_BUST_DISTANCE = 1760
 MAX_STUN_DISTANCE = 1760
@@ -335,6 +337,9 @@ class Agent:
 
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
+        # TODO - different strategies based on number of remaining busters
+        # TODO - escort remaining buster when it is the end (+ the guy can still STUN!)
+        # TODO - in the beginning of the game, rush to the center, then bring back ghosts with you?
 
         # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
         # TODO - stick around opponent busters to steal their ghosts
@@ -384,10 +389,23 @@ class Agent:
         for ghost_id in ghost_ids:
             ghost_pos = entities.ghost_position[ghost_id]
             player_ids.sort(key=lambda b: distance2(ghost_pos, entities.buster_position[b]))
+
+            # TODO - compute a number of busters to assign? Should instead have a kind of priority
             for player_id in player_ids:
                 if player_id not in self.actions:
-                    closest_dist2 = distance2(ghost_pos, entities.buster_position[player_id])
-                    if closest_dist2 < MAX_BUST_DISTANCE ** 2:
+                    player_pos = entities.buster_position[player_id]
+                    closest_dist2 = distance2(ghost_pos, player_pos)
+                    if closest_dist2 == 0:
+                        next_player_pos = np.array([WIDTH / 2, HEIGHT / 2])
+                        self.actions[player_id] = Move(next_player_pos)
+                    elif closest_dist2 < MIN_BUST_DISTANCE ** 2:
+                        # ghost_dir = ghost_pos - entities.buster_position[player_ids[0]]
+                        # next_ghost_pos = ghost_pos + ghost_dir / norm(ghost_dir) * GHOST_MOVE_DISTANCE
+                        # next_player_dir = player_pos - (ghost_pos + next_ghost_pos) / 2  # TODO - find exact formula
+                        next_player_dir = player_pos - ghost_pos
+                        next_player_pos = player_pos + next_player_dir / norm(next_player_dir) * (MAX_MOVE_DISTANCE - GHOST_MOVE_DISTANCE)
+                        self.actions[player_id] = Move(next_player_pos)
+                    elif closest_dist2 < MAX_BUST_DISTANCE ** 2:
                         self.actions[player_id] = Bust(ghost_id)
                     else:
                         self.actions[player_id] = Move(ghost_pos)
