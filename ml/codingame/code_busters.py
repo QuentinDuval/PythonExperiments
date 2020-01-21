@@ -223,18 +223,6 @@ class Territory:
                     taken.add(point)
         return assignments
 
-    '''
-    def shortest_point_to(self, position: np.ndarray) -> np.ndarray:
-        closest = None
-        min_dist = float('inf')
-        for pos in self.unvisited:
-            if distance2(pos, position) < min_dist:
-                min_dist = distance2(pos, position) + np.random.uniform(0, 3000) ** 2
-                closest = pos
-        x, y = closest
-        return np.array([x, y])
-    '''
-
     def track_explored(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
@@ -242,18 +230,16 @@ class Territory:
                 if distance2(point, player_pos) < self.cell_dist2:
                     self.unvisited.discard(point)
 
-    def remove_position(self, position: np.ndarray):
-        x, y = position
-        self.unvisited.discard((x, y))  # does not crash if key is not there
-
 
 class Agent:
     def __init__(self):
         self.territory = Territory()
         self.actions = {}
+        self.chrono = Chronometer()
 
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - keep track of previous state to enrich current (and track ghosts moves to help find them)
+        self.chrono.start()
         self.actions.clear()
 
         ghost_ids = entities.get_ghost_ids()
@@ -269,6 +255,7 @@ class Agent:
         self.go_fetch_closest_ghosts(entities, player_ids)
         self.go_explore_territory(entities, player_ids)
         self.go_to_middle(entities, player_ids)
+        debug("Time spent:", self.chrono.spent(), "ms")
         return [self.actions[player_id] for player_id in player_ids]
 
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int]):
