@@ -233,7 +233,7 @@ class Agent:
         self.actions = {}
 
     def get_actions(self, entities: Entities) -> List[Action]:
-        # TODO - keep track of previous state to enrich current (and track ghosts moves)
+        # TODO - keep track of previous state to enrich current (and track ghosts moves to help find them)
         self.actions.clear()
 
         ghost_ids = entities.get_ghost_ids()
