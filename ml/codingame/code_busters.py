@@ -176,7 +176,6 @@ class Release:
 
 Action = Union[Move, Bust, Release]
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 AGENT
@@ -226,7 +225,7 @@ class Territory:
     def track_explored(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
-            for point in list(self.unvisited):                        # TODO - make it more efficient (only neighbors)
+            for point in list(self.unvisited):  # TODO - make it more efficient (only neighbors)
                 if distance2(point, player_pos) < self.cell_dist2:
                     self.unvisited.discard(point)
 
@@ -239,6 +238,8 @@ class Agent:
 
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - keep track of previous state to enrich current (and track ghosts moves to help find them)
+        # TODO - when you find a ghost for the first time (requires tracking): add a "point of interest" to map
+
         self.chrono.start()
         self.actions.clear()
 
@@ -255,7 +256,7 @@ class Agent:
         self.go_fetch_closest_ghosts(entities, player_ids)
         self.go_explore_territory(entities, player_ids)
         self.go_to_middle(entities, player_ids)
-        debug("Time spent:", self.chrono.spent(), "ms")
+        debug("Time spent:", self.chrono.spent())
         return [self.actions[player_id] for player_id in player_ids]
 
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int]):
@@ -264,7 +265,7 @@ class Agent:
                 player_corner = TEAM_CORNERS[entities.my_team]
                 player_pos = entities.buster_position[player_id]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
-                    entities.ghost_valid[entities.buster_ghost[player_id]] = False   # TODO - rework the tracking
+                    entities.ghost_valid[entities.buster_ghost[player_id]] = False  # TODO - rework the tracking
                     self.actions[player_id] = Release()
                 else:
                     self.actions[player_id] = Move(player_corner)
