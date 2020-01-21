@@ -247,7 +247,8 @@ class Agent:
         self.if_has_ghost_go_to_base(entities, player_ids, actions)
         self.go_fetch_closest_ghosts(entities, player_ids, actions)
         self.go_explore_territory(entities, player_ids, actions)
-        return actions
+
+        return actions  # TODO - use a dictionary of actions and then transform to list... would be simpler
 
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int], actions: List[Action]):
         for i, player_id in enumerate(player_ids):
