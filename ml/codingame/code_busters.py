@@ -183,29 +183,33 @@ class Territory:
                 x = self.cell_width / 2 + self.cell_width * i
                 y = self.cell_height / 2 + self.cell_height * j
                 self.unvisited.add((x, y))
-        self.on_track = set()
 
     def __len__(self):
         return len(self.unvisited)
+
+    def assign_destinations(self, entities: Entities, player_ids: List[int]) -> List[np.ndarray]:
+        pass
 
     def shortest_point_to(self, position: np.ndarray) -> np.ndarray:
         closest = None
         min_dist = float('inf')
         for pos in self.unvisited:
-            if pos not in self.on_track:
-                if distance2(pos, position) < min_dist:
-                    min_dist = distance2(pos, position) + np.random.uniform(0, 3000) ** 2
-                    closest = pos
+            if distance2(pos, position) < min_dist:
+                min_dist = distance2(pos, position) + np.random.uniform(0, 3000) ** 2
+                closest = pos
         x, y = closest
-        self.on_track.add(closest)
         return np.array([x, y])
+
+    def track_explored(self, entities: Entities, player_ids: List[int]):
+        for player_id in player_ids:
+            player_pos = entities.buster_position[player_id]
+            for point in list(self.unvisited):                        # TODO - make it more efficient (only neighbors)
+                if distance2(point, player_pos) < self.cell_dist2:
+                    self.unvisited.discard(point)
 
     def remove_position(self, position: np.ndarray):
         x, y = position
         self.unvisited.discard((x, y))  # does not crash if key is not there
-
-    def new_turn(self):
-        self.on_track.clear()
 
 
 class Agent:
@@ -216,13 +220,14 @@ class Agent:
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - keep track of previous state
 
-        self.territory.new_turn()
         ghost_ids = self.get_ghost_ids(entities)
         player_ids = self.get_player_ids(entities)
+        self.territory.track_explored(entities, player_ids)
+        actions: List[Action] = [None] * len(player_ids)
+
         debug("player ids:", player_ids)
         debug("ghost ids:", ghost_ids)
 
-        # TODO - once a ghost is captured by opponent, my bot is confused
         # TODO - separate in several phases (to avoid conflits and priority of busters)
 
         for player_id in player_ids:
@@ -236,9 +241,9 @@ class Agent:
                 player_corner = TEAM_CORNERS[entities.my_team]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
                     entities.ghost_valid[entities.buster_ghost[player_id]] = False
-                    yield Release()
+                    actions[player_id] = Release()
                 else:
-                    yield Move(player_corner)
+                    actions[player_id] = Move(player_corner)
 
             # Look for opportunities to STUNs opponents
             # TODO - and store the cooldowns (and status of opponent)
@@ -250,9 +255,9 @@ class Agent:
                 closest_dist2 = distance2(player_pos, entities.ghost_position[closest_id])
                 ghost_ids.remove(closest_id)
                 if closest_dist2 < MAX_BUST_DISTANCE ** 2:
-                    yield Bust(closest_id)
+                    actions[player_id] = Bust(closest_id)
                 else:
-                    yield Move(entities.ghost_position[closest_id])
+                    actions[player_id] = Move(entities.ghost_position[closest_id])
 
             # If the player has some area to explore
             elif player_id in self.assignment:
@@ -261,7 +266,7 @@ class Agent:
                 if distance2(point, player_pos) < self.territory.cell_dist2:
                     del self.assignment[player_id]
                     self.territory.remove_position(point)
-                yield Move(point)
+                actions[player_id] = Move(point)
 
             # Try to find some ghosts
             elif self.territory:
@@ -270,11 +275,12 @@ class Agent:
                 debug("exploring territory", player_id)
                 point = self.territory.shortest_point_to(entities.buster_position[player_id])
                 self.assignment[player_id] = point
-                yield Move(point)
+                actions[player_id] = Move(point)
 
             # Do nothing...
             else:
-                yield Move(np.ndarray([8000, 4500]))
+                actions[player_id] = Move(np.ndarray([8000, 4500]))
+        return actions
 
     def get_player_ids(self, entities: Entities) -> List[int]:
         ids = []
