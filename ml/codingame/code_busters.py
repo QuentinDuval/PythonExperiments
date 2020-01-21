@@ -290,10 +290,9 @@ class Territory:
     def __len__(self):
         return len(self.unvisited)
 
-    def assign_destinations(self, entities: Entities, player_ids: List[int]) -> Dict[int, np.ndarray]:
-        # TODO - there is a notion of "not so useful to explore territory" => heat map to do
-        # TODO - there is a notion of "point of interest" that should impact the heat map (ex: probable ghost here)
+    # TODO - there is a notion of "point of interest" that should impact the heat map (ex: probable ghost here)
 
+    def assign_destinations(self, entities: Entities, player_ids: List[int]) -> Dict[int, np.ndarray]:
         heap = []
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
@@ -316,7 +315,7 @@ class Territory:
     def track_explored(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
             player_pos = entities.buster_position[player_id]
-            for point in list(self.unvisited):  # TODO - make it more efficient (only neighbors)
+            for point in list(self.unvisited):  # TODO - make it more efficient (look only neighbors)
                 if distance2(point, player_pos) < self.cell_dist2:
                     self.unvisited.discard(point)
 
@@ -337,6 +336,7 @@ class Agent:
     def get_actions(self, entities: Entities) -> List[Action]:
         # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
 
+        # TODO - prioritize the ghosts with low endurance
         # TODO - several busters by ghost for ghosts with high endurance
         # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
         # TODO - stick around opponent busters to steal their ghosts
