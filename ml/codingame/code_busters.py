@@ -341,6 +341,8 @@ class Agent:
         self.chrono = Chronometer()
 
     def get_actions(self, entities: Entities) -> List[Action]:
+        # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
+
         # TODO - several busters by ghost for ghosts with high endurance
         # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
         # TODO - stick around opponent busters to steal their ghosts
