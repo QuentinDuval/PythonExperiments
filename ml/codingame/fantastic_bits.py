@@ -360,6 +360,9 @@ PHYSIC ENGINE
 """
 
 
+# TODO - just check if there is a collision
+
+
 # TODO - ultimately, take two trajectories
 def on_trajectory(pos1: Vector, pos2: Vector, element: Vector, radius: float) -> bool:
     # Quick check: outside of the segment
@@ -482,62 +485,6 @@ def intersect_goal(snaffle1: Snaffle, snaffle2: Snaffle, goal: Goal) -> bool:
 
     y_cross, dt = intersection
     return goal.y_lo <= y_cross <= goal.y_hi
-
-
-'''
-def simulate(state: GameState, actions: List[Tuple[Wizard, Action]]) -> GameState:
-    next_state = state.init_next()
-
-    # TODO - take into account the last longing spells?
-
-    # Move the snaffle
-    for snaffle in state.snaffles:
-        thrust = 0.
-        destination = state.opponent_goal.center
-        for action_wizard, action in actions:
-            if np.array_equal(action_wizard.position, snaffle.position):
-                if isinstance(action, Move) and action.is_throw:
-                    thrust = action.power   # TODO - inherit the speed of the player?
-                    destination = action.direction
-                    break
-        next_snaffle = apply_force(snaffle, thrust=thrust, destination=destination, friction=0.75, mass=0.5, dt=1.0)
-        if intersect_goal(snaffle, next_snaffle, state.opponent_goal):
-            next_state.player_status.score += 1
-        elif intersect_goal(snaffle, next_snaffle, state.player_goal):
-            next_state.opponent_status.score += 1
-        else:
-            next_state.snaffles.append(next_snaffle)
-
-    # Move the wizard
-    for wizard in state.player_wizards:
-        thrust = 0.
-        destination = state.opponent_goal.center
-        for action_wizard, action in actions:
-            if action_wizard.id == wizard.id:
-                if isinstance(action, Move) and not action.is_throw:
-                    thrust = action.power
-                    destination = action.direction
-                    break
-        # TODO - detection of catching / throwing a snaffle
-        next_wizard = apply_force(wizard, thrust=thrust, destination=destination, friction=0.75, mass=1.0, dt=1.0)
-        next_state.player_wizards.append(next_wizard)
-
-    # Move the opponent wizard: TODO - move them according to a basic AI
-    for wizard in state.opponent_wizards:
-        # TODO - detection of catching / throwing a snaffle
-        next_wizard = apply_force(wizard, thrust=0., destination=state.player_goal.center, friction=0.75, mass=1.0, dt=1.0)
-        next_state.opponent_wizards.append(next_wizard)
-
-    # Move the bludgers: TODO - how does the acceleration of bludgers work?
-    for bludger in state.bludgers:
-        next_bludger = apply_force(bludger, thrust=0., destination=bludger.position, friction=0.9, mass=8.0, dt=1.0)
-        next_state.bludgers.append(next_bludger)
-
-    # Increase the magic
-    next_state.player_status.magic += 1
-    next_state.opponent_status.magic += 1
-    return next_state
-'''
 
 
 """
