@@ -262,19 +262,22 @@ class Agent:
                     self.actions[player_id] = Move(player_corner)
 
     def go_fetch_closest_ghosts(self, entities: Entities, player_ids: List[int]):
-        # TODO - use correct priority queues to go to the closest
         ghost_ids = entities.get_ghost_ids()
-        for player_id in player_ids:
-            if player_id not in self.actions:
-                if ghost_ids:
-                    player_pos = entities.buster_position[player_id]
-                    closest_id = min(ghost_ids, key=lambda gid: distance2(entities.ghost_position[gid], player_pos))
-                    closest_dist2 = distance2(player_pos, entities.ghost_position[closest_id])
-                    ghost_ids.remove(closest_id)
+        if not ghost_ids:
+            return
+
+        player_ids = list(player_ids)
+        for ghost_id in ghost_ids:
+            ghost_pos = entities.ghost_position[ghost_id]
+            player_ids.sort(key=lambda b: distance2(ghost_pos, entities.buster_position[b]))
+            for player_id in player_ids:
+                if player_id not in self.actions:
+                    closest_dist2 = distance2(ghost_pos, entities.buster_position[player_id])
                     if closest_dist2 < MAX_BUST_DISTANCE ** 2:
-                        self.actions[player_id] = Bust(closest_id)
+                        self.actions[player_id] = Bust(ghost_id)
                     else:
-                        self.actions[player_id] = Move(entities.ghost_position[closest_id])
+                        self.actions[player_id] = Move(ghost_pos)
+                    break
 
     def go_explore_territory(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
