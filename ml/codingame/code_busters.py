@@ -341,6 +341,8 @@ class Agent:
         # TODO - escort remaining buster when it is the end (+ the guy can still STUN!)
         # TODO - in the beginning of the game, rush to the center, then bring back ghosts with you?
 
+        # TODO - you could wait for the opponent at his base...
+        # TODO - do not stun when the opponent is in his base
         # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
         # TODO - stick around opponent busters to steal their ghosts
         # TODO - have busters that are there to ANNOY and STEAL
@@ -368,15 +370,40 @@ class Agent:
         return [self.actions[player_id] for player_id in player_ids]
 
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int]):
-        for player_id in player_ids:
-            if entities.buster_ghost[player_id] >= 0:
-                # TODO - beware of opponent crossed at that point
+
+        # Deal with opponents
+        opponent_ids = entities.get_opponent_ids()
+        for player_id in self._player_with_ghosts(entities, player_ids):
+            player_pos = entities.buster_position[player_id]
+            closest_opponent_id = min(opponent_ids, key=lambda oid: distance2(entities.buster_position[oid], player_pos), default=-1)
+            if closest_opponent_id < 0:
+                continue
+
+            opponent_pos = entities.buster_position[closest_opponent_id]
+            dist_to_opponent = distance2(opponent_pos, player_pos)
+            if dist_to_opponent >= RADIUS_SIGHT ** 2:
+                continue
+
+            # Flee / go to contact if only one opponent
+            if dist_to_opponent >= MAX_STUN_DISTANCE ** 2:
+                next_player_dir = player_pos - opponent_pos
+                next_player_pos = next_player_dir / norm(next_player_dir) * MAX_MOVE_DISTANCE
+                self.actions[player_id] = Move(next_player_pos)
+            elif entities.buster_cooldown[player_id] <= 0:
+                self.actions[player_id] = Stun(closest_opponent_id)
+
+        # Move toward base if no danger
+        for player_id in self._player_with_ghosts(entities, player_ids):
+            if player_id not in self.actions:
                 player_corner = TEAM_CORNERS[entities.my_team]
-                player_pos = entities.buster_position[player_id]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
                     self.actions[player_id] = Release()
                 else:
                     self.actions[player_id] = Move(player_corner)
+
+    def _player_with_ghosts(self, entities: Entities, player_ids: List[int]) -> List[int]:
+        return [player_id for player_id in player_ids if entities.buster_ghost[player_id] >= 0]
+
 
     def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
         opponent_ids = entities.get_opponent_ids()
