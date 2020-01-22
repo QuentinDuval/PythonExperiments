@@ -359,10 +359,10 @@ class Agent:
         debug("ghost ids:", ghost_ids)
 
         self.if_has_ghost_go_to_base(entities, player_ids)
-        self.go_fetch_closest_ghosts(entities, player_ids)
         self.stun_closest_opponents(entities, player_ids)
-        self.go_explore_territory(entities, player_ids)
-        self.go_to_middle(entities, player_ids)
+        self.go_fetch_closest_ghosts(entities, player_ids)
+        self.go_explore_territory(entities, player_ids) # TODO - diminish this as the game advances (escort and seek)
+        self.go_to_middle(entities, player_ids)         # TODO - go to escort
 
         debug("Time spent:", self.chrono.spent())
         return [self.actions[player_id] for player_id in player_ids]
@@ -370,12 +370,24 @@ class Agent:
     def if_has_ghost_go_to_base(self, entities: Entities, player_ids: List[int]):
         for player_id in player_ids:
             if entities.buster_ghost[player_id] >= 0:
+                # TODO - beware of opponent crossed at that point
                 player_corner = TEAM_CORNERS[entities.my_team]
                 player_pos = entities.buster_position[player_id]
                 if distance2(player_pos, player_corner) < RADIUS_BASE ** 2:
                     self.actions[player_id] = Release()
                 else:
                     self.actions[player_id] = Move(player_corner)
+
+    def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
+        opponent_ids = entities.get_opponent_ids()
+        for opponent_id in opponent_ids:
+            opponent_pos = entities.buster_position[opponent_id]
+            if entities.buster_stunned[opponent_id] <= 1:   # 1 allows to stun-lock but avoids double stuns
+                for player_id in player_ids:
+                    if player_id not in self.actions and entities.buster_cooldown[player_id] <= 0:
+                        player_pos = entities.buster_position[player_id]
+                        if distance2(player_pos, opponent_pos) < MAX_STUN_DISTANCE ** 2:
+                            self.actions[player_id] = Stun(opponent_id)
 
     def go_fetch_closest_ghosts(self, entities: Entities, player_ids: List[int]):
         ghost_ids = entities.get_ghost_ids()
@@ -413,16 +425,6 @@ class Agent:
                     # Do not put too many busters on a weak ghost
                     if entities.ghost_endurance[ghost_id] <= 5:
                         break
-
-    def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
-        opponent_ids = entities.get_opponent_ids()
-        for opponent_id in opponent_ids:
-            opponent_pos = entities.buster_position[opponent_id]
-            for player_id in player_ids:
-                if player_id not in self.actions and entities.buster_cooldown[player_id] <= 0:
-                    player_pos = entities.buster_position[player_id]
-                    if distance2(player_pos, opponent_pos) < MAX_STUN_DISTANCE ** 2:
-                        self.actions[player_id] = Stun(opponent_id)
 
     def go_explore_territory(self, entities: Entities, player_ids: List[int]):
         player_ids = [player_id for player_id in player_ids if player_id not in self.actions]
