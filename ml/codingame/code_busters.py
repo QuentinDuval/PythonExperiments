@@ -404,7 +404,6 @@ class Agent:
     def _player_with_ghosts(self, entities: Entities, player_ids: List[int]) -> List[int]:
         return [player_id for player_id in player_ids if entities.buster_ghost[player_id] >= 0]
 
-
     def stun_closest_opponents(self, entities: Entities, player_ids: List[int]):
         opponent_ids = entities.get_opponent_ids()
         for opponent_id in opponent_ids:
@@ -415,6 +414,8 @@ class Agent:
                         player_pos = entities.buster_position[player_id]
                         if distance2(player_pos, opponent_pos) < MAX_STUN_DISTANCE ** 2:
                             self.actions[player_id] = Stun(opponent_id)
+                        elif distance2(player_pos, opponent_pos) < RADIUS_SIGHT ** 2:
+                            self.actions[player_id] = Move(opponent_pos)
 
     def go_fetch_closest_ghosts(self, entities: Entities, player_ids: List[int]):
         ghost_ids = entities.get_ghost_ids()
