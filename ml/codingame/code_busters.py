@@ -543,7 +543,7 @@ class Agent:
                 actions[buster_id] = Move(buster_id, np.array([WIDTH/2, HEIGHT/2]))
             elif dist2 < MIN_BUST_DISTANCE ** 2:
                 direction = buster.position - ghost.position
-                destination = buster.position + direction / norm(direction) * (MIN_BUST_DISTANCE - dist2)
+                destination = buster.position + direction / norm(direction) * math.sqrt(MIN_BUST_DISTANCE ** 2 - dist2)
                 actions[buster_id] = Move(buster_id, destination)
             else:
                 actions[buster_id] = Bust(buster_id, capturing.target_id)
