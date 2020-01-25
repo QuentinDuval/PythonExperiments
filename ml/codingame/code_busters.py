@@ -565,7 +565,7 @@ class Agent:
 
         # Intercepting an opponent
         for buster_id, intercepting in self.intercepting.items():
-            intercept_pos = TEAM_CORNERS[entities.my_team] * 0.1 + TEAM_CORNERS[1-entities.my_team] * 0.9
+            intercept_pos = TEAM_CORNERS[entities.my_team] * 0.2 + TEAM_CORNERS[1-entities.my_team] * 0.8
             actions[buster_id] = Move(buster_id, intercept_pos)
 
         return actions
