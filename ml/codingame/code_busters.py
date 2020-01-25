@@ -448,11 +448,15 @@ class Agent:
                 del self.exploring[buster_id]
                 self.unassigned.add(buster_id)
 
-        # Carrying update
+        # Carrying / escorting update
         for buster_id, carrying in list(self.carrying.items()):
             if entities.busters[buster_id].carried_ghost < 0:
                 del self.carrying[buster_id]
                 self.unassigned.add(buster_id)
+                for escorting_buster_id, escorting in list(self.escorting.items()):
+                    if escorting.target_id == buster_id:
+                        del self.escorting[escorting_buster_id]
+                        self.unassigned.add(escorting_buster_id)
 
         # Capturing update
         for buster_id, capturing in list(self.capturing.items()):
@@ -462,6 +466,64 @@ class Agent:
             elif not entities.busters[buster_id].busting_ghost:
                 del self.capturing[buster_id]
                 self.unassigned.add(buster_id)
+
+        # Intercepting update
+        # TODO - maybe check the sucecss rate ? simple exponential decay?
+
+    def _assign_vacant_busters(self, entities: Entities):
+        ghosts: List[Ghost] = list(entities.ghosts.values())
+        busters = [entities.busters[uid] for uid in self.unassigned]
+        destinations = self.territory.assign_destinations(busters)
+
+        heap: List[Tuple[float, Buster, Ghost, int]] = []
+        for ghost in ghosts:
+            for buster in busters:
+                heapq.heappush(heap, (self._ghost_score(buster, ghost, 0), buster, ghost, 0))
+
+        # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
+        ghosts_taken_count = defaultdict(int)
+        while self.unassigned and heap:
+            ghost_score, buster, ghost, busting_count = heapq.heappop(heap)
+            if buster.uid not in self.unassigned:
+                continue
+
+            if ghosts_taken_count[ghost.uid] > busting_count:
+                busting_count = ghosts_taken_count[ghost.uid]
+                heapq.heappush(heap, (self._ghost_score(buster, ghost, busting_count), buster, ghost, busting_count))
+                continue
+
+            tile_pos = destinations.get(buster.uid)
+            if ghost_score < self._tile_score(buster, tile_pos):
+                self.capturing[buster.uid] = Capturing(target_id=ghost.uid)
+                ghosts_taken_count[ghost.uid] += 1
+            else:
+                self.exploring[buster.uid] = Exploring(destination=tile_pos)
+            self.unassigned.remove(buster.uid)
+
+        # No ghosts left: go for escort / attack
+        carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
+        for buster_id in self.unassigned:
+            buster = entities.busters[buster_id]
+            closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
+            if closest_ally and np.random.rand(1) < 0.5: # TODO - use more of this (weight it though)
+                self.escorting[buster.uid] = Escorting(closest_ally.uid)
+            else:
+                self.intercepting[buster.uid] = Intercepting()
+        self.unassigned.clear()
+
+    def _ghost_score(self, buster: Buster, ghost: Ghost, busting_count: int):
+        nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
+        ghost_value = 10        # TODO - depend on where we are in the game
+        busting_count += 1      # The number of busters once we take this one
+        return busting_count * (nb_steps + ghost.endurance / busting_count) / ghost_value
+
+    def _tile_score(self, buster: Buster, tile_pos: Vector):
+        if not tile_pos:
+            return float('inf')
+
+        nb_steps = distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2
+        exploration_value = 1   # TODO - depend on where we are in the game
+        return nb_steps / exploration_value
 
     def _carry_actions(self, entities: Entities) -> Dict[int, Action]:
         actions = dict()
@@ -507,58 +569,6 @@ class Agent:
             actions[buster_id] = Move(buster_id, intercept_pos)
 
         return actions
-
-    def _assign_vacant_busters(self, entities: Entities):
-        ghosts: List[Ghost] = list(entities.ghosts.values())
-        busters = [entities.busters[uid] for uid in self.unassigned]
-        destinations = self.territory.assign_destinations(busters)
-
-        heap: List[Tuple[float, Buster, Ghost, int]] = []
-        for ghost in ghosts:
-            for buster in busters:
-                heapq.heappush(heap, (self._ghost_score(buster, ghost, 0), buster, ghost, 0))
-
-        # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
-        ghosts_taken_count = defaultdict(int)
-        while self.unassigned and heap:
-            ghost_score, buster, ghost, busting_count = heapq.heappop(heap)
-            if buster.uid not in self.unassigned:
-                continue
-
-            if ghosts_taken_count[ghost.uid] > busting_count:
-                busting_count = ghosts_taken_count[ghost.uid]
-                heapq.heappush(heap, (self._ghost_score(buster, ghost, busting_count), buster, ghost, busting_count))
-                continue
-
-            tile_pos = destinations.get(buster.uid)
-            if ghost_score < self._tile_score(buster, tile_pos):
-                self.capturing[buster.uid] = Capturing(target_id=ghost.uid)
-                ghosts_taken_count[ghost.uid] += 1
-            else:
-                self.exploring[buster.uid] = Exploring(destination=tile_pos)
-            self.unassigned.remove(buster.uid)
-
-        # No ghosts left: go for escort / attack
-        carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
-        for buster_id in self.unassigned:
-            buster = entities.busters[buster_id]
-            closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
-            if closest_ally is not None:
-                self.escorting[buster.uid] = Escorting(closest_ally.uid)
-            else:
-                self.intercepting[buster.uid] = Intercepting()
-        self.unassigned.clear()
-
-    def _ghost_score(self, buster: Buster, ghost: Ghost, busting_count: int):
-        nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
-        ghost_value = 10    # TODO - depend on where we are in the game
-        busting_count += 1  # The number of busters once we take this one
-        return busting_count * (nb_steps + ghost.endurance / busting_count) / ghost_value
-
-    def _tile_score(self, buster: Buster, tile_pos: Vector):
-        if not tile_pos:
-            return float('inf')
-        return distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2
 
 
 """
