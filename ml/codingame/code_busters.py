@@ -439,6 +439,12 @@ class Agent:
         debug("Time spent:", self.chrono.spent())
         return [p[1] for p in sorted(actions.items(), key=lambda p: p[0])]
 
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    TRACKING CHANGE
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
     def _update_past_states(self, entities: Entities):
 
         # Tracking exploration state
@@ -469,6 +475,12 @@ class Agent:
 
         # Intercepting update
         # TODO - maybe check the success rate ? simple exponential decay? out of stun?
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    STATE TRANSITIONS
+    --------------------------------------------------------------------------------------------------------------------
+    """
 
     def _assign_vacant_busters(self, entities: Entities):
         ghosts: List[Ghost] = list(entities.ghosts.values())
@@ -525,14 +537,25 @@ class Agent:
         exploration_value = 1   # TODO - depend on where we are in the game
         return nb_steps / exploration_value
 
-    def _carry_actions(self, entities: Entities) -> Dict[int, Action]:
-        actions = dict()
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    HANDLING ACTIONS
+    --------------------------------------------------------------------------------------------------------------------
+    """
 
-        # Exploration of the map
+    def _carry_actions(self, entities: Entities) -> Dict[int, Action]:
+        actions: Dict[EntityId, Action] = dict()
+        self._carry_map_exploration(entities, actions)
+        self._carry_ghost_capture(entities, actions)
+        self._carry_ghost_to_base(entities, actions)
+        self._carry_interception(entities, actions)
+        return actions
+
+    def _carry_map_exploration(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, exploring in self.exploring.items():
             actions[buster_id] = Move(buster_id, exploring.destination)
 
-        # Capturing a ghost
+    def _carry_ghost_capture(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, capturing in self.capturing.items():
             buster = entities.busters[buster_id]
             ghost = entities.ghosts[capturing.target_id]
@@ -548,6 +571,7 @@ class Agent:
             else:
                 actions[buster_id] = Bust(buster_id, capturing.target_id)
 
+    def _carry_ghost_to_base(self, entities: Entities, actions: Dict[EntityId, Action]):
         # Carrying ghost to base
         for buster_id, carrying in self.carrying.items():
             buster = entities.busters[buster_id]
@@ -563,12 +587,10 @@ class Agent:
             team_corner = TEAM_CORNERS[entities.my_team]
             actions[buster_id] = Move(buster_id, target_pos * 0.5 + team_corner * 0.5)
 
-        # Intercepting an opponent
+    def _carry_interception(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, intercepting in self.intercepting.items():
             intercept_pos = TEAM_CORNERS[entities.my_team] * 0.2 + TEAM_CORNERS[1-entities.my_team] * 0.8
             actions[buster_id] = Move(buster_id, intercept_pos)
-
-        return actions
 
 
 """
