@@ -93,7 +93,7 @@ HEIGHT = 9000
 RADIUS_BASE = 1600
 RADIUS_SIGHT = 2200
 
-GHOST_MOVE_DISTANCE = 400
+MAX_GHOST_MOVE_DISTANCE = 400
 MAX_MOVE_DISTANCE = 800
 
 MIN_BUST_DISTANCE = 900
@@ -492,10 +492,11 @@ class Agent:
         vacant_busters = [entities.busters[uid] for uid in self.unassigned]
         assignments = self.territory.assign_destinations(vacant_busters)
         for buster_id in self.unassigned:
-            tile_pos = assignments[buster_id]
+            tile_pos = assignments.get(buster_id)
+            # TODO - might have no tile_positions
             buster = entities.busters[buster_id]
             best_ghost = min(ghosts, key=lambda g: self._ghost_score(buster, g), default=None)
-            if best_ghost and self._ghost_score(buster, best_ghost) < distance2(tile_pos, buster.position):
+            if best_ghost and self._ghost_score(buster, best_ghost) <= self._tile_score(buster, tile_pos):
                 self.capturing[buster_id] = Capturing(target_id=best_ghost.uid)
             else:
                 self.exploring[buster_id] = Exploring(destination=tile_pos)
@@ -503,7 +504,10 @@ class Agent:
         self.unassigned.clear()
 
     def _ghost_score(self, buster: Buster, ghost: Ghost):
-        return distance2(ghost.position, buster.position) / 800 ** 2 + ghost.endurance
+        return distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2 + ghost.endurance
+
+    def _tile_score(self, buster: Buster, tile_pos: Vector):
+        return distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2 + 10   # TODO - parameterize (and evolve)
 
 
 """
