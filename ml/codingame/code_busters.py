@@ -252,9 +252,6 @@ class Move(NamedTuple):
     caster_id: int
     position: np.ndarray
 
-    def apply(self, entities: Entities):
-        pass  # TODO - no need now
-
     def __repr__(self):
         x, y = self.position
         return "MOVE " + str(int(x)) + " " + str(int(y))
@@ -264,35 +261,29 @@ class Bust(NamedTuple):
     caster_id: int
     target_id: int
 
-    def apply(self, entities: Entities):
-        pass  # TODO - no need now
-
     def __repr__(self):
         return "BUST " + str(self.target_id)
 
 
-class Release(NamedTuple):
-    caster_id: int
-    target_id: int
-
-    def apply(self, entities: Entities):
+class Release:
+    def __init__(self, entities: Entities, caster_id: int, target_id: int):
+        self.caster_id = caster_id
+        self.target_id = target_id
         entities.busters[self.caster_id].carried_ghost = -1
-        del entities.ghosts[self.target_id]
 
     def __repr__(self):
         return "RELEASE"
 
 
-class Stun(NamedTuple):
-    caster_id: int
-    target_id: int
-
-    def apply(self, entities: Entities):
+class Stun:
+    def __init__(self, entities: Entities, caster_id: int, target_id: int):
+        self.caster_id = caster_id
+        self.target_id = target_id
         entities.busters[self.caster_id].stun_cooldown = STUN_COOLDOWN
         entities.busters[self.target_id].stun_duration = STUN_DURATION
 
     def __repr__(self):
-        return "STUN " + str(self.target_buster_id)
+        return "STUN " + str(self.target_id)
 
 
 Action = Union[Move, Bust, Release, Stun]
@@ -406,9 +397,11 @@ class Intercepting:
     pass
 
 
+'''
 @dataclass(frozen=False)
 class Herding:
     pass
+'''
 
 
 class Agent:
@@ -551,9 +544,27 @@ class Agent:
         self._carry_interception(entities, actions)
         return actions
 
+    def _in_stun_range(self, buster: Buster, opponents: Iterable[Buster]):
+        if buster.stun_cooldown > 0:
+            return None
+
+        candidate = None
+        for opponent in opponents:
+            if opponent.stun_duration <= 1 and distance2(buster.position, opponent.position) < MAX_STUN_DISTANCE ** 2:
+                if opponent.carried_ghost >= 0:
+                    return opponent
+                candidate = opponent
+        return candidate
+
     def _carry_map_exploration(self, entities: Entities, actions: Dict[EntityId, Action]):
+        opponents = list(entities.get_opponent_busters())
         for buster_id, exploring in self.exploring.items():
-            actions[buster_id] = Move(buster_id, exploring.destination)
+            buster = entities.busters[buster_id]
+            opponent = self._in_stun_range(buster, opponents)
+            if opponent:
+                actions[buster_id] = Stun(entities, buster_id, opponent.uid)
+            else:
+                actions[buster_id] = Move(buster_id, exploring.destination)
 
     def _carry_ghost_capture(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, capturing in self.capturing.items():
@@ -577,7 +588,7 @@ class Agent:
             buster = entities.busters[buster_id]
             team_corner = TEAM_CORNERS[entities.my_team]
             if distance2(team_corner, buster.position) < RADIUS_BASE ** 2:
-                actions[buster_id] = Release(buster_id, buster.carried_ghost)
+                actions[buster_id] = Release(entities, buster_id, buster.carried_ghost)
             else:
                 actions[buster_id] = Move(buster_id, team_corner)
 
