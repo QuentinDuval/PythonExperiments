@@ -468,7 +468,7 @@ class Agent:
                 self.unassigned.add(buster_id)
 
         # Intercepting update
-        # TODO - maybe check the sucecss rate ? simple exponential decay?
+        # TODO - maybe check the sucecss rate ? simple exponential decay? out of stun?
 
     def _assign_vacant_busters(self, entities: Entities):
         ghosts: List[Ghost] = list(entities.ghosts.values())
