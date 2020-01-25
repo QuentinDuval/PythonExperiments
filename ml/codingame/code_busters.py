@@ -432,8 +432,8 @@ class Agent:
         self.chrono.start()
 
         self._update_past_states(entities)
+        self._assign_vacant_busters(entities)
         # self._strategic_analysis(entities) # TODO - set the goals ?
-        self._state_transitions(entities)
         actions = self._carry_actions(entities)
 
         debug("Time spent:", self.chrono.spent())
@@ -507,10 +507,6 @@ class Agent:
             actions[buster_id] = Move(buster_id, intercept_pos)
 
         return actions
-
-    def _state_transitions(self, entities: Entities):
-        self._assign_vacant_busters(entities)
-        # TODO - When capturing / exploring, look for possible stuns
 
     def _assign_vacant_busters(self, entities: Entities):
         ghosts: List[Ghost] = list(entities.ghosts.values())
