@@ -1,6 +1,7 @@
 import abc
 import copy
 import enum
+from collections import *
 from dataclasses import *
 import math
 import sys
@@ -144,6 +145,7 @@ class Entities:
     ghost_count: int
     busters: Dict[int, Buster] = field(default_factory=dict)
     ghosts: Dict[int, Ghost] = field(default_factory=dict)
+    current_turn: int = 0
 
     @property
     def his_team(self):
@@ -167,7 +169,10 @@ READING & TRACKING GAME STATE
 
 
 def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, previous_entities: Entities):
-    entities = Entities(my_team=my_team_id, my_score=0, busters_per_player=busters_per_player, ghost_count=ghost_count)
+    entities = Entities(my_team=my_team_id, my_score=0,
+                        busters_per_player=busters_per_player,
+                        ghost_count=ghost_count)
+
     carried_ghosts = set()
     n = int(input())
     for i in range(n):
@@ -181,7 +186,7 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
         #   For busters: Ghost id being carried, or number of stunned turns if stunned.
         #   For ghosts: number of busters attempting to trap this ghost.
         identity, x, y, entity_type, state, value = [int(j) for j in input().split()]
-        position = np.array([x, y])
+        position = np.array([x, y], dtype=np.float64)
         if entity_type == -1:
             entities.ghosts[identity] = Ghost(
                 uid=identity,
@@ -206,29 +211,34 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
 
     # Adding the previous information
     entities.my_score = previous_entities.my_score
+    entities.current_turn = previous_entities.current_turn + 1
     for buster in entities.get_player_busters():
-        buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown
-        # TODO - probably missing stuff here
+        buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown - 1
 
     # Adding missing ghosts
     for ghost_id, ghost in previous_entities.ghosts.items():
-        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts and ghost.last_seen <= 10:  # TODO - parameterize
+        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts and ghost.last_seen <= 10:
             entities.ghosts[ghost_id] = ghost
             ghost.last_seen += 1
+            # TODO - make ghosts move away from their closest buster
 
-    # Adding missing busters
+    # Adding missing opponent busters
     for buster in previous_entities.get_opponent_busters():
-        if buster.uid not in entities.busters and buster.last_seen <= 10:  # TODO - parameterize
-            entities.busters[buster.uid] = buster
-            buster.last_seen += 1
+        if buster.uid not in entities.busters:
+            opponent_corner = TEAM_CORNERS[1-entities.my_team]
+
+            # Moving them to their base if carrying
+            if buster.carried_ghost >= 0 and distance2(opponent_corner, buster.position) > RADIUS_BASE ** 2:
+                direction = TEAM_CORNERS[1-entities.my_team] - buster.position
+                buster.position += direction / norm(direction) * MAX_MOVE_DISTANCE
+                entities.busters[buster.uid] = buster
+                buster.last_seen = 1
+
+            # Else keeping a timer, but decreasing the belief
+            if buster.last_seen <= 10:
+                entities.busters[buster.uid] = buster
+                buster.last_seen += 1
     return entities
-
-
-def on_end_of_turn(entities: Entities):
-    # TODO - make ghosts move - or make it as ACTION
-    # TODO - make opponent busters carrying ghosts move - or make it as ACTION
-    # TODO - decrease all the cooldowns
-    pass
 
 
 """
@@ -401,9 +411,6 @@ class Herding:
     pass
 
 
-# TODO - add a state for the game as well (exploration phase, mid-game, end-game)...
-
-
 class Agent:
     def __init__(self):
         self.chrono = Chronometer()
@@ -423,6 +430,7 @@ class Agent:
         self.chrono.start()
 
         self._update_past_states(entities)
+        # self._strategic_analysis(entities) # TODO - set the goals ?
         self._state_transitions(entities)
         actions = self._carry_actions(entities)
 
@@ -480,34 +488,49 @@ class Agent:
         return actions
 
     def _state_transitions(self, entities: Entities):
+        self._assign_vacant_busters(entities)
+        # TODO - When capturing / exploring, look for possible stuns
+
+    def _assign_vacant_busters(self, entities: Entities):
         ghosts: List[Ghost] = list(entities.ghosts.values())
+        busters = [entities.busters[uid] for uid in self.unassigned]
+        destinations = self.territory.assign_destinations(busters)
 
-        debug(self.unassigned)
-        debug(self.exploring)
-        debug(self.capturing)
-        debug(self.carrying)
+        heap: List[Tuple[float, Buster, Ghost, int]] = []
+        for ghost in ghosts:
+            for buster in busters:
+                heapq.heappush(heap, (self._ghost_score(buster, ghost, 0), buster, ghost, 0))
 
-        # Assign vacant busters
-        # TODO - avoid assigning too many to the same buster
-        vacant_busters = [entities.busters[uid] for uid in self.unassigned]
-        assignments = self.territory.assign_destinations(vacant_busters)
-        for buster_id in self.unassigned:
-            tile_pos = assignments.get(buster_id)
-            # TODO - might have no tile_positions
-            buster = entities.busters[buster_id]
-            best_ghost = min(ghosts, key=lambda g: self._ghost_score(buster, g), default=None)
-            if best_ghost and self._ghost_score(buster, best_ghost) <= self._tile_score(buster, tile_pos):
-                self.capturing[buster_id] = Capturing(target_id=best_ghost.uid)
+        # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
+        ghosts_taken_count = defaultdict(int)
+        while self.unassigned and heap:
+            ghost_score, buster, ghost, busting_count = heapq.heappop(heap)
+            if buster.uid not in self.unassigned:
+                continue
+
+            if ghosts_taken_count[ghost.uid] > busting_count:
+                busting_count = ghosts_taken_count[ghost.uid]
+                heapq.heappush(heap, (self._ghost_score(buster, ghost, busting_count), buster, ghost, busting_count))
+                continue
+
+            tile_pos = destinations.get(buster.uid)
+            if ghost_score < self._tile_score(buster, tile_pos):
+                self.capturing[buster.uid] = Capturing(target_id=ghost.uid)
+                ghosts_taken_count[ghost.uid] += 1
             else:
-                self.exploring[buster_id] = Exploring(destination=tile_pos)
+                self.exploring[buster.uid] = Exploring(destination=tile_pos)
+            self.unassigned.remove(buster.uid)
 
-        self.unassigned.clear()
-
-    def _ghost_score(self, buster: Buster, ghost: Ghost):
-        return distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2 + ghost.endurance
+    def _ghost_score(self, buster: Buster, ghost: Ghost, busting_count: int):
+        nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
+        ghost_value = 10    # TODO - depend on where we are in the game
+        busting_count += 1  # The number of busters once we take this one
+        return busting_count * (nb_steps + ghost.endurance / busting_count) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Vector):
-        return distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2 + 10   # TODO - parameterize (and evolve)
+        if not tile_pos:
+            return float('inf')
+        return distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2
 
 
 """
@@ -541,7 +564,6 @@ def game_loop():
         for action in agent.get_actions(entities):
             print(action)
 
-        on_end_of_turn(entities)
         previous_entities = entities
 
 
