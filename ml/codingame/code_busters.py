@@ -505,6 +505,13 @@ class Agent:
                 self.exploring[buster.uid] = Exploring(destination=tile_pos)
             self.unassigned.remove(buster.uid)
 
+        # Go for tiles
+        for buster_id in list(self.unassigned):
+            tile_pos = destinations.get(buster_id)
+            if tile_pos:
+                self.exploring[buster_id] = Exploring(destination=tile_pos)
+            self.unassigned.remove(buster_id)
+
         # No ghosts left: go for escort / attack
         carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
         for buster_id in self.unassigned:
@@ -544,12 +551,12 @@ class Agent:
         self._carry_interception(entities, actions)
         return actions
 
-    def _in_stun_range(self, buster: Buster, opponents: Iterable[Buster]):
+    def _in_stun_range(self, buster: Buster, entities: Entities):
         if buster.stun_cooldown > 0:
             return None
 
         candidate = None
-        for opponent in opponents:
+        for opponent in entities.get_opponent_busters():
             if opponent.stun_duration <= 1 and distance2(buster.position, opponent.position) < MAX_STUN_DISTANCE ** 2:
                 if opponent.carried_ghost >= 0:
                     return opponent
@@ -557,10 +564,9 @@ class Agent:
         return candidate
 
     def _carry_map_exploration(self, entities: Entities, actions: Dict[EntityId, Action]):
-        opponents = list(entities.get_opponent_busters())
         for buster_id, exploring in self.exploring.items():
             buster = entities.busters[buster_id]
-            opponent = self._in_stun_range(buster, opponents)
+            opponent = self._in_stun_range(buster, entities)
             if opponent:
                 actions[buster_id] = Stun(entities, buster_id, opponent.uid)
             else:
@@ -571,7 +577,10 @@ class Agent:
             buster = entities.busters[buster_id]
             ghost = entities.ghosts[capturing.target_id]
             dist2 = distance2(buster.position, ghost.position)
-            if dist2 > MAX_BUST_DISTANCE ** 2:
+            opponent = self._in_stun_range(buster, entities)
+            if opponent:
+                actions[buster_id] = Stun(entities, buster_id, opponent.uid)
+            elif dist2 > MAX_BUST_DISTANCE ** 2:
                 actions[buster_id] = Move(buster_id, ghost.position)   # TODO - anticipate move of ghost?
             elif dist2 == 0:
                 actions[buster_id] = Move(buster_id, np.array([WIDTH/2, HEIGHT/2]))
@@ -596,12 +605,21 @@ class Agent:
         for buster_id, escorting in self.escorting.items():
             target_pos = entities.busters[escorting.target_id].position
             team_corner = TEAM_CORNERS[entities.my_team]
-            actions[buster_id] = Move(buster_id, target_pos * 0.5 + team_corner * 0.5)
+            opponent = self._in_stun_range(entities.busters[buster_id], entities)
+            if opponent:
+                actions[buster_id] = Stun(entities, buster_id, opponent.uid)
+            else:
+                actions[buster_id] = Move(buster_id, target_pos * 0.5 + team_corner * 0.5)
 
     def _carry_interception(self, entities: Entities, actions: Dict[EntityId, Action]):
+        # TODO - try to cover some territory while sitting next to the ennemi base
         for buster_id, intercepting in self.intercepting.items():
             intercept_pos = TEAM_CORNERS[entities.my_team] * 0.2 + TEAM_CORNERS[1-entities.my_team] * 0.8
-            actions[buster_id] = Move(buster_id, intercept_pos)
+            opponent = self._in_stun_range(entities.busters[buster_id], entities)
+            if opponent:
+                actions[buster_id] = Stun(entities, buster_id, opponent.uid)
+            else:
+                actions[buster_id] = Move(buster_id, intercept_pos)
 
 
 """
