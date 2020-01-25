@@ -486,6 +486,7 @@ class Agent:
                 heapq.heappush(heap, (self._ghost_score(buster, ghost, 0), buster, ghost, 0))
 
         # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
+        # A kind of Dijkstra for assigning ghost to their closest players
         ghosts_taken_count = defaultdict(int)
         while self.unassigned and heap:
             ghost_score, buster, ghost, busting_count = heapq.heappop(heap)
