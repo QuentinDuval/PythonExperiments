@@ -490,6 +490,7 @@ class Agent:
                         self.unassigned.add(escorting_buster_id)
 
         # Capturing update
+        # TODO - tend to bust ghosts that are for the opponent... do not do this... go elsewhere
         for buster_id, capturing in list(self.capturing.items()):
             if entities.busters[buster_id].carried_ghost >= 0:
                 del self.capturing[buster_id]
@@ -614,6 +615,7 @@ class Agent:
                 actions[buster_id] = Move(buster_id, exploring.destination)
 
     def _carry_ghost_capture(self, entities: Entities, actions: Dict[EntityId, Action]):
+        # TODO - improve in highly congested area
         for buster_id, capturing in self.capturing.items():
             buster = entities.busters[buster_id]
             ghost = entities.ghosts[capturing.target_id]
