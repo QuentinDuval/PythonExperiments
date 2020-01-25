@@ -398,7 +398,7 @@ class Carrying:
 
 @dataclass(frozen=False)
 class Escorting:
-    pass
+    target_id: EntityId
 
 
 @dataclass(frozen=False)
@@ -419,6 +419,8 @@ class Agent:
         self.exploring: Dict[int, Exploring] = {}
         self.capturing: Dict[int, Capturing] = {}
         self.carrying: Dict[int, Carrying] = {}
+        self.escorting: Dict[int, Escorting] = {}
+        self.intercepting: Dict[int, Intercepting] = {}
 
     def init(self, entities: Entities):
         busters = list(entities.get_player_busters())
@@ -472,8 +474,15 @@ class Agent:
         for buster_id, capturing in self.capturing.items():
             buster = entities.busters[buster_id]
             ghost = entities.ghosts[capturing.target_id]
-            if distance2(buster.position, ghost.position) > MAX_BUST_DISTANCE ** 2:
+            dist2 = distance2(buster.position, ghost.position)
+            if dist2 > MAX_BUST_DISTANCE ** 2:
                 actions[buster_id] = Move(buster_id, ghost.position)   # TODO - anticipate move of ghost?
+            elif dist2 == 0:
+                actions[buster_id] = Move(buster_id, np.array([WIDTH/2, HEIGHT/2]))
+            elif dist2 < MIN_BUST_DISTANCE ** 2:
+                direction = buster.position - ghost.position
+                destination = buster.position + direction / norm(direction) * (MIN_BUST_DISTANCE - dist2)
+                actions[buster_id] = Move(buster_id, destination)
             else:
                 actions[buster_id] = Bust(buster_id, capturing.target_id)
 
@@ -485,6 +494,18 @@ class Agent:
                 actions[buster_id] = Release(buster_id, buster.carried_ghost)
             else:
                 actions[buster_id] = Move(buster_id, team_corner)
+
+        # Assisting an ally
+        for buster_id, escorting in self.escorting.items():
+            target_pos = entities.busters[escorting.target_id].position
+            team_corner = TEAM_CORNERS[entities.my_team]
+            actions[buster_id] = Move(buster_id, target_pos * 0.5 + team_corner * 0.5)
+
+        # Intercepting an opponent
+        for buster_id, intercepting in self.intercepting.items():
+            intercept_pos = TEAM_CORNERS[entities.my_team] * 0.1 + TEAM_CORNERS[1-entities.my_team] * 0.9
+            actions[buster_id] = Move(buster_id, intercept_pos)
+
         return actions
 
     def _state_transitions(self, entities: Entities):
@@ -520,6 +541,17 @@ class Agent:
             else:
                 self.exploring[buster.uid] = Exploring(destination=tile_pos)
             self.unassigned.remove(buster.uid)
+
+        # No ghosts left: go for escort / attack
+        carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
+        for buster_id in self.unassigned:
+            buster = entities.busters[buster_id]
+            closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
+            if closest_ally is not None:
+                self.escorting[buster.uid] = Escorting(closest_ally.uid)
+            else:
+                self.intercepting[buster.uid] = Intercepting()
+        self.unassigned.clear()
 
     def _ghost_score(self, buster: Buster, ghost: Ghost, busting_count: int):
         nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
