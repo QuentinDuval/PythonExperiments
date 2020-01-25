@@ -178,7 +178,8 @@ def past_ghost_relevant(entities: Entities, ghost: Ghost):
     # TODO - make it an information later in my algorithms
     distance_my_team = distance(ghost.position, TEAM_CORNERS[entities.my_team])
     distance_his_team = distance(ghost.position, TEAM_CORNERS[1 - entities.my_team])
-    threshold = 40 if distance_my_team < distance_his_team * 0.8 else 10  # TODO - take into account opponents
+    threshold = 100 if distance_my_team < distance_his_team * 0.8 else 25  # TODO - take into account opponents
+    threshold /= math.sqrt(entities.busters_per_player)
     return ghost.last_seen <= threshold
 
 
@@ -497,7 +498,7 @@ class Agent:
         heap: List[Tuple[float, Buster, Ghost, int]] = []
         for ghost in ghosts:
             for buster in busters:
-                heapq.heappush(heap, (self._ghost_score(buster, ghost, 0), buster, ghost, 0))
+                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, 0), buster, ghost, 0))
 
         # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
         # A kind of Dijkstra for assigning ghost to their closest players
@@ -509,7 +510,7 @@ class Agent:
 
             if ghosts_taken_count[ghost.uid] > busting_count:
                 busting_count = ghosts_taken_count[ghost.uid]
-                heapq.heappush(heap, (self._ghost_score(buster, ghost, busting_count), buster, ghost, busting_count))
+                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
                 continue
 
             tile_pos = destinations.get(buster.uid)
@@ -538,11 +539,10 @@ class Agent:
                 self.intercepting[buster.uid] = Intercepting()
         self.unassigned.clear()
 
-    def _ghost_score(self, buster: Buster, ghost: Ghost, busting_count: int):
+    def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
         nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
-        ghost_value = 10        # TODO - depend on where we are in the game
-        busting_count += 1      # The number of busters once we take this one
-        return busting_count * (nb_steps + ghost.endurance / busting_count) / ghost_value
+        ghost_value = 10 + (entities.current_turn + 1) / 50  # TODO - improve this formula (decrease with opponents?)
+        return (busting_count + 1) * (nb_steps + ghost.endurance / (busting_count + 1)) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Vector):
         if not tile_pos:
