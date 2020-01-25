@@ -121,6 +121,9 @@ class Ghost:
     def clone(self):
         return copy.deepcopy(self)
 
+    def __lt__(self, other):
+        return self.uid < other.uid
+
 
 @dataclass(frozen=False)
 class Buster:
@@ -135,6 +138,9 @@ class Buster:
 
     def clone(self):
         return copy.deepcopy(self)
+
+    def __lt__(self, other):
+        return self.uid < other.uid
 
 
 @dataclass(frozen=False)
@@ -166,6 +172,14 @@ class Entities:
 READING & TRACKING GAME STATE
 ------------------------------------------------------------------------------------------------------------------------
 """
+
+
+def past_ghost_relevant(entities: Entities, ghost: Ghost):
+    # TODO - make it an information later in my algorithms
+    distance_my_team = distance(ghost.position, TEAM_CORNERS[entities.my_team])
+    distance_his_team = distance(ghost.position, TEAM_CORNERS[1 - entities.my_team])
+    threshold = 40 if distance_my_team < distance_his_team * 0.8 else 10  # TODO - take into account opponents
+    return ghost.last_seen <= threshold
 
 
 def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, previous_entities: Entities):
@@ -217,7 +231,7 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
 
     # Adding missing ghosts
     for ghost_id, ghost in previous_entities.ghosts.items():
-        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts and ghost.last_seen <= 10:
+        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts and past_ghost_relevant(entities, ghost):
             entities.ghosts[ghost_id] = ghost
             ghost.last_seen += 1
             # TODO - make ghosts move away from their closest buster
@@ -582,7 +596,7 @@ class Agent:
             if opponent:
                 actions[buster_id] = Stun(entities, buster_id, opponent.uid)
             elif dist2 > MAX_BUST_DISTANCE ** 2:
-                actions[buster_id] = Move(buster_id, ghost.position)   # TODO - anticipate move of ghost?
+                actions[buster_id] = Move(buster_id, ghost.position)
             elif dist2 == 0:
                 actions[buster_id] = Move(buster_id, np.array([WIDTH/2, HEIGHT/2]))
             elif dist2 < MIN_BUST_DISTANCE ** 2:
