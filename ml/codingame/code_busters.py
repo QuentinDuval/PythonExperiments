@@ -372,17 +372,13 @@ AGENT
 
 
 # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
-# TODO - different strategies based on number of remaining busters
-# TODO - escort remaining buster when it is the end (+ the guy can still STUN!)
+# TODO - different strategies based on number of remaining ghosts
 # TODO - in the beginning of the game, rush to the center, then bring back ghosts with you?
 
-# TODO - you could wait for the opponent at his base...
 # TODO - do not stun when the opponent is in his base
 # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
 # TODO - stick around opponent busters to steal their ghosts
-# TODO - have busters that are there to ANNOY and STEAL
 
-# TODO - keep track of previous state to enrich current (and track ghosts moves to help find them)
 # TODO - when you find a ghost for the first time (requires tracking): add a "point of interest" to map
 # TODO - consider going for a stun if the opponent carries a ghost - pursing him, etc
 
