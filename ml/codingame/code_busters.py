@@ -182,6 +182,9 @@ class Entities:
     def get_ghosts(self) -> List[Ghost]:
         return list(self.ghosts.values())
 
+    def get_carried_ghost_ids(self) -> Set[EntityId]:
+        return {b.carried_ghost for _, b in self.busters.items() if b.carried_ghost >= 0}
+
     def clone(self):
         return copy.deepcopy(self)
 
@@ -209,12 +212,47 @@ def past_ghost_relevant(entities: Entities, ghost: Ghost):
     return ghost.last_seen <= threshold
 
 
+def complete_picture_from_past(entities: Entities, previous_entities: Entities):
+    # Adding the previous information
+    entities.my_score = previous_entities.my_score
+    entities.current_turn = previous_entities.current_turn + 1
+    for buster in entities.get_player_busters():
+        buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown - 1
+
+    # Adding missing ghosts
+    carried_ghosts = entities.get_carried_ghost_ids()
+    my_busters = list(entities.get_player_busters())
+    for ghost_id, ghost in previous_entities.ghosts.items():
+        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts:
+            if not in_line_of_sight_of(ghost.position, my_busters):
+                if past_ghost_relevant(entities, ghost):
+                    entities.ghosts[ghost_id] = ghost
+                    ghost.last_seen += 1
+                    # TODO - make ghosts move away from their closest buster
+
+    # Adding missing opponent busters
+    for buster in previous_entities.get_opponent_busters():
+        if buster.uid not in entities.busters and not in_line_of_sight_of(buster.position, my_busters):
+            opponent_corner = entities.his_corner
+
+            # Moving them to their base if carrying
+            if buster.carried_ghost >= 0 and distance2(opponent_corner, buster.position) > RADIUS_BASE ** 2:
+                direction = opponent_corner - buster.position
+                buster.position += direction / norm(direction) * MAX_MOVE_DISTANCE
+                entities.busters[buster.uid] = buster
+                buster.last_seen = 1
+
+            # Else keeping a timer, but decreasing the belief
+            elif buster.last_seen <= 10:
+                entities.busters[buster.uid] = buster
+                buster.last_seen += 1
+
+
 def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, previous_entities: Entities):
     entities = Entities(my_team=my_team_id, my_score=0,
                         busters_per_player=busters_per_player,
                         ghost_count=ghost_count)
 
-    carried_ghosts = set()
     n = int(input())
     for i in range(n):
         # entity_id: buster id or ghost id
@@ -242,46 +280,12 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
                 carried_ghost=value if state == 1 else -1,
                 stun_duration=value if state == 2 else 0,
                 busting_ghost=state == 3)
-            carried_ghosts.add(value if state == 1 else -1)
 
     # IMPORTANT NODE:
     # * the carried ghosts are not part of the input
 
-    if not previous_entities:
-        return entities
-
-    # Adding the previous information
-    entities.my_score = previous_entities.my_score
-    entities.current_turn = previous_entities.current_turn + 1
-    for buster in entities.get_player_busters():
-        buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown - 1
-
-    # Adding missing ghosts
-    my_busters = list(entities.get_player_busters())
-    for ghost_id, ghost in previous_entities.ghosts.items():
-        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts:
-            if not in_line_of_sight_of(ghost.position, my_busters):
-                if past_ghost_relevant(entities, ghost):
-                    entities.ghosts[ghost_id] = ghost
-                    ghost.last_seen += 1
-                    # TODO - make ghosts move away from their closest buster
-
-    # Adding missing opponent busters
-    for buster in previous_entities.get_opponent_busters():
-        if buster.uid not in entities.busters:
-            opponent_corner = entities.his_corner
-
-            # Moving them to their base if carrying
-            if buster.carried_ghost >= 0 and distance2(opponent_corner, buster.position) > RADIUS_BASE ** 2:
-                direction = opponent_corner - buster.position
-                buster.position += direction / norm(direction) * MAX_MOVE_DISTANCE
-                entities.busters[buster.uid] = buster
-                buster.last_seen = 1
-
-            # Else keeping a timer, but decreasing the belief
-            if buster.last_seen <= 10:
-                entities.busters[buster.uid] = buster
-                buster.last_seen += 1
+    if previous_entities:
+        complete_picture_from_past(entities, previous_entities)
     return entities
 
 
