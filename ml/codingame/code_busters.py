@@ -580,15 +580,14 @@ class Agent:
             tile_pos = destinations.get(buster_id)
             if tile_pos:
                 self.exploring[buster_id] = Exploring(destination=tile_pos)
-            self.unassigned.remove(buster_id)
+                self.unassigned.remove(buster_id)
 
-        # TODO - go for intercept
         # No ghosts left: go for escort / attack
         carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
         for buster_id in self.unassigned:
             buster = entities.busters[buster_id]
             closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
-            if closest_ally and np.random.rand(1) < 0.5: # TODO - use more of this (weight it though)
+            if closest_ally and np.random.rand(1) < 0.5:    # TODO - use more of this (weight it though)
                 self.escorting[buster.uid] = Escorting(closest_ally.uid)
             else:
                 self.intercepting[buster.uid] = Intercepting(destination=self._intercept_pos(entities))
