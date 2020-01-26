@@ -334,7 +334,15 @@ class Stun:
         return "STUN " + str(self.target_id)
 
 
-Action = Union[Move, Bust, Release, Stun]
+class Radar:
+    def __init__(self):
+        pass
+
+    def __repr__(self):
+        return "RADAR"
+
+
+Action = Union[Move, Bust, Release, Stun, Radar]
 
 
 """
@@ -420,26 +428,32 @@ AGENT
 
 
 @dataclass(frozen=False)
+class Opening:
+    destination: Tuple[float, float]
+    use_radar: bool = False
+
+
+@dataclass()
 class Exploring:
-    destination: Vector
+    destination: Tuple[float, float]
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Capturing:
     target_id: EntityId
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Carrying:
     pass
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Escorting:
     target_id: EntityId
 
 
-@dataclass(frozen=False)
+@dataclass()
 class Intercepting:
     destination: Vector
 
@@ -456,34 +470,30 @@ class Agent:
         self.chrono = Chronometer()
         self.territory = Territory()
         self.unassigned: Set[int] = set()
+        self.opening: Dict[int, Opening] = {}
         self.exploring: Dict[int, Exploring] = {}
         self.capturing: Dict[int, Capturing] = {}
         self.carrying: Dict[int, Carrying] = {}
         self.escorting: Dict[int, Escorting] = {}
         self.intercepting: Dict[int, Intercepting] = {}
 
-    def init(self, entities: Entities):
-        # TODO - hard-code an initial state to target given positions (exploration is not ideal at first)
-
-        busters = list(entities.get_player_busters())
-        assignments = self.territory.assign_destinations(busters)
-        for buster in entities.get_player_busters():
-            # TODO - randomly pick one of them?
-            self.exploring[buster.uid] = Exploring(assignments[buster.uid])
-            # self.intercepting[buster.uid] = Intercepting(destination=self._intercept_pos(entities))
-
     def get_actions(self, entities: Entities) -> List[Action]:
         self.chrono.start()
 
-        self._update_past_states(entities)
-        self._assign_vacant_busters(entities)
-        # self._strategic_analysis(entities) # TODO - identify good and desperate situation + formulate strategies
+        if entities.current_turn == 0:
+            self._opening_book(entities)
+        else:
+            self._update_past_states(entities)
+            self._assign_vacant_busters(entities)
+            # self._strategic_analysis(entities) # TODO - identify good and desperate situation + formulate strategies
+
         actions = self._carry_actions(entities)
 
         debug("Time spent:", self.chrono.spent(), "ms")
         return [p[1] for p in sorted(actions.items(), key=lambda p: p[0])]
 
     def debug_states(self):
+        debug("opening", self.opening)
         debug("exploring", self.exploring)
         debug("capturing", self.capturing)
         debug("carrying", self.carrying)
@@ -493,11 +503,48 @@ class Agent:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    TRACKING CHANGE
+    OPENING BOOK: initial strategy
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    def _opening_book(self, entities: Entities):
+        # Go to fixed locations, then use the radar at the end
+
+        # Compute the way points
+        n = entities.busters_per_player
+        angle_diff = math.pi / 2 / (n + 1)
+        angles = [angle_diff * (i + 1) for i in range(n)]
+        if entities.my_team == 0:
+            direction = np.array([8000, 0])
+        else:
+            direction = np.array([-8000, 0])
+        waypoints = [rotate(direction, a) for a in angles]
+        indices = set(range(n))
+        debug(waypoints)
+
+        # Assign the way points to each ghosts
+        for buster in entities.get_player_busters():
+            min_i = min(indices, key=lambda i: distance2(waypoints[i], buster.position))
+            self.opening[buster.uid] = Opening(tuple(waypoints[min_i]), use_radar=False)
+            indices.remove(min_i)
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    TRACKING CHANGE: existing state
     --------------------------------------------------------------------------------------------------------------------
     """
 
     def _update_past_states(self, entities: Entities):
+
+        # Tracking opening state
+        for buster_id, opening in list(self.opening.items()):
+            buster = entities.busters[buster_id]
+            if distance2(buster.position, opening.destination) < MAX_MOVE_DISTANCE ** 2:
+                if opening.use_radar:
+                    del self.opening[buster_id]
+                    self.unassigned.add(buster_id)
+                else:
+                    opening.use_radar = True
 
         # Tracking exploration state
         self.territory.track_explored(entities.get_player_busters())
@@ -540,7 +587,7 @@ class Agent:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    STATE TRANSITIONS
+    STATE TRANSITIONS: entering new states
     --------------------------------------------------------------------------------------------------------------------
     """
 
@@ -608,17 +655,25 @@ class Agent:
 
     """
     --------------------------------------------------------------------------------------------------------------------
-    HANDLING ACTIONS
+    HANDLING ACTIONS: carrying out the actions dictated by states
     --------------------------------------------------------------------------------------------------------------------
     """
 
     def _carry_actions(self, entities: Entities) -> Dict[int, Action]:
         actions: Dict[EntityId, Action] = dict()
+        self._carry_opening(entities, actions)
         self._carry_map_exploration(entities, actions)
         self._carry_ghost_capture(entities, actions)
         self._carry_ghost_to_base(entities, actions)
         self._carry_interception(entities, actions)
         return actions
+
+    def _carry_opening(self, entities: Entities, actions: Dict[EntityId, Action]):
+        for buster_id, opening in self.opening.items():
+            if opening.use_radar:
+                actions[buster_id] = Radar() # TODO - could also be used to carry a ghost back to base
+            else:
+                actions[buster_id] = Move(buster_id, opening.destination)
 
     def _in_stun_range(self, buster: Buster, entities: Entities):
         if buster.stun_cooldown > 0:
@@ -723,15 +778,12 @@ def game_loop():
 
     agent = Agent()
     previous_entities = None
-    for turn_nb in itertools.count(start=0, step=1):
+    while True:
         entities = read_entities(my_team_id=my_team_id,
                                  busters_per_player=busters_per_player,
                                  ghost_count=ghost_count,
                                  previous_entities=previous_entities)
         debug(entities)
-
-        if turn_nb == 0:
-            agent.init(entities)
 
         for action in agent.get_actions(entities):
             print(action)
