@@ -614,16 +614,15 @@ class Agent:
                 else:
                     opening.use_radar = True
 
-        # Tracking exploration state
+        # Dropping exploration state (assignment will recover it if necessary)
         self.territory.track_explored(entities.get_player_busters())
-        for buster_id, exploring in list(self.exploring.items()):
-            if self.territory.is_visited(exploring.destination):
-                del self.exploring[buster_id]
-                self.unassigned.add(buster_id)
+        for buster_id, exploring in self.exploring.items():
+            self.unassigned.add(buster_id)
+        self.exploring.clear()
 
-        # Carrying / escorting update
+        # Carrying / escorting update base on the success of the mission
         for buster_id, carrying in list(self.carrying.items()):
-            if not entities.busters[buster_id].carrying_ghost:
+            if not entities.busters[buster_id].carrying_ghost:  # TODO - check if stunned, due to opponent intercept
                 del self.carrying[buster_id]
                 self.unassigned.add(buster_id)
                 for escorting_buster_id, escorting in list(self.escorting.items()):
@@ -658,9 +657,9 @@ class Agent:
     """
 
     def _strategic_analysis(self, entities: Entities):
-        # TODO - interrupt exploration in case of opponent nearby (or at least analyze if you should)
-        # TODO - interrupt exploration in case of ally needing help nearby (identify uneven situations)
-        # TODO - assign or un-assigned or plot interception course
+        # TODO - identify whether or not we should drop a ghost capture (bad situation)
+        # TODO - identify whether or not we should attack an opponent position
+        # TODO - overall, should give cost to ghosts... or COORDINATED METRICS / GHOSTS at least
         pass
 
     """
