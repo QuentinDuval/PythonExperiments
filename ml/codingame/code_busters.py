@@ -387,20 +387,22 @@ class Territory:
     # TODO - cumulative interests (places with a lot of yet undiscovered neighbors should have bigger weights)
 
     def __init__(self, team_id: int, w=15, h=10):
-        self.unvisited = set()
+        self.unvisited: MutableSet[Tuple[int, int]] = set()
         self.w = w
         self.h = h
         self.cell_width = WIDTH / self.w
         self.cell_height = HEIGHT / self.h
+        self.cells = np.zeros(shape=(self.w, self.h, 2))
         for i in range(self.w):
             for j in range(self.h):
-                x = self.cell_width / 2 + self.cell_width * i
-                y = self.cell_height / 2 + self.cell_height * j
-                if distance2((x, y), TEAM_CORNERS[1-team_id]) > RADIUS_BASE ** 2: # No reason to explore opponent's base
-                    self.unvisited.add((x, y))
+                self.cells[i, j, 0] = self.cell_width / 2 + self.cell_width * i
+                self.cells[i, j, 1] = self.cell_height / 2 + self.cell_height * j
+                # No reason to explore opponent's base
+                if distance2(self.cells[i, j], TEAM_CORNERS[1-team_id]) > RADIUS_BASE ** 2:
+                    self.unvisited.add((i, j))
 
         center = (self.w / 2, self.h / 2)
-        self.heat = np.ones(shape=(self.w, self.h), dtype=np.float32)  # TODO: use better encoding of territory (array?)
+        self.heat = np.ones(shape=(self.w, self.h), dtype=np.float32)
         for i in range(self.w):
             for j in range(self.h):
                 self.heat[(i, j)] = 10 / (1 + distance((i, j), center))
@@ -411,11 +413,11 @@ class Territory:
     def assign_destinations(self, busters: Collection[Buster]) -> Dict[int, Tuple[float, float]]:
         heap = []
         for buster in busters:
-            for point in self.unvisited:
-                d = distance2(point, buster.position)
-                x, y = point
-                h = self.heat[int(x / self.cell_width), int(y // self.cell_height)]
-                heapq.heappush(heap, (d / h, buster.uid, point))
+            for i, j in self.unvisited:
+                point = self.cells[i, j]
+                heat = self.heat[i, j]
+                dist2 = distance2(point, buster.position)
+                heapq.heappush(heap, (dist2 / heat, buster.uid, tuple(point)))
 
         assignments = {}
         taken = set()
@@ -429,13 +431,16 @@ class Territory:
 
     def track_explored(self, busters: Iterator[Buster]):
         for buster in busters:
-            for point in list(self.unvisited):
+            for i, j in list(self.unvisited):
+                point = self.cells[i, j]
                 # TODO - could take into account the RADAR as well
                 if all(distance2(corner, buster.position) < RADIUS_SIGHT ** 2 for corner in self._corners_of(point)):
-                    self.unvisited.discard(point)
+                    self.unvisited.discard((i, j))
 
     def is_visited(self, point: Tuple[float, float]) -> bool:
-        return point not in self.unvisited
+        i = int(point[0] / self.cell_width)
+        j = int(point[1] / self.cell_height)
+        return (i, j) not in self.unvisited
 
     def _corners_of(self, position: Tuple[float, float]):
         for dx in (-1, 1):
