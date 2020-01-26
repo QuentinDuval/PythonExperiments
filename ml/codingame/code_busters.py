@@ -1,16 +1,14 @@
-import abc
 import copy
-import enum
-from collections import *
-from dataclasses import *
+import heapq
 import math
 import sys
-import itertools
-from typing import *
 import time
-import heapq
+from collections import *
+from dataclasses import *
+from typing import *
 
 import numpy as np
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -92,9 +90,10 @@ def rotate(vector: Vector, angle: Angle):
 
 """
 ------------------------------------------------------------------------------------------------------------------------
-MAIN DATA STRUCTURE to keep STATE
+GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
+
 
 WIDTH = 16000
 HEIGHT = 9000
@@ -115,7 +114,14 @@ STUN_COOLDOWN = 20
 TEAM_CORNERS = np.array([[0, 0], [WIDTH, HEIGHT]], dtype=np.float32)
 
 
-EntityId = int;
+EntityId = int
+
+
+"""
+------------------------------------------------------------------------------------------------------------------------
+MAIN DATA STRUCTURE to keep STATE
+------------------------------------------------------------------------------------------------------------------------
+"""
 
 
 @dataclass(frozen=False)
@@ -312,7 +318,7 @@ ACTION
 
 class Move(NamedTuple):
     caster_id: int
-    position: np.ndarray
+    position: Union[Tuple[float, float], Vector]
 
     def __repr__(self):
         x, y = self.position
@@ -402,7 +408,7 @@ class Territory:
     def __len__(self):
         return len(self.unvisited)
 
-    def assign_destinations(self, busters: Collection[Buster]) -> Dict[int, Vector]:
+    def assign_destinations(self, busters: Collection[Buster]) -> Dict[int, Tuple[float, float]]:
         heap = []
         for buster in busters:
             for point in self.unvisited:
@@ -494,9 +500,9 @@ class Agent:
     #   - recompute the destinations based on all busters that are exploring (else same destination possible)
 
     def __init__(self):
-        self.chrono = Chronometer()
+        self.chronometer = Chronometer()
         self.territory = Territory()
-        self.unassigned: Set[int] = set()
+        self.unassigned: MutableSet[int] = set()
         self.opening: Dict[int, Opening] = {}
         self.exploring: Dict[int, Exploring] = {}
         self.capturing: Dict[int, Capturing] = {}
@@ -505,7 +511,7 @@ class Agent:
         self.intercepting: Dict[int, Intercepting] = {}
 
     def get_actions(self, entities: Entities) -> List[Action]:
-        self.chrono.start()
+        self.chronometer.start()
 
         if entities.current_turn == 0:
             self._opening_book(entities)
@@ -516,7 +522,7 @@ class Agent:
 
         actions = self._carry_actions(entities)
 
-        debug("Time spent:", self.chrono.spent(), "ms")
+        debug("Time spent:", self.chronometer.spent(), "ms")
         return [p[1] for p in sorted(actions.items(), key=lambda p: p[0])]
 
     def debug_states(self):
@@ -618,7 +624,7 @@ class Agent:
     """
 
     def _assign_vacant_busters(self, entities: Entities):
-        # TODO - generalize the notion of utility: take the action maximizes it (escorting, exploring, intercepting, etc)
+        # TODO - generalize the notion of utility: maximize it (escorting, exploring, intercepting, etc)
 
         ghosts: List[Ghost] = list(entities.ghosts.values())
         busters = [entities.busters[uid] for uid in self.unassigned]
@@ -673,7 +679,7 @@ class Agent:
         ghost_value = 10 + (entities.current_turn + 1) / 10  # TODO - improve this formula (decrease with opponents?)
         return (busting_count + 1) * (nb_steps + ghost.endurance / (busting_count + 1)) / ghost_value
 
-    def _tile_score(self, buster: Buster, tile_pos: Vector):
+    def _tile_score(self, buster: Buster, tile_pos: Tuple[float, float]):
         if not tile_pos:
             return float('inf')
 
@@ -755,6 +761,7 @@ class Agent:
                 actions[buster_id] = Move(buster_id, target_pos * 0.5 + entities.my_corner * 0.5)
 
     def _carry_interception(self, entities: Entities, actions: Dict[EntityId, Action]):
+        # TODO - use EJECT somewhere here
         intercept_dir = self._intercept_dir(entities)
         for buster_id, intercepting in self.intercepting.items():
             buster = entities.busters[buster_id]
