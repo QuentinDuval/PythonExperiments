@@ -509,6 +509,7 @@ class Agent:
     #   - exit some states with simple exponential decay
     #   - keep RADAR for avoiding ambush when bringing a ghost back to the base
     #   - FIND USE FOR EJECT
+    #   - Help busters that requires help nearby... interrupt exploration actions when doing so
 
     # TODO - FIX:
     #   - do not stun when the opponent is in his base
