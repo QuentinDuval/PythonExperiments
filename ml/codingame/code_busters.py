@@ -143,6 +143,7 @@ class Buster:
     last_seen: int = 0  # Mostly useful for opponent
     stun_duration: int = 0  # How many rounds until end of stun
     stun_cooldown: int = 0
+    has_radar: bool = True
 
     def clone(self):
         return copy.deepcopy(self)
@@ -335,8 +336,8 @@ class Stun:
 
 
 class Radar:
-    def __init__(self):
-        pass
+    def __init__(self, entities: Entities, caster_id: int):
+        entities.busters[caster_id].has_radar = False
 
     def __repr__(self):
         return "RADAR"
@@ -671,7 +672,7 @@ class Agent:
     def _carry_opening(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, opening in self.opening.items():
             if opening.use_radar:
-                actions[buster_id] = Radar() # TODO - could also be used to carry a ghost back to base
+                actions[buster_id] = Radar(entities, buster_id) # TODO - could also be used to carry a ghost back to base
             else:
                 actions[buster_id] = Move(buster_id, opening.destination)
 
