@@ -399,7 +399,7 @@ class Territory:
         return assignments
 
     def track_explored(self, busters: Iterator[Buster]):
-        # TODO - inefficient (look only neighbors)
+        # TODO - take into account the line of sight (and therefore the RADAR)
         for buster in busters:
             for point in list(self.unvisited):
                 if distance2(point, buster.position) < self.cell_dist2:
@@ -418,7 +418,6 @@ AGENT
 
 # TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
 # TODO - different strategies based on number of remaining ghosts
-# TODO - in the beginning of the game, rush to the center, then bring back ghosts with you?
 
 # TODO - do not stun when the opponent is in his base
 # TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
@@ -538,6 +537,7 @@ class Agent:
     def _update_past_states(self, entities: Entities):
 
         # Tracking opening state
+        # TODO - also try to bring back the ghosts with you
         for buster_id, opening in list(self.opening.items()):
             buster = entities.busters[buster_id]
             if distance2(buster.position, opening.destination) < MAX_MOVE_DISTANCE ** 2:
@@ -593,6 +593,8 @@ class Agent:
     """
 
     def _assign_vacant_busters(self, entities: Entities):
+        # TODO - generalize the notion of utility: take the action maximizes it (escorting, exploring, intercepting, etc)
+
         ghosts: List[Ghost] = list(entities.ghosts.values())
         busters = [entities.busters[uid] for uid in self.unassigned]
         destinations = self.territory.assign_destinations(busters)
