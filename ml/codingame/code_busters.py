@@ -568,11 +568,11 @@ class Agent:
             direction = np.array([8000, 0])
         else:
             direction = np.array([-8000, 0])
-        waypoints = [rotate(direction, a) for a in angles]
-        indices = set(range(n))
-        debug(waypoints)
+        team_corner = TEAM_CORNERS[entities.my_team]
+        waypoints = [team_corner + rotate(direction, a) for a in angles]
 
         # Assign the way points to each ghosts
+        indices = set(range(n))
         for buster in entities.get_player_busters():
             min_i = min(indices, key=lambda i: distance2(waypoints[i], buster.position))
             self.opening[buster.uid] = Opening(tuple(waypoints[min_i]), use_radar=False)
