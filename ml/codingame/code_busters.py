@@ -370,6 +370,7 @@ class Territory:
         return len(self.unvisited)
 
     def assign_destinations(self, busters: Collection[Buster]) -> Dict[int, Vector]:
+        # TODO - recompute the destinations based on all busters that are exploring (else same destination if not assigned at same time)
         heap = []
         for buster in busters:
             for point in self.unvisited:
@@ -481,6 +482,14 @@ class Agent:
 
         debug("Time spent:", self.chrono.spent(), "ms")
         return [p[1] for p in sorted(actions.items(), key=lambda p: p[0])]
+
+    def debug_states(self):
+        debug("exploring", self.exploring)
+        debug("capturing", self.capturing)
+        debug("carrying", self.carrying)
+        debug("escorting", self.escorting)
+        debug("intercepting", self.intercepting)
+        debug("unassigned", self.unassigned)
 
     """
     --------------------------------------------------------------------------------------------------------------------
