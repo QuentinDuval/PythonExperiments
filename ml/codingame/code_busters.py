@@ -393,7 +393,6 @@ class Territory:
         self.h = h
         self.cell_width = WIDTH / self.w
         self.cell_height = HEIGHT / self.h
-        self.cell_dist2 = norm2([self.cell_width, self.cell_height]) / 2
         for i in range(self.w):
             for j in range(self.h):
                 x = self.cell_width / 2 + self.cell_width * i
@@ -429,14 +428,20 @@ class Territory:
         return assignments
 
     def track_explored(self, busters: Iterator[Buster]):
+        # TODO - inefficient (ideally, just consider the surrounding)
         # TODO - take into account the line of sight (and therefore the RADAR)
         for buster in busters:
             for point in list(self.unvisited):
-                if distance2(point, buster.position) < self.cell_dist2:
+                if all(distance2(corner, buster.position) < RADIUS_SIGHT ** 2 for corner in self._corners_of(point)):
                     self.unvisited.discard(point)
 
-    def is_visited(self, point: Vector) -> bool:
+    def is_visited(self, point: Tuple[float, float]) -> bool:
         return point not in self.unvisited
+
+    def _corners_of(self, position: Tuple[float, float]):
+        for dx in (-1, 1):
+            for dy in (-1, 1):
+                yield position[0] + dx * self.cell_width, position[1] + dy * self.cell_height
 
 
 """
