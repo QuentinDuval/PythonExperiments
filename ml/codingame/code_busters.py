@@ -343,7 +343,18 @@ class Radar:
         return "RADAR"
 
 
-Action = Union[Move, Bust, Release, Stun, Radar]
+class Eject:
+    def __init__(self, entities: Entities, target_id: int, destination: Vector):
+        self.destination = destination
+        entities.busters[target_id].carried_ghost = -1
+        # TODO - does the creation of the ghost happen in the same turn? if so, make it appear
+
+    def __repr__(self):
+        x, y = self.destination
+        return "EJECT " + str(int(x)) + " " + str(int(y))
+
+
+Action = Union[Move, Bust, Release, Stun, Radar, Eject]
 
 
 """
@@ -379,7 +390,6 @@ class Territory:
         return len(self.unvisited)
 
     def assign_destinations(self, busters: Collection[Buster]) -> Dict[int, Vector]:
-        # TODO - recompute the destinations based on all busters that are exploring (else same destination if not assigned at same time)
         heap = []
         for buster in busters:
             for point in self.unvisited:
@@ -414,17 +424,6 @@ class Territory:
 AGENT
 ------------------------------------------------------------------------------------------------------------------------
 """
-
-
-# TODO - different strategies when 2 busters (explore quickly) VS 4 busters (MORE STUNS)
-# TODO - different strategies based on number of remaining ghosts
-
-# TODO - do not stun when the opponent is in his base
-# TODO - stun when the opponent is busting / having a ghost? only if you can STEAL the ghost
-# TODO - stick around opponent busters to steal their ghosts
-
-# TODO - when you find a ghost for the first time (requires tracking): add a "point of interest" to map
-# TODO - consider going for a stun if the opponent carries a ghost - pursing him, etc
 
 
 @dataclass(frozen=False)
@@ -466,6 +465,20 @@ class Herding:
 
 
 class Agent:
+    # TODO - IDEAS:
+    #   - consider going for a stun if the opponent carries a ghost & pursing him
+    #   - stick around opponent busters to steal their ghosts
+    #   - when you find a ghost for the first time (requires tracking): add a "point of interest" to map
+    #   - herding when carrying a ghost back home (and if no danger)
+    #   - exit some states with simple exponential decay
+    #   - keep RADAR for avoiding ambush when bringing a ghost back to the base
+
+    # TODO - FIX:
+    #   - do not stun when the opponent is in his base
+    #   - when BUSTING, stun opponent only if you can finish the busting before end of stun
+    #   - do not bust ghost if more opponent on it, it only helps him
+    #   - recompute the destinations based on all busters that are exploring (else same destination possible)
+
     def __init__(self):
         self.chrono = Chronometer()
         self.territory = Territory()
@@ -565,7 +578,6 @@ class Agent:
                         self.unassigned.add(escorting_buster_id)
 
         # Capturing update
-        # TODO - tend to bust ghosts that are for the opponent... do not do this... go elsewhere
         for buster_id, capturing in list(self.capturing.items()):
             if entities.busters[buster_id].carried_ghost >= 0:
                 del self.capturing[buster_id]
@@ -584,7 +596,6 @@ class Agent:
                 if buster.stun_cooldown >= STUN_COOLDOWN / 2:
                     del self.intercepting[buster_id]
                     self.capturing[buster_id] = Capturing(released_ghosts.pop())
-        # TODO - maybe check the success rate ? simple exponential decay? out of stun?
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -645,7 +656,7 @@ class Agent:
 
     def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
         nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
-        ghost_value = 10 + (entities.current_turn + 1) / 50  # TODO - improve this formula (decrease with opponents?)
+        ghost_value = 10 + (entities.current_turn + 1) / 10  # TODO - improve this formula (decrease with opponents?)
         return (busting_count + 1) * (nb_steps + ghost.endurance / (busting_count + 1)) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Vector):
@@ -674,7 +685,7 @@ class Agent:
     def _carry_opening(self, entities: Entities, actions: Dict[EntityId, Action]):
         for buster_id, opening in self.opening.items():
             if opening.use_radar:
-                actions[buster_id] = Radar(entities, buster_id) # TODO - could also be used to carry a ghost back to base
+                actions[buster_id] = Radar(entities, buster_id)
             else:
                 actions[buster_id] = Move(buster_id, opening.destination)
 
