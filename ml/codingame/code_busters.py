@@ -534,14 +534,14 @@ class Agent:
         if entities.current_turn == 0:
             self._opening_book(entities)
         else:
-            self._update_past_states(entities)
-            self._assign_vacant_busters(entities)
-            # self._strategic_analysis(entities) # TODO - identify good and desperate situation + formulate strategies
+            self._update_past_states(entities)      # Exit state which goal is satisfied
+            self._strategic_analysis(entities)      # Identifying overall / coordinated goals
+            self._assign_vacant_busters(entities)   # Assign busters to their new states
 
         actions = self._carry_actions(entities)
 
         debug("Time spent:", self.chronometer.spent(), "ms")
-        return [p[1] for p in sorted(actions.items(), key=lambda p: p[0])]
+        return [action for buster_id, action in sorted(actions.items(), key=lambda p: p[0])]
 
     def debug_states(self):
         debug("opening", self.opening)
@@ -634,6 +634,15 @@ class Agent:
                 if buster.stun_cooldown >= STUN_COOLDOWN / 2:
                     del self.intercepting[buster_id]
                     self.capturing[buster_id] = Capturing(released_ghosts.pop())
+
+    """
+    --------------------------------------------------------------------------------------------------------------------
+    STRATEGIC ANALYSIS: identifying coordinated goals
+    --------------------------------------------------------------------------------------------------------------------
+    """
+
+    def _strategic_analysis(self, entities: Entities):
+        pass # TODO - identify good and desperate situation + formulate strategies
 
     """
     --------------------------------------------------------------------------------------------------------------------
