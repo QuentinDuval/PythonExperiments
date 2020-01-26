@@ -658,7 +658,10 @@ class Agent:
     """
 
     def _strategic_analysis(self, entities: Entities):
-        pass # TODO - identify good and desperate situation + formulate strategies
+        # TODO - interrupt exploration in case of opponent nearby (or at least analyze if you should)
+        # TODO - interrupt exploration in case of ally needing help nearby (identify uneven situations)
+        # TODO - assign or un-assigned or plot interception course
+        pass
 
     """
     --------------------------------------------------------------------------------------------------------------------
