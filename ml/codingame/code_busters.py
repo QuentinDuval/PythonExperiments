@@ -385,6 +385,7 @@ TERRITORY - TO GUIDE EXPLORATION
 
 class Territory:
     # TODO - cumulative interests (places with a lot of yet undiscovered neighbors should have bigger weights)
+    # TODO - remove the opponent base => no reason to explore it...
 
     def __init__(self, w=15, h=10):
         self.unvisited = set()
