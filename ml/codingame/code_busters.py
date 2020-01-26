@@ -193,6 +193,13 @@ READING & TRACKING GAME STATE
 """
 
 
+def in_line_of_sight_of(position: Vector, busters: List[Buster]):
+    for buster in busters:
+        if distance2(buster.position, position) < RADIUS_SIGHT ** 2:
+            return True
+    return False
+
+
 def past_ghost_relevant(entities: Entities, ghost: Ghost):
     # TODO - make it an information later in my algorithms
     distance_my_team = distance(ghost.position, entities.my_corner)
@@ -250,11 +257,14 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
         buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown - 1
 
     # Adding missing ghosts
+    my_busters = list(entities.get_player_busters())
     for ghost_id, ghost in previous_entities.ghosts.items():
-        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts and past_ghost_relevant(entities, ghost):
-            entities.ghosts[ghost_id] = ghost
-            ghost.last_seen += 1
-            # TODO - make ghosts move away from their closest buster
+        if ghost_id not in entities.ghosts and ghost_id not in carried_ghosts:
+            if not in_line_of_sight_of(ghost.position, my_busters):
+                if past_ghost_relevant(entities, ghost):
+                    entities.ghosts[ghost_id] = ghost
+                    ghost.last_seen += 1
+                    # TODO - make ghosts move away from their closest buster
 
     # Adding missing opponent busters
     for buster in previous_entities.get_opponent_busters():
@@ -555,6 +565,7 @@ class Agent:
                 self.exploring[buster_id] = Exploring(destination=tile_pos)
             self.unassigned.remove(buster_id)
 
+        # TODO - go for intercept
         # No ghosts left: go for escort / attack
         carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
         for buster_id in self.unassigned:
@@ -639,6 +650,7 @@ class Agent:
         for buster_id, carrying in self.carrying.items():
             buster = entities.busters[buster_id]
             team_corner = entities.my_corner
+            # TODO - you can stun, but only if the opponent has a STUN + put to get ghost right after
             if distance2(team_corner, buster.position) < RADIUS_BASE ** 2:
                 actions[buster_id] = Release(entities, buster_id, buster.carried_ghost)
             else:
