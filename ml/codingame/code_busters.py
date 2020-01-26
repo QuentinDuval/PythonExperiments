@@ -385,9 +385,8 @@ TERRITORY - TO GUIDE EXPLORATION
 
 class Territory:
     # TODO - cumulative interests (places with a lot of yet undiscovered neighbors should have bigger weights)
-    # TODO - remove the opponent base => no reason to explore it...
 
-    def __init__(self, w=15, h=10):
+    def __init__(self, team_id: int, w=15, h=10):
         self.unvisited = set()
         self.w = w
         self.h = h
@@ -397,7 +396,8 @@ class Territory:
             for j in range(self.h):
                 x = self.cell_width / 2 + self.cell_width * i
                 y = self.cell_height / 2 + self.cell_height * j
-                self.unvisited.add((x, y))
+                if distance2((x, y), TEAM_CORNERS[1-team_id]) > RADIUS_BASE ** 2: # No reason to explore opponent's base
+                    self.unvisited.add((x, y))
 
         center = (self.w / 2, self.h / 2)
         self.heat = np.ones(shape=(self.w, self.h), dtype=np.float32)  # TODO: use better encoding of territory (array?)
@@ -428,10 +428,9 @@ class Territory:
         return assignments
 
     def track_explored(self, busters: Iterator[Buster]):
-        # TODO - inefficient (ideally, just consider the surrounding)
-        # TODO - take into account the line of sight (and therefore the RADAR)
         for buster in busters:
             for point in list(self.unvisited):
+                # TODO - could take into account the RADAR as well
                 if all(distance2(corner, buster.position) < RADIUS_SIGHT ** 2 for corner in self._corners_of(point)):
                     self.unvisited.discard(point)
 
@@ -505,9 +504,9 @@ class Agent:
     #   - do not bust ghost if more opponent on it, it only helps him
     #   - recompute the destinations based on all busters that are exploring (else same destination possible)
 
-    def __init__(self):
+    def __init__(self, team_id: int):
         self.chronometer = Chronometer()
-        self.territory = Territory()
+        self.territory = Territory(team_id)
         self.unassigned: MutableSet[int] = set()
         self.opening: Dict[int, Opening] = {}
         self.exploring: Dict[int, Exploring] = {}
@@ -807,7 +806,7 @@ def game_loop():
     debug("ghost count: ", ghost_count)
     debug("my team id: ", my_team_id)
 
-    agent = Agent()
+    agent = Agent(my_team_id)
     previous_entities = None
     while True:
         entities = read_entities(my_team_id=my_team_id,
