@@ -384,8 +384,6 @@ TERRITORY - TO GUIDE EXPLORATION
 
 
 class Territory:
-    # TODO - cumulative interests (places with a lot of yet undiscovered neighbors should have bigger weights)
-
     def __init__(self, team_id: int, w=15, h=10):
         self.unvisited: MutableSet[Tuple[int, int]] = set()
         self.w = w
@@ -415,7 +413,7 @@ class Territory:
         for buster in busters:
             for i, j in self.unvisited:
                 point = self.cells[i, j]
-                heat = self.heat[i, j]
+                heat = self._weight_of_cell(i, j)
                 dist2 = distance2(point, buster.position)
                 heapq.heappush(heap, (dist2 / heat, buster.uid, tuple(point)))
 
@@ -446,6 +444,15 @@ class Territory:
         for dx in (-1, 1):
             for dy in (-1, 1):
                 yield position[0] + dx * self.cell_width, position[1] + dy * self.cell_height
+
+    def _weight_of_cell(self, i: int, j: int):
+        # Prioritize strategic cells + with a lot of unexplored neighbors
+        heat = self.heat[i, j]
+        for di in (-1, 1):
+            for dj in (-1, 1):
+                if (i + di, j + dj) in self.unvisited:
+                    heat += self.heat[i+di, j+dj] * 0.5
+        return heat
 
 
 """
