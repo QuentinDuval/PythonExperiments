@@ -144,12 +144,20 @@ class Buster:
     uid: EntityId
     position: np.ndarray
     team: int  # 0 for team 0, 1 for team 1
-    carried_ghost: int  # ID of the ghost being carried, -1 if no ghost carried
-    busting_ghost: bool  # TODO - replace by ID?
+    carried_ghost: EntityId  # ID of the ghost being carried, -1 if no ghost carried
+    busted_ghost: EntityId  # ID of the ghost being busted, -1 if no ghost busted
     last_seen: int = 0  # Mostly useful for opponent
     stun_duration: int = 0  # How many rounds until end of stun
     stun_cooldown: int = 0
     has_radar: bool = True
+
+    @property
+    def carrying_ghost(self) -> bool:
+        return self.carried_ghost >= 0
+
+    @property
+    def busting_ghost(self) -> bool:
+        return self.busted_ghost >= 0
 
     def clone(self):
         return copy.deepcopy(self)
@@ -190,7 +198,7 @@ class Entities:
         return list(self.ghosts.values())
 
     def get_carried_ghost_ids(self) -> Set[EntityId]:
-        return {b.carried_ghost for _, b in self.busters.items() if b.carried_ghost >= 0}
+        return {b.carried_ghost for _, b in self.busters.items() if b.carrying_ghost}
 
     def clone(self):
         return copy.deepcopy(self)
@@ -217,7 +225,7 @@ def in_stun_range(buster: Buster, entities: Entities):
     candidate = None
     for opponent in entities.get_opponent_busters():
         if opponent.stun_duration <= 1 and distance2(buster.position, opponent.position) < MAX_STUN_DISTANCE ** 2:
-            if opponent.carried_ghost >= 0:
+            if opponent.carrying_ghost:
                 return opponent
             candidate = opponent
     return candidate
@@ -233,11 +241,17 @@ def past_ghost_relevant(entities: Entities, ghost: Ghost):
 
 
 def complete_picture_from_past(entities: Entities, previous_entities: Entities):
-    # Adding the previous information
+
+    # Deduce general information
     entities.my_score = previous_entities.my_score
     entities.current_turn = previous_entities.current_turn + 1
+
+    # Complete buster information
     for buster in entities.get_player_busters():
-        buster.stun_cooldown = previous_entities.busters[buster.uid].stun_cooldown - 1
+        previous_buster = previous_entities.busters[buster.uid]
+        buster.stun_cooldown = previous_buster.stun_cooldown - 1
+        if buster.busting_ghost and previous_buster.busting_ghost:
+            buster.busted_ghost = previous_buster.busted_ghost
 
     # Adding missing ghosts
     carried_ghosts = entities.get_carried_ghost_ids()
@@ -256,7 +270,7 @@ def complete_picture_from_past(entities: Entities, previous_entities: Entities):
             opponent_corner = entities.his_corner
 
             # Moving them to their base if carrying
-            if buster.carried_ghost >= 0 and distance2(opponent_corner, buster.position) > RADIUS_BASE ** 2:
+            if buster.carrying_ghost and distance2(opponent_corner, buster.position) > RADIUS_BASE ** 2:
                 direction = opponent_corner - buster.position
                 buster.position += direction / norm(direction) * MAX_MOVE_DISTANCE
                 entities.busters[buster.uid] = buster
@@ -299,7 +313,7 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
                 team=entity_type,
                 carried_ghost=value if state == 1 else -1,
                 stun_duration=value if state == 2 else 0,
-                busting_ghost=state == 3)
+                busted_ghost=0 if state == 3 else -1)
 
     # IMPORTANT NODE:
     # * the carried ghosts are not part of the input
@@ -325,9 +339,11 @@ class Move(NamedTuple):
         return "MOVE " + str(int(x)) + " " + str(int(y))
 
 
-class Bust(NamedTuple):
-    caster_id: int
-    target_id: int
+class Bust:
+    def __init__(self, entities: Entities, caster_id: int, target_id: int):
+        self.caster_id = caster_id
+        self.target_id = target_id
+        entities.busters[caster_id].busted_ghost = target_id
 
     def __repr__(self):
         return "BUST " + str(self.target_id)
@@ -607,7 +623,7 @@ class Agent:
 
         # Carrying / escorting update
         for buster_id, carrying in list(self.carrying.items()):
-            if entities.busters[buster_id].carried_ghost < 0:
+            if not entities.busters[buster_id].carrying_ghost:
                 del self.carrying[buster_id]
                 self.unassigned.add(buster_id)
                 for escorting_buster_id, escorting in list(self.escorting.items()):
@@ -617,7 +633,7 @@ class Agent:
 
         # Capturing update
         for buster_id, capturing in list(self.capturing.items()):
-            if entities.busters[buster_id].carried_ghost >= 0:
+            if entities.busters[buster_id].carrying_ghost:
                 del self.capturing[buster_id]
                 self.carrying[buster_id] = Carrying()
             elif not entities.busters[buster_id].busting_ghost:
@@ -691,7 +707,7 @@ class Agent:
                 self.unassigned.remove(buster_id)
 
         # No ghosts left: go for escort / attack
-        carrying_allies = [b for b in entities.get_player_busters() if b.carried_ghost >= 0]
+        carrying_allies = [b for b in entities.get_player_busters() if b.carrying_ghost]
         for buster_id in self.unassigned:
             buster = entities.busters[buster_id]
             closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
@@ -763,7 +779,7 @@ class Agent:
                 destination = buster.position + direction / norm(direction) * math.sqrt(MIN_BUST_DISTANCE ** 2 - dist2)
                 actions[buster_id] = Move(buster_id, destination)
             else:
-                actions[buster_id] = Bust(buster_id, capturing.target_id)
+                actions[buster_id] = Bust(entities, caster_id=buster_id, target_id=capturing.target_id)
 
     def _carry_ghost_to_base(self, entities: Entities, actions: Dict[EntityId, Action]):
         # Carrying ghost to base
