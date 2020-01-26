@@ -345,6 +345,8 @@ TERRITORY - TO GUIDE EXPLORATION
 
 
 class Territory:
+    # TODO - cumulative interests (places with a lot of yet undiscovered neighbors should have bigger weights)
+
     def __init__(self, w=15, h=10):
         self.unvisited = set()
         self.w = w
@@ -460,6 +462,8 @@ class Agent:
         self.intercepting: Dict[int, Intercepting] = {}
 
     def init(self, entities: Entities):
+        # TODO - hard-code an initial state to target given positions (exploration is not ideal at first)
+
         busters = list(entities.get_player_busters())
         assignments = self.territory.assign_destinations(busters)
         for buster in entities.get_player_busters():
