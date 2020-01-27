@@ -129,7 +129,8 @@ class Ghost:
     uid: EntityId
     position: np.ndarray
     endurance: int
-    busters_count: int = 0
+    total_busters_count: int = 0
+    my_busters_count: int = 0
     last_seen: int = 0
 
     def clone(self):
@@ -246,12 +247,19 @@ def complete_picture_from_past(entities: Entities, previous_entities: Entities):
     entities.my_score = previous_entities.my_score
     entities.current_turn = previous_entities.current_turn + 1
 
-    # Complete buster information
+    # Complete known buster information
+    my_ghost_count = defaultdict(int)
     for buster in entities.get_player_busters():
         previous_buster = previous_entities.busters[buster.uid]
         buster.stun_cooldown = previous_buster.stun_cooldown - 1
         if buster.busting_ghost and previous_buster.busting_ghost:
             buster.busted_ghost = previous_buster.busted_ghost
+            my_ghost_count[buster.busted_ghost] += 1
+
+    # Complete known ghost information
+    for ghost in entities.get_ghosts():
+        if ghost.total_busters_count > 0:
+            ghost.my_busters_count = my_ghost_count[ghost.uid]
 
     # Adding missing ghosts
     carried_ghosts = entities.get_carried_ghost_ids()
@@ -305,7 +313,7 @@ def read_entities(my_team_id: int, busters_per_player: int, ghost_count: int, pr
                 uid=identity,
                 position=position,
                 endurance=state,
-                busters_count=value)
+                total_busters_count=value)
         else:
             entities.busters[identity] = Buster(
                 uid=identity,
@@ -675,9 +683,8 @@ class Agent:
 
         # Identify the ghosts that are already taken
         ghosts_taken_count = defaultdict(int)
-        for buster in entities.get_player_busters():
-            if buster.busting_ghost:
-                ghosts_taken_count[buster.busted_ghost] += 1
+        for ghost in entities.get_ghosts():
+            ghosts_taken_count[ghost.uid] = ghost.my_busters_count
 
         # Consider all possible actions and their priority - TODO generalize to: escorting, intercepting...
         heap: List[Tuple[float, Buster, Ghost, int]] = []
