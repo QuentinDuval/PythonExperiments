@@ -10,7 +10,6 @@ from typing import *
 
 import numpy as np
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 UTILS
@@ -95,7 +94,6 @@ GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 WIDTH = 16000
 HEIGHT = 9000
 
@@ -115,13 +113,11 @@ STUN_COOLDOWN = 20
 
 TEAM_CORNERS = np.array([[0, 0], [WIDTH, HEIGHT]], dtype=np.float32)
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 MAIN DATA STRUCTURE to keep STATE
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 EntityId = int
 
@@ -153,7 +149,7 @@ class Ghost:
 
 
 @dataclass(frozen=False)
-class Buster:
+class Buster:  # TODO - separate data structure (and list) for OPPONENT BUSTERS (last known position, anticipated, etc.)
     uid: EntityId
     position: np.ndarray
     team: int  # 0 for team 0, 1 for team 1
@@ -255,7 +251,6 @@ def past_ghost_relevant(entities: Entities, ghost: Ghost):
 
 
 def complete_picture_from_past(entities: Entities, previous_entities: Entities):
-
     # Deduce general information
     entities.my_score = previous_entities.my_score
     entities.current_turn = previous_entities.current_turn + 1
@@ -303,8 +298,9 @@ def complete_picture_from_past(entities: Entities, previous_entities: Entities):
                 buster.last_seen = 1
 
             # Else keeping a timer, but decreasing the belief
-            elif buster.last_seen <= 10:
+            elif buster.last_seen <= 20: # TODO - increase credibility based on busting or not
                 entities.busters[buster.uid] = buster
+                buster.carried_ghost = -1
                 buster.last_seen += 1
 
 
@@ -417,7 +413,6 @@ class Eject:
 
 Action = Union[Move, Bust, Release, Stun, Radar, Eject]
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 TERRITORY - TO GUIDE EXPLORATION
@@ -438,7 +433,7 @@ class Territory:
                 self.cells[i, j, 0] = self.cell_width / 2 + self.cell_width * i
                 self.cells[i, j, 1] = self.cell_height / 2 + self.cell_height * j
                 # No reason to explore opponent's base
-                if distance2(self.cells[i, j], TEAM_CORNERS[1-team_id]) > RADIUS_BASE ** 2:
+                if distance2(self.cells[i, j], TEAM_CORNERS[1 - team_id]) > RADIUS_BASE ** 2:
                     self.unvisited.add((i, j))
 
         center = (self.w / 2, self.h / 2)
@@ -473,7 +468,8 @@ class Territory:
         for buster in busters:
             for i, j in list(self.unvisited):
                 point = self.cells[i, j]
-                if all(distance2(corner, buster.position) < buster.sight_radius ** 2 for corner in self._corners_of(point)):
+                if all(distance2(corner, buster.position) < buster.sight_radius ** 2 for corner in
+                       self._corners_of(point)):
                     self.unvisited.discard((i, j))
 
     def is_visited(self, point: Tuple[float, float]) -> bool:
@@ -492,7 +488,7 @@ class Territory:
         for di in (-1, 1):
             for dj in (-1, 1):
                 if (i + di, j + dj) in self.unvisited:
-                    heat += self.heat[i+di, j+dj] * 0.5
+                    heat += self.heat[i + di, j + dj] * 0.5
         return heat
 
 
@@ -531,6 +527,11 @@ class Escorting:
 
 @dataclass()
 class Intercepting:
+    target_id: EntityId
+
+
+@dataclass()
+class Ambushing:
     destination: Vector
 
 
@@ -568,6 +569,7 @@ class Agent:
         self.carrying: Dict[int, Carrying] = {}
         self.escorting: Dict[int, Escorting] = {}
         self.intercepting: Dict[int, Intercepting] = {}
+        self.ambushing: Dict[int, Ambushing] = {}
 
     def get_actions(self, entities: Entities) -> List[Action]:
         self.chronometer.start()
@@ -575,9 +577,9 @@ class Agent:
         if entities.current_turn == 0:
             self._opening_book(entities)
         else:
-            self._update_past_states(entities)      # Exit state which goal is satisfied
-            self._strategic_analysis(entities)      # Identifying overall / coordinated goals
-            self._assign_vacant_busters(entities)   # Assign busters to their new states
+            self._update_past_states(entities)  # Exit state which goal is satisfied
+            self._strategic_analysis(entities)  # Identifying overall / coordinated goals
+            self._assign_vacant_busters(entities)  # Assign busters to their new states
 
         self.debug_states()
         actions = self._carry_actions(entities)
@@ -592,6 +594,7 @@ class Agent:
         debug("carrying", self.carrying)
         debug("escorting", self.escorting)
         debug("intercepting", self.intercepting)
+        debug("ambushing", self.ambushing)
         debug("unassigned", self.unassigned)
 
     """
@@ -631,7 +634,6 @@ class Agent:
     def _update_past_states(self, entities: Entities):
 
         # Tracking opening state
-        # TODO - also try to bring back the ghosts with you
         for buster_id, opening in list(self.opening.items()):
             buster = entities.busters[buster_id]
             if distance2(buster.position, opening.destination) < MAX_MOVE_DISTANCE ** 2:
@@ -649,32 +651,49 @@ class Agent:
 
         # Carrying / escorting update base on the success of the mission
         for buster_id, carrying in list(self.carrying.items()):
-            if not entities.busters[buster_id].carrying_ghost:  # TODO - check if stunned, due to opponent intercept
-                del self.carrying[buster_id]
-                self.unassigned.add(buster_id)
-                for escorting_buster_id, escorting in list(self.escorting.items()):
-                    if escorting.target_id == buster_id:
-                        del self.escorting[escorting_buster_id]
-                        self.unassigned.add(escorting_buster_id)
+
+            # If carrying, keep on carrying the ghost toward base
+            if entities.busters[buster_id].carrying_ghost:
+                continue
+
+            # If not carrying anymore (could be due to STUN or RELEASE or EJECT)
+            del self.carrying[buster_id]
+            self.unassigned.add(buster_id)
+            for escorting_buster_id, escorting in list(self.escorting.items()):
+                if escorting.target_id == buster_id:
+                    del self.escorting[escorting_buster_id]
+                    self.unassigned.add(escorting_buster_id)
 
         # Capturing update
         for buster_id, capturing in list(self.capturing.items()):
-            if entities.busters[buster_id].carrying_ghost:
+            buster = entities.busters[buster_id]
+
+            # If successful capture of the ghost
+            if buster.carrying_ghost:
                 del self.capturing[buster_id]
                 self.carrying[buster_id] = Carrying()
-            elif not entities.busters[buster_id].busting_ghost:
+
+            # In case of stun / end of capture by another buster
+            elif not buster.busting_ghost:
                 del self.capturing[buster_id]
                 self.unassigned.add(buster_id)
 
         # Intercepting update
+        for buster_id, intercepting in list(self.intercepting.items()):
+            opponent_buster = entities.busters.get(intercepting.target_id)
+            if not opponent_buster or not opponent_buster.carrying_ghost:
+                del self.intercepting[buster_id]
+                self.unassigned.add(buster_id)
+
+        # Ambushing update
         threshold_dist2 = 3 * RADIUS_BASE ** 2
         released_ghosts = [g.uid for g in entities.get_ghosts()
                            if g.endurance == 0 and distance2(g.position, entities.his_corner) < threshold_dist2]
-        for buster_id, intercepting in list(self.intercepting.items()):
+        for buster_id, ambushing in list(self.ambushing.items()):
             if released_ghosts:
                 buster = entities.busters[buster_id]
                 if buster.stun_cooldown >= STUN_COOLDOWN / 2:
-                    del self.intercepting[buster_id]
+                    del self.ambushing[buster_id]
                     self.capturing[buster_id] = Capturing(released_ghosts.pop())
 
     """
@@ -684,11 +703,48 @@ class Agent:
     """
 
     def _strategic_analysis(self, entities: Entities):
-        # TODO - identify when we should DROP an activity (identify a top of activies)
+
+        # Abandon a fight you cannot win, and plan ambush - TODO: avoid the fight, ban the ghost, look from distance?
+        for buster_id, capturing in list(self.capturing.items()):
+            ghost_id = capturing.target_id
+            ghost = entities.ghosts[ghost_id]
+            if ghost.his_buster_count > ghost.my_busters_count:
+                del self.capturing[buster_id]
+                self.ambushing[buster_id] = Ambushing(entities.his_corner)
+
+        # Mandate an interception
+        for opponent in entities.get_opponent_busters():
+            if opponent.carrying_ghost:
+                buster_id = self._assign_interceptor(entities, opponent)
+                if buster_id is not None:
+                    self.intercepting[buster_id] = Intercepting(opponent.uid)
+
+        # TODO - identify when we should DROP an activity (identify a top of activities)
         # TODO - identify whether or not we should drop a ghost capture (bad situation)
         # TODO - identify whether or not we should attack an opponent position
         # TODO - overall, should give cost to ghosts... or COORDINATED METRICS / GHOSTS at least
-        pass
+
+    def _assign_interceptor(self, entities: Entities, opponent: Buster) -> Optional[EntityId]:
+        # TODO - try the closest? try the one with the least useful thing to do
+        for buster_id in list(self.unassigned):
+            if self._can_intercept(entities, entities.busters[buster_id], opponent):
+                self.unassigned.remove(buster_id)
+                return buster_id
+
+        for buster_id in list(self.capturing):
+            if self._can_intercept(entities, entities.busters[buster_id], opponent):
+                del self.capturing[buster_id]
+                return buster_id
+
+        for buster_id in list(self.ambushing):
+            if self._can_intercept(entities, entities.busters[buster_id], opponent):
+                del self.ambushing[buster_id]
+                return buster_id
+
+    def _can_intercept(self, entities: Entities, buster: Buster, opponent: Buster):
+        my_dist = distance(buster.position, entities.his_corner) - RADIUS_BASE
+        his_dist = distance(opponent.position, entities.his_corner) - RADIUS_BASE
+        return my_dist < his_dist and buster.stun_cooldown < his_dist / MAX_MOVE_DISTANCE
 
     """
     --------------------------------------------------------------------------------------------------------------------
@@ -711,7 +767,8 @@ class Agent:
         for ghost in ghosts:
             for buster in busters:
                 busting_count = ghosts_taken_count[ghost.uid]
-                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
+                heapq.heappush(heap, (
+                self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
 
         # A kind of Dijkstra for assigning ghost to their best priority
         while self.unassigned and heap:
@@ -721,7 +778,8 @@ class Agent:
 
             if ghosts_taken_count[ghost.uid] > busting_count:
                 busting_count = ghosts_taken_count[ghost.uid]
-                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
+                heapq.heappush(heap, (
+                self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
                 continue
 
             tile_pos = destinations.get(buster.uid)
@@ -744,10 +802,10 @@ class Agent:
         for buster_id in self.unassigned:
             buster = entities.busters[buster_id]
             closest_ally = min(carrying_allies, key=lambda b: distance2(b.position, buster.position), default=None)
-            if closest_ally and np.random.rand(1) < 0.5:    # TODO - use more of this (weight it though)
+            if closest_ally and np.random.rand(1) < 0.5:  # TODO - use more of this (weight it though)
                 self.escorting[buster.uid] = Escorting(closest_ally.uid)
             else:
-                self.intercepting[buster.uid] = Intercepting(destination=self._intercept_pos(entities))
+                self.ambushing[buster.uid] = Ambushing(destination=self._ambushing_pos(entities))
         self.unassigned.clear()
 
     def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
@@ -772,7 +830,7 @@ class Agent:
             return float('inf')
 
         nb_steps = distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2
-        exploration_value = 1   # TODO - depend on where we are in the game
+        exploration_value = 1  # TODO - depend on where we are in the game
         return nb_steps / exploration_value
 
     """
@@ -787,7 +845,8 @@ class Agent:
         self._carry_map_exploration(entities, actions)
         self._carry_ghost_capture(entities, actions)
         self._carry_ghost_to_base(entities, actions)
-        self._carry_interception(entities, actions)
+        self._carry_intercepting(entities, actions)
+        self._carry_ambushing(entities, actions)
         return actions
 
     def _carry_opening(self, entities: Entities, actions: Dict[EntityId, Action]):
@@ -807,7 +866,7 @@ class Agent:
                 actions[buster_id] = Move(buster_id, exploring.destination)
 
     def _carry_ghost_capture(self, entities: Entities, actions: Dict[EntityId, Action]):
-        # TODO - improve in highly congested area
+        # TODO - improve in highly congested area - how to do GOOD STUNS
         for buster_id, capturing in self.capturing.items():
             buster = entities.busters[buster_id]
             ghost = entities.ghosts[capturing.target_id]
@@ -818,7 +877,7 @@ class Agent:
             elif dist2 > MAX_BUST_DISTANCE ** 2:
                 actions[buster_id] = Move(buster_id, ghost.position)
             elif dist2 == 0:
-                actions[buster_id] = Move(buster_id, np.array([WIDTH/2, HEIGHT/2]))
+                actions[buster_id] = Move(buster_id, np.array([WIDTH / 2, HEIGHT / 2]))
             elif dist2 < MIN_BUST_DISTANCE ** 2:
                 direction = buster.position - ghost.position
                 destination = buster.position + direction / norm(direction) * math.sqrt(MIN_BUST_DISTANCE ** 2 - dist2)
@@ -848,27 +907,52 @@ class Agent:
             else:
                 actions[buster_id] = Move(buster_id, target_pos * 0.5 + entities.my_corner * 0.5)
 
-    def _carry_interception(self, entities: Entities, actions: Dict[EntityId, Action]):
+    def _carry_intercepting(self, entities: Entities, actions: Dict[EntityId, Action]):
         # TODO - use EJECT somewhere here
-        intercept_dir = self._intercept_dir(entities)
-        for buster_id, intercepting in self.intercepting.items():
+        for buster_id, intercepting in list(self.intercepting.items()):
             buster = entities.busters[buster_id]
-            opponent = in_stun_range(entities.busters[buster_id], entities)   # TODO - do better here - pursue
+            opponent = entities.busters[intercepting.target_id]
+
+            # Reached the opponent, stun him
+            if distance2(opponent.position, buster.position) < MAX_STUN_DISTANCE ** 2 and buster.stun_cooldown <= 0:
+                actions[buster_id] = Stun(entities, buster_id, intercepting.target_id)
+                del self.intercepting[buster_id]
+                self.unassigned.add(buster_id)
+                continue
+
+            # Seeking the opponent
+            direction = entities.his_corner - opponent.position
+            remaining_distance = norm(direction)
+            direction /= remaining_distance
+            normal = np.array([-direction[1], direction[0]])
+            dist_to_trajectory = abs(np.dot(normal, buster.position - opponent.position))
+            if dist_to_trajectory < MAX_STUN_DISTANCE:
+                actions[buster_id] = Move(buster_id, opponent.position)
+            else:
+                direction *= 0.7 * (remaining_distance - RADIUS_BASE)
+                actions[buster_id] = Move(buster_id, opponent.position + direction)
+
+    def _carry_ambushing(self, entities: Entities, actions: Dict[EntityId, Action]):
+        # TODO - use EJECT somewhere here
+        intercept_dir = self._ambushing_dir(entities)
+        for buster_id, ambushing in self.ambushing.items():
+            buster = entities.busters[buster_id]
+            opponent = in_stun_range(entities.busters[buster_id], entities)  # TODO - do better here - pursue
             if opponent:
                 actions[buster_id] = Stun(entities, buster_id, opponent.uid)
-            elif distance2(buster.position, intercepting.destination) < 16:
-                angle = np.random.choice([-math.pi/10, 0, math.pi/10, math.pi/5])
+            elif distance2(buster.position, ambushing.destination) < 16:
+                angle = np.random.choice([-math.pi / 10, 0, math.pi / 10, math.pi / 5])
                 destination = entities.his_corner + rotate(intercept_dir, angle)
                 actions[buster_id] = Move(buster_id, destination)
-                self.intercepting[buster_id] = Intercepting(destination)    # TODO - move to assignment of orders?
+                self.ambushing[buster_id] = Ambushing(destination)  # TODO - move to assignment of orders?
             else:
-                actions[buster_id] = Move(buster_id, intercepting.destination)
+                actions[buster_id] = Move(buster_id, ambushing.destination)
 
-    def _intercept_pos(self, entities: Entities):
-        intercept_dir = self._intercept_dir(entities)
+    def _ambushing_pos(self, entities: Entities):
+        intercept_dir = self._ambushing_dir(entities)
         return entities.his_corner + intercept_dir
 
-    def _intercept_dir(self, entities: Entities):
+    def _ambushing_dir(self, entities: Entities):
         intercept_dir = entities.my_corner - entities.his_corner
         return intercept_dir / norm(intercept_dir) * RADIUS_BASE * 2
 
@@ -896,7 +980,9 @@ def game_loop():
                                  busters_per_player=busters_per_player,
                                  ghost_count=ghost_count,
                                  previous_entities=previous_entities)
-        debug(entities)
+
+        # TODO - shorten this display to make it useful
+        # debug(entities)
 
         for action in agent.get_actions(entities):
             print(action)
