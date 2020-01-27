@@ -1,4 +1,5 @@
 import copy
+import enum
 import heapq
 import math
 import sys
@@ -100,6 +101,7 @@ HEIGHT = 9000
 
 RADIUS_BASE = 1600
 RADIUS_SIGHT = 2200
+RADIUS_RADAR = 2 * RADIUS_SIGHT
 
 MAX_GHOST_MOVE_DISTANCE = 400
 MAX_MOVE_DISTANCE = 800
@@ -122,6 +124,12 @@ MAIN DATA STRUCTURE to keep STATE
 
 
 EntityId = int
+
+
+class RadarStatus(enum.Enum):
+    NO_RADAR = 0
+    HAS_RADAR = 1
+    USED_RADAR = 2
 
 
 @dataclass(frozen=False)
@@ -154,7 +162,8 @@ class Buster:
     last_seen: int = 0  # Mostly useful for opponent
     stun_duration: int = 0  # How many rounds until end of stun
     stun_cooldown: int = 0
-    has_radar: bool = True
+    radar_status: RadarStatus = RadarStatus.HAS_RADAR
+    sight_radius: float = RADIUS_SIGHT
 
     @property
     def carrying_ghost(self) -> bool:
@@ -259,6 +268,11 @@ def complete_picture_from_past(entities: Entities, previous_entities: Entities):
         if buster.busting_ghost and previous_buster.busting_ghost:
             buster.busted_ghost = previous_buster.busted_ghost
             my_ghost_count[buster.busted_ghost] += 1
+        if previous_buster.radar_status == RadarStatus.USED_RADAR:
+            buster.sight_radius = RADIUS_RADAR
+            buster.radar_status = RadarStatus.NO_RADAR
+        else:
+            buster.radar_status = previous_buster.radar_status
 
     # Complete known ghost information
     for ghost in entities.get_ghosts():
@@ -384,7 +398,7 @@ class Stun:
 
 class Radar:
     def __init__(self, entities: Entities, caster_id: int):
-        entities.busters[caster_id].has_radar = False
+        entities.busters[caster_id].radar_status = RadarStatus.USED_RADAR
 
     def __repr__(self):
         return "RADAR"
@@ -459,8 +473,7 @@ class Territory:
         for buster in busters:
             for i, j in list(self.unvisited):
                 point = self.cells[i, j]
-                # TODO - could take into account the RADAR as well
-                if all(distance2(corner, buster.position) < RADIUS_SIGHT ** 2 for corner in self._corners_of(point)):
+                if all(distance2(corner, buster.position) < buster.sight_radius ** 2 for corner in self._corners_of(point)):
                     self.unvisited.discard((i, j))
 
     def is_visited(self, point: Tuple[float, float]) -> bool:
@@ -751,7 +764,7 @@ class Agent:
         #   => MOVE THIS STRATEGIC OVERVIEW, TOO HARD HERE
 
         endurance_at_arrival = ghost.endurance - steps_to_target * ghost.total_busters_count
-        ghost_value /= (busting_count + 1)
+        ghost_value /= (busting_count + 1) ** 2
         return (steps_to_target + endurance_at_arrival / (busting_count + 1)) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Tuple[float, float]):
