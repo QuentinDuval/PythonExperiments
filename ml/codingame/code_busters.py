@@ -88,6 +88,10 @@ def rotate(vector: Vector, angle: Angle):
     return np.array([x, y])
 
 
+def normal_of(v: Vector) -> Vector:
+    return np.array([-v[1], v[0]])
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME CONSTANTS
@@ -241,13 +245,18 @@ def in_stun_range(buster: Buster, entities: Entities):
     return candidate
 
 
-def past_ghost_relevant(entities: Entities, ghost: Ghost):
+def past_ghost_relevant(entities: Entities, ghost: Ghost) -> bool:
     # TODO - make it an information later in my algorithms
-    distance_my_team = distance(ghost.position, entities.my_corner)
-    distance_his_team = distance(ghost.position, entities.his_corner)
-    threshold = 100 if distance_my_team < distance_his_team * 0.8 else 25  # TODO - take into account opponents
-    threshold /= math.sqrt(entities.busters_per_player)
-    return ghost.last_seen <= threshold
+    if ghost.total_busters_count > 0:
+        alive = ghost.endurance > 0
+        ghost.endurance -= ghost.total_busters_count
+        return alive
+    else:
+        distance_my_team = distance(ghost.position, entities.my_corner)
+        distance_his_team = distance(ghost.position, entities.his_corner)
+        threshold = 100 if distance_my_team < distance_his_team * 0.8 else 25
+        threshold /= math.sqrt(entities.busters_per_player)
+        return ghost.last_seen <= threshold
 
 
 def complete_picture_from_past(entities: Entities, previous_entities: Entities):
@@ -297,8 +306,18 @@ def complete_picture_from_past(entities: Entities, previous_entities: Entities):
                 entities.busters[buster.uid] = buster
                 buster.last_seen = 1
 
+            # Tracking if they bust
+            # TODO - problem here is that I do not know which ghost is being busted
+            # elif buster.busting_ghost:
+            #     debug("busted ghost", buster.busted_ghost)
+            #     ghost = entities.ghosts.get(buster.busted_ghost)
+            #     if ghost.endurance == 0:
+            #         buster.carried_ghost = buster.busted_ghost
+            #         buster.busted_ghost = -1
+            #         del entities.ghosts[buster.busted_ghost]
+
             # Else keeping a timer, but decreasing the belief
-            elif buster.last_seen <= 20: # TODO - increase credibility based on busting or not
+            elif buster.last_seen <= 20:  # TODO - increase credibility based on busting or not
                 entities.busters[buster.uid] = buster
                 buster.carried_ghost = -1
                 buster.last_seen += 1
@@ -768,7 +787,7 @@ class Agent:
             for buster in busters:
                 busting_count = ghosts_taken_count[ghost.uid]
                 heapq.heappush(heap, (
-                self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
+                    self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
 
         # A kind of Dijkstra for assigning ghost to their best priority
         while self.unassigned and heap:
@@ -779,7 +798,7 @@ class Agent:
             if ghosts_taken_count[ghost.uid] > busting_count:
                 busting_count = ghosts_taken_count[ghost.uid]
                 heapq.heappush(heap, (
-                self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
+                    self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
                 continue
 
             tile_pos = destinations.get(buster.uid)
@@ -924,7 +943,7 @@ class Agent:
             direction = entities.his_corner - opponent.position
             remaining_distance = norm(direction)
             direction /= remaining_distance
-            normal = np.array([-direction[1], direction[0]])
+            normal = normal_of(direction)
             dist_to_trajectory = abs(np.dot(normal, buster.position - opponent.position))
             if dist_to_trajectory < MAX_STUN_DISTANCE:
                 actions[buster_id] = Move(buster_id, opponent.position)
