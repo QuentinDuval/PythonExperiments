@@ -452,7 +452,7 @@ class Territory:
                 self.cells[i, j, 0] = self.cell_width / 2 + self.cell_width * i
                 self.cells[i, j, 1] = self.cell_height / 2 + self.cell_height * j
                 # No reason to explore opponent's base
-                if distance2(self.cells[i, j], TEAM_CORNERS[1 - team_id]) > RADIUS_BASE ** 2:
+                if distance2(self.cells[i, j], TEAM_CORNERS[1 - team_id]) > (RADIUS_BASE * 1.5) ** 2:
                     self.unvisited.add((i, j))
 
         center = (self.w / 2, self.h / 2)
