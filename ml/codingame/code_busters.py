@@ -669,20 +669,24 @@ class Agent:
     """
 
     def _assign_vacant_busters(self, entities: Entities):
-        # TODO - generalize the notion of utility: maximize it (escorting, exploring, intercepting, etc)
-
         ghosts: List[Ghost] = list(entities.ghosts.values())
         busters = [entities.busters[uid] for uid in self.unassigned]
         destinations = self.territory.assign_destinations(busters)
 
+        # Identify the ghosts that are already taken
+        ghosts_taken_count = defaultdict(int)
+        for buster in entities.get_player_busters():
+            if buster.busting_ghost:
+                ghosts_taken_count[buster.busted_ghost] += 1
+
+        # Consider all possible actions and their priority - TODO generalize to: escorting, intercepting...
         heap: List[Tuple[float, Buster, Ghost, int]] = []
         for ghost in ghosts:
             for buster in busters:
-                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, 0), buster, ghost, 0))
+                busting_count = ghosts_taken_count[ghost.uid]
+                heapq.heappush(heap, (self._ghost_score(entities, buster, ghost, busting_count), buster, ghost, busting_count))
 
-        # TODO - count the busters per ghosts ALREADY THERE and fight for equality (or remove your busters if not worth)
-        # A kind of Dijkstra for assigning ghost to their closest players
-        ghosts_taken_count = defaultdict(int)
+        # A kind of Dijkstra for assigning ghost to their best priority
         while self.unassigned and heap:
             ghost_score, buster, ghost, busting_count = heapq.heappop(heap)
             if buster.uid not in self.unassigned:
@@ -701,14 +705,14 @@ class Agent:
                 self.exploring[buster.uid] = Exploring(destination=tile_pos)
             self.unassigned.remove(buster.uid)
 
-        # Go for tiles
+        # Go for tiles (in case the heap of ghost is empty)
         for buster_id in list(self.unassigned):
             tile_pos = destinations.get(buster_id)
             if tile_pos:
                 self.exploring[buster_id] = Exploring(destination=tile_pos)
                 self.unassigned.remove(buster_id)
 
-        # No ghosts left: go for escort / attack
+        # No ghosts / no exploration left: go for escort / attack
         carrying_allies = [b for b in entities.get_player_busters() if b.carrying_ghost]
         for buster_id in self.unassigned:
             buster = entities.busters[buster_id]
