@@ -732,14 +732,20 @@ class Agent:
         self.unassigned.clear()
 
     def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
-        nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
+        steps_to_target = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
         ghost_value = 10 + (entities.current_turn + 1) / 10 - ghost.last_seen / 10
 
         # Take into account:
-        # - the cost of resources (busting count + 1): multiplier
+        # - the cost of resources by diminishing the value of the ghost
         # - the duration till we get the point
-        # - the value of the ghost
-        return (busting_count + 1) * (nb_steps + ghost.endurance / (busting_count + 1)) / ghost_value
+
+        # TODO - should take into account:
+        #   - the balance with opponent busters
+        #   - the fact that we do not need too many busters on the ghost
+
+        endurance_at_arrival = ghost.endurance - steps_to_target * ghost.total_busters_count
+        ghost_value /= (busting_count + 1)
+        return (steps_to_target + endurance_at_arrival / (busting_count + 1)) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Tuple[float, float]):
         if not tile_pos:
