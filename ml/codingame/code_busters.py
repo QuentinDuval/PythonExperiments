@@ -588,11 +588,12 @@ class Agent:
         # Compute the way points
         n = entities.busters_per_player
         angle_diff = math.pi / 2 / (n + 1)
-        angles = [angle_diff * (i + 1) for i in range(n)]
+        angle_delta = angle_diff / 2
+        angles = [angle_delta + angle_diff * i for i in range(n)]
         if entities.my_team == 0:
-            direction = np.array([8000, 0])
+            direction = np.array([8800, 0])
         else:
-            direction = np.array([-8000, 0])
+            direction = np.array([-8800, 0])
         team_corner = TEAM_CORNERS[entities.my_team]
         waypoints = [team_corner + rotate(direction, a) for a in angles]
 
@@ -732,7 +733,12 @@ class Agent:
 
     def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
         nb_steps = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
-        ghost_value = 10 + (entities.current_turn + 1) / 10  # TODO - improve this formula (decrease with opponents?)
+        ghost_value = 10 + (entities.current_turn + 1) / 10 - ghost.last_seen / 10
+
+        # Take into account:
+        # - the cost of resources (busting count + 1): multiplier
+        # - the duration till we get the point
+        # - the value of the ghost
         return (busting_count + 1) * (nb_steps + ghost.endurance / (busting_count + 1)) / ghost_value
 
     def _tile_score(self, buster: Buster, tile_pos: Tuple[float, float]):
