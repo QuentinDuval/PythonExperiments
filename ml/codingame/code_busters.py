@@ -575,7 +575,6 @@ class Agent:
     # TODO - FIX:
     #   - do not stun when the opponent is in his base
     #   - when BUSTING, stun opponent only if you can finish the busting before end of stun
-    #   - do not bust ghost if more opponent on it, it only helps him
     #   - recompute the destinations based on all busters that are exploring (else same destination possible)
 
     def __init__(self, team_id: int):
@@ -802,7 +801,7 @@ class Agent:
                 continue
 
             tile_pos = destinations.get(buster.uid)
-            if ghost_score < self._tile_score(buster, tile_pos):
+            if ghost_score < self._tile_score(entities, buster, tile_pos):
                 self.capturing[buster.uid] = Capturing(target_id=ghost.uid)
                 ghosts_taken_count[ghost.uid] += 1
             else:
@@ -828,28 +827,23 @@ class Agent:
         self.unassigned.clear()
 
     def _ghost_score(self, entities: Entities, buster: Buster, ghost: Ghost, busting_count: int):
-        steps_to_target = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
-        ghost_value = 10 + (entities.current_turn + 1) / 10 - ghost.last_seen / 10
-
         # Take into account:
         # - the cost of resources by diminishing the value of the ghost
         # - the duration till we get the point
-
-        # TODO - should take into account:
-        #   - the balance with opponent busters
-        #   - the fact that we do not need too many busters on the ghost
-        #   => MOVE THIS STRATEGIC OVERVIEW, TOO HARD HERE
-
+        # - the fact that the ghost is already taken by his
+        steps_to_target = distance2(ghost.position, buster.position) / MAX_MOVE_DISTANCE ** 2
+        ghost_value = 10 + (entities.current_turn + 1) / 10 - ghost.last_seen / 10
         endurance_at_arrival = ghost.endurance - steps_to_target * ghost.total_busters_count
         ghost_value /= (busting_count + 1) ** 2
-        return (steps_to_target + endurance_at_arrival / (busting_count + 1)) / ghost_value
+        balance = (ghost.his_buster_count + 1) / (ghost.my_busters_count + 1)
+        return balance * (steps_to_target + endurance_at_arrival / (busting_count + 1)) / ghost_value
 
-    def _tile_score(self, buster: Buster, tile_pos: Tuple[float, float]):
+    def _tile_score(self, entities: Entities, buster: Buster, tile_pos: Tuple[float, float]):
         if not tile_pos:
             return float('inf')
 
         nb_steps = distance2(tile_pos, buster.position) / MAX_MOVE_DISTANCE ** 2
-        exploration_value = 1  # TODO - depend on where we are in the game
+        exploration_value = 1 - entities.current_turn / 500 # 500 is the double of maximum turns
         return nb_steps / exploration_value
 
     """
