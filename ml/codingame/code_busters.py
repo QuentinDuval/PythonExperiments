@@ -899,6 +899,8 @@ class Agent:
                 actions[buster_id] = Bust(entities, caster_id=buster_id, target_id=capturing.target_id)
 
     def _carry_ghost_to_base(self, entities: Entities, actions: Dict[EntityId, Action]):
+        # TODO - when going back to base, avoid the obvious way, and just stick to the wall at the end
+
         # Carrying ghost to base
         for buster_id, carrying in self.carrying.items():
             buster = entities.busters[buster_id]
