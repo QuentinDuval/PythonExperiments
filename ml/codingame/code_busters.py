@@ -133,6 +133,10 @@ class Ghost:
     my_busters_count: int = 0
     last_seen: int = 0
 
+    @property
+    def his_buster_count(self):
+        return self.total_busters_count - self.my_busters_count
+
     def clone(self):
         return copy.deepcopy(self)
 
@@ -562,6 +566,7 @@ class Agent:
             self._strategic_analysis(entities)      # Identifying overall / coordinated goals
             self._assign_vacant_busters(entities)   # Assign busters to their new states
 
+        self.debug_states()
         actions = self._carry_actions(entities)
 
         debug("Time spent:", self.chronometer.spent(), "ms")
@@ -666,6 +671,7 @@ class Agent:
     """
 
     def _strategic_analysis(self, entities: Entities):
+        # TODO - identify when we should DROP an activity (identify a top of activies)
         # TODO - identify whether or not we should drop a ghost capture (bad situation)
         # TODO - identify whether or not we should attack an opponent position
         # TODO - overall, should give cost to ghosts... or COORDINATED METRICS / GHOSTS at least
@@ -742,6 +748,7 @@ class Agent:
         # TODO - should take into account:
         #   - the balance with opponent busters
         #   - the fact that we do not need too many busters on the ghost
+        #   => MOVE THIS STRATEGIC OVERVIEW, TOO HARD HERE
 
         endurance_at_arrival = ghost.endurance - steps_to_target * ghost.total_busters_count
         ghost_value /= (busting_count + 1)
