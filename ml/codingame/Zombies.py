@@ -166,6 +166,8 @@ class Agent:
 
     def get_action(self, game_state: GameState) -> Vector:
         self.chrono.start()
+
+        # Find the human that you can really save
         savable: List[Human] = []
         for h in game_state.humans:
             closest_zombie = closest(game_state.zombies, h.position)
