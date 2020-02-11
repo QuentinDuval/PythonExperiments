@@ -1,3 +1,4 @@
+import itertools
 import math
 import sys
 import time
@@ -189,7 +190,7 @@ class Agent:
             # If the player is in between, the human is safe for now, try to collect max zombies
             my_zombies = self.zombies_on_player(game_state)
             if len(my_zombies) > 1 and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
-                target_position = self.find_attaction_point(my_zombies)
+                target_position = self.find_attaction_point(player_pos, my_zombies)
 
             # Go directly to intercept the zombie
             else:
@@ -209,17 +210,16 @@ class Agent:
                 zombies.append(z)
         return zombies
 
-    def find_attaction_point(self, zombies: List[Zombie]) -> Vector:
+    def find_attaction_point(self, player_pos: Vector, zombies: List[Zombie]) -> Vector:
         best_point = None
         best_score = float('inf')
         xs = np.random.uniform(0, MAP_WIDTH, size=500)
         ys = np.random.uniform(0, MAP_HEIGHT, size=500)
-        for x, y in zip(xs, ys):
+        for x, y in itertools.chain([player_pos], zip(xs, ys)):
             point = np.array([x, y])
             distances = np.array([distance(z.position, point) for z in zombies])
-            mean = np.mean(distances)
             variance = np.mean(distances ** 2) - np.mean(distances) ** 2
-            score = mean + variance
+            score = variance
             if score < best_score:
                 best_score = score
                 best_point = point
