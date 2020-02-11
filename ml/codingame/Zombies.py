@@ -1,15 +1,10 @@
-import copy
-import enum
-import heapq
 import math
 import sys
 import time
-from collections import *
 from dataclasses import *
 from typing import *
 
 import numpy as np
-
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -33,7 +28,8 @@ class Chronometer:
         current = time.time_ns()
         return self._to_ms(current - self.start_time)
 
-    def _to_ms(self, delay):
+    @staticmethod
+    def _to_ms(delay):
         return delay / 1_000_000
 
 
@@ -59,7 +55,7 @@ def get_angle(v: Vector) -> Angle:
 
 
 def norm2(v) -> float:
-    return np.dot(v, v)
+    return float(np.dot(v, v))
 
 
 def norm(v) -> float:
@@ -113,8 +109,8 @@ class Human:
 
     @classmethod
     def read(cls):
-        id, x, y = [int(j) for j in input().split()]
-        return cls(id=id, position=np.array([x, y]))
+        entity_id, x, y = [int(j) for j in input().split()]
+        return cls(id=entity_id, position=np.array([x, y]))
 
 
 @dataclass()
@@ -125,8 +121,8 @@ class Zombie:
 
     @classmethod
     def read(cls):
-        id, x, y, x_next, y_next = [int(j) for j in input().split()]
-        return cls(id=id, position=np.array([x, y]), next_position=np.array([x_next, y_next]))
+        entity_id, x, y, x_next, y_next = [int(j) for j in input().split()]
+        return cls(id=entity_id, position=np.array([x, y]), next_position=np.array([x_next, y_next]))
 
 
 @dataclass()
