@@ -181,6 +181,7 @@ class Agent:
 
         # Go for the zombie directly if it is closer than the human, else: intercept
         if distance2(game_state.player, closest_zombie.position) < distance2(game_state.player, closest_human.position):
+            # TODO - You could actually attract the zombie...
             target_position = closest_zombie.position
         else:
             target_position = (closest_human.position + closest_zombie.position) / 2
