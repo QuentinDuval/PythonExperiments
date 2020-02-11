@@ -174,8 +174,9 @@ class Agent:
                 savable.append(h)
 
         closest_human = closest(savable, game_state.player)
+        closest_zombie = closest(game_state.zombies, closest_human.position)
         debug("Time spent:", self.chrono.spent(), "ms")
-        return closest_human.position
+        return (closest_human.position + closest_zombie.position) / 2
 
 
 """
@@ -190,7 +191,7 @@ def game_loop():
     while True:
         game_state = GameState.read()
         target = agent.get_action(game_state)
-        print(target[0], target[1], "I love zombies")
+        print(int(target[0]), int(target[1]), "I love zombies")
 
 
 if __name__ == '__main__':
