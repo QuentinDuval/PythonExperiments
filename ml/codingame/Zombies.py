@@ -88,6 +88,9 @@ GAME CONSTANTS
 ASH_SPEED = 1000
 ZOMBIE_SPEED = 400
 
+MAP_WIDTH = 16000
+MAP_HEIGHT = 9000
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -162,6 +165,7 @@ class Agent:
 
     def get_action(self, game_state: GameState) -> Vector:
         self.chrono.start()
+        player_pos = game_state.player
 
         # Find the human that you can really save
         savable: List[Human] = []
@@ -172,17 +176,47 @@ class Agent:
                 savable.append(h)
 
         # The human to protect and its closest zombie
-        closest_human = closest(savable, game_state.player)
+        closest_human = closest(savable, game_state.player) # TODO - might crash, but should not if you do it right
         closest_zombie = closest(game_state.zombies, closest_human.position)
 
-        # Go for the zombie directly if it is closer than the human, else: intercept
-        if distance2(game_state.player, closest_zombie.position) < distance2(game_state.player, closest_human.position):
-            # TODO - You could actually attract the zombie... if all the zombies are away, go to the point at equal distance to all of them
-            target_position = closest_zombie.position
+        # If the player is in between, the human is safe for now, try to collect max zombies
+        # If the zombie is closer than the human to defend, go directly for the zombie
+        if distance2(player_pos, closest_zombie.position) < distance2(player_pos, closest_human.position):
+            my_zombies = self.zombies_on_player(game_state)
+            if my_zombies and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
+                target_position = self.find_attaction_point(my_zombies)
+            else:
+                target_position = closest_zombie.next_position
+
+        # Otherwise, go to protect the human by intercepting the zombie
         else:
             target_position = (closest_human.position + closest_zombie.position) / 2
         debug("Time spent:", self.chrono.spent(), "ms")
         return target_position
+
+    def zombies_on_player(self, game_state: GameState) -> List[Zombie]:
+        zombies = []
+        for z in game_state.zombies:
+            h = closest(game_state.humans, z.position)
+            if distance2(h.position, z.position) > distance2(game_state.player, z.position):
+                zombies.append(z)
+        return zombies
+
+    def find_attaction_point(self, zombies: List[Zombie]) -> Vector:
+        best_point = None
+        lowest_variance = float('inf')
+        xs = np.random.uniform(0, MAP_WIDTH, size=500)
+        ys = np.random.uniform(0, MAP_HEIGHT, size=500)
+        for x, y in zip(xs, ys):
+            point = np.array([x, y])
+            distances = np.array([distance(z.position, point) for z in zombies])
+            variance = np.mean(distances ** 2) - np.mean(distances) ** 2
+            if variance < lowest_variance:
+                lowest_variance = variance
+                best_point = point
+        debug(zombies)
+        debug(lowest_variance)
+        return best_point
 
 
 """
