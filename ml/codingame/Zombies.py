@@ -181,6 +181,7 @@ class Agent:
 
         # TODO - try to find if I can get a move that draws zombies to me / go to barycenter of zombies? in some map...
         # TODO - take into account the speed of zombies in order to draw them to you...
+        # TODO - try clusterization algorithm to find the "groups" of zombies
 
         # If the zombie is closer than the human to defend
         if distance2(player_pos, closest_zombie.position) < distance2(player_pos, closest_human.position):
