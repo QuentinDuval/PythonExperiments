@@ -179,12 +179,15 @@ class Agent:
         closest_human = closest(savable, game_state.player) # TODO - might crash, but should not if you do it right
         closest_zombie = closest(game_state.zombies, closest_human.position)
 
-        # If the player is in between, the human is safe for now, try to collect max zombies
-        # If the zombie is closer than the human to defend, go directly for the zombie
+        # If the zombie is closer than the human to defend
         if distance2(player_pos, closest_zombie.position) < distance2(player_pos, closest_human.position):
+
+            # If the player is in between, the human is safe for now, try to collect max zombies
             my_zombies = self.zombies_on_player(game_state)
             if my_zombies and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
                 target_position = self.find_attaction_point(my_zombies)
+
+            # Go directly to intercept the zombie
             else:
                 target_position = closest_zombie.next_position
 
@@ -204,18 +207,17 @@ class Agent:
 
     def find_attaction_point(self, zombies: List[Zombie]) -> Vector:
         best_point = None
-        lowest_variance = float('inf')
+        best_value = float('inf')
         xs = np.random.uniform(0, MAP_WIDTH, size=500)
         ys = np.random.uniform(0, MAP_HEIGHT, size=500)
         for x, y in zip(xs, ys):
             point = np.array([x, y])
             distances = np.array([distance(z.position, point) for z in zombies])
+            mean = np.mean(distances)
             variance = np.mean(distances ** 2) - np.mean(distances) ** 2
-            if variance < lowest_variance:
-                lowest_variance = variance
+            if mean + variance < best_value:
+                best_value = variance + mean
                 best_point = point
-        debug(zombies)
-        debug(lowest_variance)
         return best_point
 
 
