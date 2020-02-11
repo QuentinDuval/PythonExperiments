@@ -207,7 +207,7 @@ class Agent:
 
     def find_attaction_point(self, zombies: List[Zombie]) -> Vector:
         best_point = None
-        best_value = float('inf')
+        best_score = float('inf')
         xs = np.random.uniform(0, MAP_WIDTH, size=500)
         ys = np.random.uniform(0, MAP_HEIGHT, size=500)
         for x, y in zip(xs, ys):
@@ -215,8 +215,9 @@ class Agent:
             distances = np.array([distance(z.position, point) for z in zombies])
             mean = np.mean(distances)
             variance = np.mean(distances ** 2) - np.mean(distances) ** 2
-            if mean + variance < best_value:
-                best_value = variance + mean
+            score = mean + variance
+            if score < best_score:
+                best_score = score
                 best_point = point
         return best_point
 
