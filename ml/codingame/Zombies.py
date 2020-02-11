@@ -191,6 +191,7 @@ class Agent:
             my_zombies = self.zombies_on_player(game_state)
             if len(my_zombies) > 1 and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
                 target_position = self.find_attaction_point(player_pos, my_zombies)
+                # TODO - once you find the attaction point, plot a path to it that avoids the zombies and keep them in range
 
             # Go directly to intercept the zombie
             else:
