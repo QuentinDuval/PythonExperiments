@@ -176,15 +176,18 @@ class Agent:
                 savable.append(h)
 
         # The human to protect and its closest zombie
-        closest_human = closest(savable, game_state.player) # TODO - might crash, but should not if you do it right
+        closest_human = closest(savable, game_state.player)
         closest_zombie = closest(game_state.zombies, closest_human.position)
+
+        # TODO - try to find if I can get a move that draws zombies to me / go to barycenter of zombies? in some map...
+        # TODO - take into account the speed of zombies in order to draw them to you...
 
         # If the zombie is closer than the human to defend
         if distance2(player_pos, closest_zombie.position) < distance2(player_pos, closest_human.position):
 
             # If the player is in between, the human is safe for now, try to collect max zombies
             my_zombies = self.zombies_on_player(game_state)
-            if my_zombies and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
+            if len(my_zombies) > 1 and distance2(player_pos, closest_human.position) < distance2(closest_human.position, closest_zombie.position):
                 target_position = self.find_attaction_point(my_zombies)
 
             # Go directly to intercept the zombie
