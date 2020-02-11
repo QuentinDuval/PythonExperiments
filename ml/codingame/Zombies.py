@@ -173,10 +173,17 @@ class Agent:
             if can_save_human(closest_distance, distance(game_state.player, h.position)):
                 savable.append(h)
 
+        # The human to protect and its closest zombie
         closest_human = closest(savable, game_state.player)
         closest_zombie = closest(game_state.zombies, closest_human.position)
+
+        # Go for the zombie directly if it is closer than the human, else: intercept
+        if distance2(game_state.player, closest_zombie.position) < distance2(game_state.player, closest_human.position):
+            target_position = closest_zombie.position
+        else:
+            target_position = (closest_human.position + closest_zombie.position) / 2
         debug("Time spent:", self.chrono.spent(), "ms")
-        return (closest_human.position + closest_zombie.position) / 2
+        return target_position
 
 
 """
