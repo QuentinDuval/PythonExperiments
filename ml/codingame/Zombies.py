@@ -241,6 +241,8 @@ AGENT
 ------------------------------------------------------------------------------------------------------------------------
 """
 
+
+MIN_SCORE = -1e32
 SEQUENCE_LEN = 4
 
 
@@ -281,13 +283,13 @@ class Agent:
         for action in sequence:
             score += update(new_state, action)
             if not new_state.humans:
-                return float('-inf')
+                return MIN_SCORE
             elif not new_state.zombies:
                 return score
 
         h = self.closest_savable_human(new_state)
         if h is None:
-            return float('-inf')
+            return MIN_SCORE
         return score - distance2(h.position, game_state.player)
 
     def closest_savable_human(self, game_state: GameState):
