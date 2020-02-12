@@ -218,8 +218,14 @@ def update(game_state: GameState, target: Vector) -> float:
         h_position = game_state.humans[h_index].position
         if distance2(z.position, game_state.player) < distance2(z.position, h_position):
             h_position = game_state.player
+
         direction = h_position - z.position
-        z.next_position = z.position + direction / norm(direction) * ZOMBIE_SPEED
+        direction_norm = norm(direction)
+        if direction_norm < ZOMBIE_SPEED:
+            z.next_position = h_position
+        else:
+            z.next_position = np.trunc(z.position + direction / direction_norm * ZOMBIE_SPEED)
+
         if distance2(z.position, game_state.player) <= SHOOTING_RADIUS ** 2:
             nb_killed += 1
             score += human_factor * FIBONNACCI_NUMBERS[nb_killed+2]
@@ -382,10 +388,12 @@ GAME LOOP
 
 def check_prediction(prediction: GameState, game_state: GameState):
     if prediction.zombies != game_state.zombies:
-        debug("EXPECTED")
-        debug(prediction.zombies)
-        debug("GOT")
-        debug(game_state.zombies)
+        for ez, gz in zip(prediction.zombies, game_state.zombies):
+            if ez != gz:
+                debug("EXPECTED")
+                debug(ez)
+                debug("GOT")
+                debug(gz)
 
 
 def game_loop():
