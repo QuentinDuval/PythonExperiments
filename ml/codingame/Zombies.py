@@ -40,7 +40,6 @@ GEOMETRY & VECTOR CALCULUS
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 Angle = float
 Vector = np.ndarray
 
@@ -85,7 +84,6 @@ GAME CONSTANTS
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 ASH_SPEED = 1000
 ZOMBIE_SPEED = 400
 SHOOTING_RADIUS = 2000
@@ -95,16 +93,13 @@ MAP_HEIGHT = 9000
 
 MAX_RESPONSE_TIME = 100
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME ENTITIES
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 T = TypeVar('T')
-
 
 EntityId = int
 
@@ -131,17 +126,14 @@ class Human:
 class Zombie:
     id: EntityId
     position: Vector
-    next_position: Vector
 
     @classmethod
     def read(cls):
         entity_id, x, y, x_next, y_next = [int(j) for j in input().split()]
-        return cls(id=entity_id,
-                   position=np.array([x, y], dtype=np.float64),
-                   next_position=np.array([x_next, y_next], dtype=np.float64))
+        return cls(id=entity_id, position=np.array([x, y], dtype=np.float64))
 
     def __eq__(self, other):
-        return self.id == other.id and np.array_equal(self.position, other.position) and np.array_equal(self.next_position, other.next_position)
+        return self.id == other.id and np.array_equal(self.position, other.position)
 
     def copy(self, **kwargs):
         return replace(self, **kwargs)
@@ -200,41 +192,44 @@ def fibs(n: int):
 FIBONNACCI_NUMBERS = fibs(1000)
 
 
-def update(game_state: GameState, target: Vector) -> float:
+def update(game_state: GameState, target: Vector, with_debug=False) -> float:
     score = 0.
     nb_killed = 0
     human_factor = 10 * len(game_state.humans) ** 2
 
     # Move player
     direction = target - game_state.player
-    game_state.player += direction / norm(direction) * ASH_SPEED
+    prev_player_pos = game_state.player
+    game_state.player = np.trunc(game_state.player + direction / norm(direction) * ASH_SPEED)
 
     # Move zombies / eat humans
     write = 0
     for read in range(len(game_state.zombies)):
         z = game_state.zombies[read]
-        z.position = z.next_position
         h_index = arg_closest(game_state.humans, z.position)
         h_position = game_state.humans[h_index].position
-        if distance2(z.position, game_state.player) < distance2(z.position, h_position):
-            h_position = game_state.player
+        if distance2(z.position, prev_player_pos) < distance2(z.position, h_position):
+            h_position = prev_player_pos
+
+        if with_debug:
+            debug(h_position)
 
         direction = h_position - z.position
         direction_norm = norm(direction)
-        if direction_norm < ZOMBIE_SPEED:
-            z.next_position = h_position
+        if direction_norm <= ZOMBIE_SPEED:
+            z.position = h_position
         else:
-            z.next_position = np.trunc(z.position + direction / direction_norm * ZOMBIE_SPEED)
+            z.position = np.trunc(z.position + direction / direction_norm * ZOMBIE_SPEED)
 
         if distance2(z.position, game_state.player) <= SHOOTING_RADIUS ** 2:
             nb_killed += 1
-            score += human_factor * FIBONNACCI_NUMBERS[nb_killed+2]
+            score += human_factor * FIBONNACCI_NUMBERS[nb_killed + 2]
         else:
             game_state.zombies[write] = z
             write += 1
             if np.array_equal(h_position, z.position):
                 game_state.humans.pop(h_index)
-                if len(game_state.humans) == 0:
+                if not game_state.humans:
                     return score
     game_state.zombies = game_state.zombies[:write]
     return score
@@ -245,7 +240,6 @@ def update(game_state: GameState, target: Vector) -> float:
 AGENT
 ------------------------------------------------------------------------------------------------------------------------
 """
-
 
 SEQUENCE_LEN = 4
 
@@ -294,7 +288,7 @@ class Agent:
         h = self.closest_savable_human(new_state)
         if h is None:
             return float('-inf')
-        return score - distance(h.position, game_state.player)
+        return score - distance2(h.position, game_state.player)
 
     def closest_savable_human(self, game_state: GameState):
         closest_human: Human = None
@@ -378,7 +372,6 @@ class Agent:
         return best_point
 '''
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 GAME LOOP
@@ -394,6 +387,11 @@ def check_prediction(prediction: GameState, game_state: GameState):
                 debug(ez)
                 debug("GOT")
                 debug(gz)
+    if prediction.humans != game_state.humans:
+        debug("EXPECTED")
+        debug(prediction.humans)
+        debug("GOT")
+        debug(game_state.humans)
 
 
 def game_loop():
@@ -404,7 +402,7 @@ def game_loop():
         if prediction:
             check_prediction(prediction, game_state)
         target = agent.get_action(game_state)
-        update(game_state, target)
+        update(game_state, target, with_debug=True)
         prediction = game_state
         print(int(target[0]), int(target[1]), "I love zombies")
 
