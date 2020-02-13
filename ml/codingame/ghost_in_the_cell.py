@@ -50,8 +50,6 @@ EntityId = int
 
 class Topology:
     def __init__(self):
-        self.factory_count = 0
-        self.link_count = 0
         self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
         self.paths: Dict[EntityId, Dict[EntityId, EntityId]] = {}
 
@@ -61,37 +59,51 @@ class Topology:
     def next_move_hop(self, source: EntityId, destination: EntityId) -> EntityId:
         return self.paths[source][destination]
 
+    def __repr__(self):
+        s = "GRAPH\n"
+        s += str(self.graph)
+        s += "\nPATHS\n"
+        s += str(self.paths)
+        return s
+
     @classmethod
     def read(cls):
         topology = Topology()
-        topology.factory_count = int(input())
-        topology.link_count = int(input())
-        for _ in range(topology.link_count):
+        factory_count = int(input())
+        link_count = int(input())
+        for _ in range(link_count):
             factory_1, factory_2, distance = [int(j) for j in input().split()]
             topology.graph[factory_1][factory_2] = distance
             topology.graph[factory_2][factory_1] = distance
         topology.paths = cls.compute_paths(topology.graph)
         return topology
 
+    @classmethod
+    def from_graph(cls, graph):
+        topology = Topology()
+        for k, v in graph.items():
+            topology.graph[k].update(v)
+        topology.paths = cls.compute_paths(topology.graph)
+        return topology
+
     @staticmethod
     def compute_paths(graph):
-        # TODO - improve this algorithm by a lot...
         nodes = list(graph.keys())
-        distances: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
         paths: Dict[EntityId, Dict[EntityId, EntityId]] = defaultdict(dict)
+        modified_dist: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
         for s in nodes:
+            paths[s][s] = 0
             for d in nodes:
                 if s != d:
-                    distances[s][d] = graph[s][d]
+                    modified_dist[s][d] = graph[s][d] ** 2
                     paths[s][d] = d
         for k in range(len(nodes)):
             for s in nodes:
                 for d in nodes:
                     if s != d and s != k and d != k:
-                        if distances[s][d] > distances[s][k] + distances[k][d] - 2:
-                            distances[s][d] = distances[s][k] + distances[k][d]
+                        if modified_dist[s][d] > modified_dist[s][k] + modified_dist[k][d]:
+                            modified_dist[s][d] = modified_dist[s][k] + modified_dist[k][d]
                             paths[s][d] = k
-        # debug(paths)
         return paths
 
 
@@ -165,6 +177,14 @@ class SendBomb:
 
 
 @dataclass()
+class Increase:
+    factory_id: EntityId
+
+    def __repr__(self):
+        return "INC " + str(self.factory_id)
+
+
+@dataclass()
 class Move:
     source: EntityId
     destination: EntityId
@@ -174,8 +194,9 @@ class Move:
         return "MOVE " + str(self.source) + " " + str(self.destination) + " " + str(self.cyborg_count)
 
 
-Action = Union[Wait, Move, SendBomb]
+Action = Union[Wait, Move, SendBomb, Increase]
 Actions = List[Action]
+
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -193,6 +214,7 @@ class Agent:
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
+        # TODO - increase action
         # TODO - pre-treat the topology to detect your camp and defend it
         # TODO - pre-treat the topology to pass through as many  nodes as possible
         # TODO - apply the effect of on-going actions
@@ -272,6 +294,7 @@ GAME LOOP
 def game_loop():
     agent = Agent()
     topology = Topology.read()
+    debug(topology)
     for turn_nb in itertools.count():
         game_state = GameState.read()
         # TODO - voronoi to identify camps at beginning (turn 0)
