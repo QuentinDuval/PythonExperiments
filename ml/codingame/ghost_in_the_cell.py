@@ -227,6 +227,7 @@ class Agent:
         return actions
 
     def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
+        # TODO - only send bombs to bases in the opponent camps
         if self.bomb_sent >= MAX_BOMBS:
             return []
 
