@@ -54,10 +54,14 @@ class Topology:
     def __init__(self):
         self.factory_count = 0
         self.link_count = 0
-        self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(lambda: defaultdict(Distance))
+        self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
+        self.paths: Dict[EntityId, Dict[EntityId, EntityId]] = {}
 
     def distance(self, source: EntityId, destination: EntityId) -> Distance:
         return self.graph[source][destination]
+
+    def next_hop(self, source: EntityId, destination: EntityId) -> EntityId:
+        return self.paths[source][destination]
 
     @classmethod
     def read(cls):
@@ -68,7 +72,30 @@ class Topology:
             factory_1, factory_2, distance = [int(j) for j in input().split()]
             topology.graph[factory_1][factory_2] = distance
             topology.graph[factory_2][factory_1] = distance
+        topology.paths = cls.compute_paths(topology.graph)
         return topology
+
+    @staticmethod
+    def compute_paths(graph):
+        # TODO - improve this algorithm by a lot...
+        nodes = list(graph.keys())
+        distances: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
+        paths: Dict[EntityId, Dict[EntityId, EntityId]] = defaultdict(dict)
+        for s in nodes:
+            for d in nodes:
+                if s != d:
+                    distances[s][d] = graph[s][d]
+                    paths[s][d] = d
+        for k in range(len(nodes)):
+            for s in nodes:
+                for d in nodes:
+                    if s != d and s != k and d != k:
+                        if distances[s][d] > distances[s][k] + distances[k][d] - 2:
+                            distances[s][d] = distances[s][k] + distances[k][d]
+                            paths[s][d] = k
+        # debug(paths)
+        return paths
+
 
 
 @dataclass()
@@ -180,7 +207,8 @@ class Agent:
                 return moves
 
             troops = min(excess_cyborgs, game_state.factories[f_id].cyborg_count + 1)
-            moves.append(Move(source, f_id, troops))
+            next_hop = topology.next_hop(source, f_id)
+            moves.append(Move(source, next_hop, troops))
             excess_cyborgs -= troops
         return moves
 
@@ -195,8 +223,9 @@ GAME LOOP
 def game_loop():
     agent = Agent()
     topology = Topology.read()
-    while True:
+    for turn_nb in itertools.count():
         game_state = GameState.read()
+        # TODO - voronoi to identify camps at beginning (turn 0)
         actions = agent.get_action(topology, game_state)
         print(";".join(str(a) for a in actions))
 
