@@ -142,8 +142,8 @@ class Zombie:
 @dataclass()
 class GameState:
     player: Vector
-    humans: List[Human]
-    zombies: List[Zombie]
+    humans: List[Human]         # TODO - replace by just a 2 dimensional vector
+    zombies: List[Zombie]       # TODO - replace by just a 2 dimensional vector
 
     @classmethod
     def read(cls):
