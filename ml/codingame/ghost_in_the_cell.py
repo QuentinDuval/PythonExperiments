@@ -259,7 +259,7 @@ class Agent:
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
         # TODO - bad formula for attractiveness? tries too often to assault the opponent base at start and lose
-        # TODO - go through intermediary bases
+
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             return topology.distance(source, f_id) / (f.production + f.cyborg_count + 1)
