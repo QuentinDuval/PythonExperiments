@@ -8,7 +8,6 @@ from typing import *
 
 import numpy as np
 
-
 """
 ------------------------------------------------------------------------------------------------------------------------
 UTILS
@@ -42,9 +41,8 @@ GAME ENTITIES
 ------------------------------------------------------------------------------------------------------------------------
 """
 
-
 MAX_PRODUCTION = 3
-
+MAX_BOMBS = 2
 
 Distance = int
 EntityId = int
@@ -60,7 +58,7 @@ class Topology:
     def distance(self, source: EntityId, destination: EntityId) -> Distance:
         return self.graph[source][destination]
 
-    def next_hop(self, source: EntityId, destination: EntityId) -> EntityId:
+    def next_move_hop(self, source: EntityId, destination: EntityId) -> EntityId:
         return self.paths[source][destination]
 
     @classmethod
@@ -97,7 +95,6 @@ class Topology:
         return paths
 
 
-
 @dataclass()
 class Factory:
     owner: int
@@ -115,9 +112,18 @@ class Troop:
 
 
 @dataclass()
+class Bomb:
+    owner: int
+    source: EntityId
+    destination: EntityId
+    distance: Distance
+
+
+@dataclass()
 class GameState:
     factories: Dict[EntityId, Factory] = field(default_factory=dict)
     troops: Dict[EntityId, Troop] = field(default_factory=dict)
+    bombs: Dict[EntityId, Bomb] = field(default_factory=dict)
 
     @classmethod
     def read(cls):
@@ -137,6 +143,9 @@ class GameState:
                 state.troops[entity_id] = Troop(
                     owner=arg_1, source=arg_2, destination=arg_3,
                     cyborg_count=arg_4, distance=arg_5)
+            elif entity_type == "BOMB":
+                state.bombs[entity_id] = Bomb(owner=arg_1, source=arg_2, destination=arg_3, distance=arg_4)
+
         return state
 
 
@@ -144,6 +153,15 @@ class GameState:
 class Wait:
     def __repr__(self):
         return "WAIT"
+
+
+@dataclass()
+class SendBomb:
+    source: EntityId
+    destination: EntityId
+
+    def __repr__(self):
+        return "BOMB " + str(self.source) + " " + str(self.destination)
 
 
 @dataclass()
@@ -156,9 +174,8 @@ class Move:
         return "MOVE " + str(self.source) + " " + str(self.destination) + " " + str(self.cyborg_count)
 
 
-Action = Union[Wait, Move]
+Action = Union[Wait, Move, SendBomb]
 Actions = List[Action]
-
 
 """
 ------------------------------------------------------------------------------------------------------------------------
@@ -168,10 +185,11 @@ AGENT
 
 
 class Agent:
-    MIN_TROOPS = 5
+    MIN_TROOPS = 1
 
     def __init__(self):
         self.chrono = Chronometer()
+        self.bomb_sent = 0
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
@@ -181,8 +199,39 @@ class Agent:
         for f_id, f in game_state.factories.items():
             if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
                 actions.extend(self.send_troop_from(f_id, topology, game_state))
+        actions.extend(self.send_bombs(topology, game_state))
         if not actions:
             actions.append(Wait())
+        return actions
+
+    def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
+        if self.bomb_sent >= MAX_BOMBS:
+            return []
+
+        targets = []
+        for f_id, f in game_state.factories.items():
+            if f.owner == -1:
+                targets.append(f_id)
+        targets.sort(key=lambda f_id: game_state.factories[f_id].production)
+        if not targets:
+            return []
+
+        target = targets[-1]
+
+        for b in game_state.bombs.values():
+            if b.owner == 1 and b.destination == target:
+                return []
+
+        sources = []
+        for f_id, f in game_state.factories.items():
+            if f.owner == 1:
+                sources.append(f_id)
+        sources.sort(key=lambda f_id: topology.distance(f_id, target))
+        if not sources:
+            return []
+
+        actions = [SendBomb(sources[0], target)]
+        self.bomb_sent += 1
         return actions
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
@@ -207,7 +256,7 @@ class Agent:
                 return moves
 
             troops = min(excess_cyborgs, game_state.factories[f_id].cyborg_count + 1)
-            next_hop = topology.next_hop(source, f_id)
+            next_hop = topology.next_move_hop(source, f_id)
             moves.append(Move(source, next_hop, troops))
             excess_cyborgs -= troops
         return moves
