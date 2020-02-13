@@ -48,7 +48,27 @@ MAX_PRODUCTION = 3
 
 Distance = int
 EntityId = int
-Topology = Dict[EntityId, Dict[EntityId, Distance]]
+
+
+class Topology:
+    def __init__(self):
+        self.factory_count = 0
+        self.link_count = 0
+        self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(lambda: defaultdict(Distance))
+
+    def distance(self, source: EntityId, destination: EntityId) -> Distance:
+        return self.graph[source][destination]
+
+    @classmethod
+    def read(cls):
+        topology = Topology()
+        topology.factory_count = int(input())
+        topology.link_count = int(input())
+        for _ in range(topology.link_count):
+            factory_1, factory_2, distance = [int(j) for j in input().split()]
+            topology.graph[factory_1][factory_2] = distance
+            topology.graph[factory_2][factory_1] = distance
+        return topology
 
 
 @dataclass()
@@ -144,7 +164,7 @@ class Agent:
         # TODO - go through intermediary bases
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
-            return topology[source][f_id] / (f.production + f.cyborg_count + 1)
+            return topology.distance(source, f_id) / (f.production + f.cyborg_count + 1)
 
         moves: Actions = []
 
@@ -172,20 +192,9 @@ GAME LOOP
 """
 
 
-def read_topology() -> Topology:
-    topology = defaultdict(lambda: defaultdict(Distance))
-    factory_count = int(input())
-    link_count = int(input())
-    for i in range(link_count):
-        factory_1, factory_2, distance = [int(j) for j in input().split()]
-        topology[factory_1][factory_2] = distance
-        topology[factory_2][factory_1] = distance
-    return topology
-
-
 def game_loop():
     agent = Agent()
-    topology = read_topology()
+    topology = Topology.read()
     while True:
         game_state = GameState.read()
         actions = agent.get_action(topology, game_state)
