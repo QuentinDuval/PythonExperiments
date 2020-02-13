@@ -266,14 +266,16 @@ class Agent:
 
         moves: Actions = []
 
-        neutral = []
+        targets = []
         for f_id, f in game_state.factories.items():
             if f_id != source and (f.owner != 1 or (f.owner == 1 and f.cyborg_count < self.MIN_TROOPS)):
-                neutral.append(f_id)
-        neutral.sort(key=attractiveness)
+                targets.append(f_id)
+        targets.sort(key=attractiveness)
+        if not targets:
+            return moves
 
         excess_cyborgs = game_state.factories[source].cyborg_count - self.MIN_TROOPS
-        for f_id in neutral:
+        for f_id in targets:
             if not excess_cyborgs:
                 return moves
 
@@ -281,6 +283,11 @@ class Agent:
             next_hop = topology.next_move_hop(source, f_id)
             moves.append(Move(source, next_hop, troops))
             excess_cyborgs -= troops
+
+        if excess_cyborgs:
+            next_hop = topology.next_move_hop(source, targets[0])
+            moves.append(Move(source, next_hop, excess_cyborgs // 2))
+
         return moves
 
 
