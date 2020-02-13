@@ -121,6 +121,18 @@ class Agent:
         self.chrono = Chronometer()
 
     def get_action(self, topology: Topology, game_state: GameState) -> Action:
+        for f_id, f in game_state.factories.items():
+            if f.owner > 0 and f.cyborg_count > 10:
+                return self.send_troop_from(f_id, topology, game_state)
+        return Wait()
+
+    def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Action:
+        for f_id, f in game_state.factories.items():
+            if f.owner == 0:
+                return Move(source, f_id, game_state.factories[source].cyborg_count - 10)
+        for f_id, f in game_state.factories.items():
+            if f.owner == -1:
+                return Move(source, f_id, game_state.factories[source].cyborg_count - 10)
         return Wait()
 
 
