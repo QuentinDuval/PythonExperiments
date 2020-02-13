@@ -90,6 +90,25 @@ class GameState:
         return state
 
 
+@dataclass()
+class Wait:
+    def __repr__(self):
+        return "WAIT"
+
+
+@dataclass()
+class Move:
+    source: EntityId
+    destination: EntityId
+    cyborg_count: int
+
+    def __repr__(self):
+        return "MOVE " + str(self.source) + " " + str(self.destination) + " " + str(self.cyborg_count)
+
+
+Action = Union[Wait, Move]
+
+
 """
 ------------------------------------------------------------------------------------------------------------------------
 AGENT
@@ -101,9 +120,8 @@ class Agent:
     def __init__(self):
         self.chrono = Chronometer()
 
-    def get_action(self, topology: Topology, game_state: GameState) -> str:
-        # Any valid action, such as "WAIT" or "MOVE source destination cyborgs"
-        return "WAIT"
+    def get_action(self, topology: Topology, game_state: GameState) -> Action:
+        return Wait()
 
 
 """
