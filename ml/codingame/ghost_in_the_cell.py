@@ -43,6 +43,9 @@ GAME ENTITIES
 """
 
 
+MAX_PRODUCTION = 3
+
+
 Distance = int
 EntityId = int
 Topology = Dict[EntityId, Dict[EntityId, Distance]]
@@ -107,6 +110,7 @@ class Move:
 
 
 Action = Union[Wait, Move]
+Actions = List[Action]
 
 
 """
@@ -117,23 +121,46 @@ AGENT
 
 
 class Agent:
+    MIN_TROOPS = 5
+
     def __init__(self):
         self.chrono = Chronometer()
 
-    def get_action(self, topology: Topology, game_state: GameState) -> Action:
+    def get_action(self, topology: Topology, game_state: GameState) -> Actions:
+        actions: Actions = []
+        # TODO - apply the effect of on-going actions
         for f_id, f in game_state.factories.items():
-            if f.owner > 0 and f.cyborg_count > 10:
-                return self.send_troop_from(f_id, topology, game_state)
-        return Wait()
+            if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
+                actions.extend(self.send_troop_from(f_id, topology, game_state))
+        if not actions:
+            actions.append(Wait())
+        return actions
 
-    def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Action:
+    def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
+
+        # TODO - bad formula for attractiveness? tries too often to assault the opponent base at start and lose
+        # TODO - go through intermediary bases
+        def attractiveness(f_id: int):
+            f = game_state.factories[f_id]
+            return topology[source][f_id] / (f.production + f.cyborg_count + 1)
+
+        moves: Actions = []
+
+        neutral = []
         for f_id, f in game_state.factories.items():
-            if f.owner == 0:
-                return Move(source, f_id, game_state.factories[source].cyborg_count - 10)
-        for f_id, f in game_state.factories.items():
-            if f.owner == -1:
-                return Move(source, f_id, game_state.factories[source].cyborg_count - 10)
-        return Wait()
+            if f_id != source and (f.owner != 1 or (f.owner == 1 and f.cyborg_count < self.MIN_TROOPS)):
+                neutral.append(f_id)
+        neutral.sort(key=attractiveness)
+
+        excess_cyborgs = game_state.factories[source].cyborg_count - self.MIN_TROOPS
+        for f_id in neutral:
+            if not excess_cyborgs:
+                return moves
+
+            troops = min(excess_cyborgs, game_state.factories[f_id].cyborg_count + 1)
+            moves.append(Move(source, f_id, troops))
+            excess_cyborgs -= troops
+        return moves
 
 
 """
@@ -159,8 +186,8 @@ def game_loop():
     topology = read_topology()
     while True:
         game_state = GameState.read()
-        action = agent.get_action(topology, game_state)
-        print(action)
+        actions = agent.get_action(topology, game_state)
+        print(";".join(str(a) for a in actions))
 
 
 if __name__ == '__main__':
