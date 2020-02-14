@@ -251,7 +251,7 @@ AGENT
 class Agent:
     MIN_TROOPS = 1
     BOMB_TURN = 5   # TODO - tune this number
-    MAX_PROJ_TURN = 10
+    MAX_PROJ_TURN = 20  # TODO - does not seem to help
     # TURN_DISCOUNT = 0.9
 
     def __init__(self):
@@ -336,6 +336,7 @@ class Agent:
         return moves
 
     def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
+        # TODO - sometimes helps the opponent by eliminating neutral at far regions from his base, helping him
         targets = []
         for f_id, f in game_state.factories.items():
             if topology.get_camp(f_id) == -1:
