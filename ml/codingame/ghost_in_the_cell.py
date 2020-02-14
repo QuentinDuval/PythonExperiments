@@ -1,5 +1,6 @@
 from collections import *
 import itertools
+import heapq
 import math
 import sys
 import time
@@ -41,23 +42,84 @@ GAME ENTITIES
 ------------------------------------------------------------------------------------------------------------------------
 """
 
+
 MAX_PRODUCTION = 3
 MAX_BOMBS = 2
+INF_DISTANCE = 1_000
 
 Distance = int
 EntityId = int
+Owner = int
+
+
+@dataclass()
+class Factory:
+    owner: Owner
+    cyborg_count: int
+    production: int
+
+
+@dataclass()
+class Troop:
+    owner: Owner
+    source: EntityId
+    destination: EntityId
+    cyborg_count: int
+    distance: Distance
+
+
+@dataclass()
+class Bomb:
+    owner: Owner
+    source: EntityId
+    destination: EntityId
+    distance: Distance
+
+
+@dataclass()
+class GameState:
+    turn_nb: int
+    factories: Dict[EntityId, Factory] = field(default_factory=dict)
+    troops: Dict[EntityId, Troop] = field(default_factory=dict)
+    bombs: Dict[EntityId, Bomb] = field(default_factory=dict)
+
+    @classmethod
+    def read(cls, turn_nb: int):
+        state = cls(turn_nb=turn_nb)
+        entity_count = int(input())
+        for i in range(entity_count):
+            entity_id, entity_type, arg_1, arg_2, arg_3, arg_4, arg_5 = input().split()
+            entity_id = int(entity_id)
+            arg_1 = int(arg_1)
+            arg_2 = int(arg_2)
+            arg_3 = int(arg_3)
+            arg_4 = int(arg_4)
+            arg_5 = int(arg_5)
+            if entity_type == "FACTORY":
+                state.factories[entity_id] = Factory(owner=arg_1, cyborg_count=arg_2, production=arg_3)
+            elif entity_type == "TROOP":
+                state.troops[entity_id] = Troop(
+                    owner=arg_1, source=arg_2, destination=arg_3,
+                    cyborg_count=arg_4, distance=arg_5)
+            elif entity_type == "BOMB":
+                state.bombs[entity_id] = Bomb(owner=arg_1, source=arg_2, destination=arg_3, distance=arg_4)
+        return state
 
 
 class Topology:
     def __init__(self):
         self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
         self.paths: Dict[EntityId, Dict[EntityId, EntityId]] = {}
+        self.camps: Dict[EntityId, Owner] = {}
 
     def distance(self, source: EntityId, destination: EntityId) -> Distance:
         return self.graph[source][destination]
 
     def next_move_hop(self, source: EntityId, destination: EntityId) -> EntityId:
         return self.paths[source][destination]
+
+    def get_camp(self, factory_id: EntityId) -> Owner:
+        return self.camps[factory_id]
 
     def __repr__(self):
         s = "GRAPH\n"
@@ -86,6 +148,15 @@ class Topology:
         topology.paths = cls.compute_paths(topology.graph)
         return topology
 
+    @classmethod
+    def from_edges(cls, edges: List[Tuple[EntityId, EntityId, Distance]]):
+        topology = Topology()
+        for e1, e2, d in edges:
+            topology.graph[e1][e2] = d
+            topology.graph[e2][e1] = d
+        topology.paths = cls.compute_paths(topology.graph)
+        return topology
+
     @staticmethod
     def compute_paths(graph):
         nodes = list(graph.keys())
@@ -95,7 +166,7 @@ class Topology:
             paths[s][s] = 0
             for d in nodes:
                 if s != d:
-                    modified_dist[s][d] = graph[s][d] ** 2
+                    modified_dist[s][d] = graph[s].get(d, INF_DISTANCE) ** 2
                     paths[s][d] = d
         for k in range(len(nodes)):
             for s in nodes:
@@ -106,59 +177,30 @@ class Topology:
                             paths[s][d] = k
         return paths
 
+    def compute_camps(self, game_state: GameState):
+        self.camps.clear()
+        camp_dist = {}
 
-@dataclass()
-class Factory:
-    owner: int
-    cyborg_count: int
-    production: int
+        q = []
+        for f_id, f in game_state.factories.items():
+            if f.owner != 0:
+                heapq.heappush(q, (0, f_id, f.owner))
+                self.camps[f_id] = f.owner
+                camp_dist[f_id] = 0
+        while q:
+            f_dist, f_id, f_owner = heapq.heappop(q)
 
+            # Assign camp and take into account equalities
+            if f_id not in camp_dist:
+                self.camps[f_id] = f_owner
+                camp_dist[f_id] = f_dist
+            elif camp_dist[f_id] == f_dist and self.camps[f_id] != f_owner:
+                self.camps[f_id] = 0
 
-@dataclass()
-class Troop:
-    owner: int
-    source: EntityId
-    destination: EntityId
-    cyborg_count: int
-    distance: Distance
-
-
-@dataclass()
-class Bomb:
-    owner: int
-    source: EntityId
-    destination: EntityId
-    distance: Distance
-
-
-@dataclass()
-class GameState:
-    factories: Dict[EntityId, Factory] = field(default_factory=dict)
-    troops: Dict[EntityId, Troop] = field(default_factory=dict)
-    bombs: Dict[EntityId, Bomb] = field(default_factory=dict)
-
-    @classmethod
-    def read(cls):
-        state = cls()
-        entity_count = int(input())
-        for i in range(entity_count):
-            entity_id, entity_type, arg_1, arg_2, arg_3, arg_4, arg_5 = input().split()
-            entity_id = int(entity_id)
-            arg_1 = int(arg_1)
-            arg_2 = int(arg_2)
-            arg_3 = int(arg_3)
-            arg_4 = int(arg_4)
-            arg_5 = int(arg_5)
-            if entity_type == "FACTORY":
-                state.factories[entity_id] = Factory(owner=arg_1, cyborg_count=arg_2, production=arg_3)
-            elif entity_type == "TROOP":
-                state.troops[entity_id] = Troop(
-                    owner=arg_1, source=arg_2, destination=arg_3,
-                    cyborg_count=arg_4, distance=arg_5)
-            elif entity_type == "BOMB":
-                state.bombs[entity_id] = Bomb(owner=arg_1, source=arg_2, destination=arg_3, distance=arg_4)
-
-        return state
+            # Visit the neighbors
+            for neigh, dist in self.graph[f_id].items():
+                if neigh not in self.camps:
+                    heapq.heappush(q, (f_dist + dist, neigh, f_owner))
 
 
 @dataclass()
@@ -214,10 +256,16 @@ class Agent:
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
+
+        # TODO
+        #   - simple: increase factories with 0 production right away
+        #   - simple: send bomb to most productive factory of opponent camp right away
+
         # TODO - increase action
         # TODO - pre-treat the topology to detect your camp and defend it
         # TODO - pre-treat the topology to pass through as many  nodes as possible
         # TODO - apply the effect of on-going actions
+
         for f_id, f in game_state.factories.items():
             if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
                 actions.extend(self.send_troop_from(f_id, topology, game_state))
@@ -227,7 +275,6 @@ class Agent:
         return actions
 
     def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
-        # TODO - only send bombs to bases in the opponent camps
         if self.bomb_sent >= MAX_BOMBS:
             return []
 
@@ -259,11 +306,10 @@ class Agent:
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
-        # TODO - bad formula for attractiveness? tries too often to assault the opponent base at start and lose
-
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
-            return topology.distance(source, f_id) / (f.production + f.cyborg_count + 1)
+            camp_factor = 5 if topology.get_camp(f_id) == 1 else 1  # More attractiveness for my camp
+            return camp_factor * topology.distance(source, f_id) / (f.production + f.cyborg_count + 1)
 
         moves: Actions = []
 
@@ -302,10 +348,10 @@ GAME LOOP
 def game_loop():
     agent = Agent()
     topology = Topology.read()
-    debug(topology)
     for turn_nb in itertools.count():
-        game_state = GameState.read()
-        # TODO - voronoi to identify camps at beginning (turn 0)
+        game_state = GameState.read(turn_nb)
+        if turn_nb == 0:
+            topology.compute_camps(game_state)
         actions = agent.get_action(topology, game_state)
         print(";".join(str(a) for a in actions))
 
