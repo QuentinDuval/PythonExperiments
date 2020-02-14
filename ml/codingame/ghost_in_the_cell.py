@@ -57,6 +57,7 @@ class Factory:
     owner: Owner
     cyborg_count: int
     production: int
+    projected_count: int = 0
 
 
 @dataclass()
@@ -253,6 +254,7 @@ class Agent:
 
     def __init__(self):
         self.chrono = Chronometer()
+        # TODO - make the AI subjective to a player
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
@@ -260,43 +262,63 @@ class Agent:
         # TODO - increase action
         # TODO - apply the effect of on-going actions to defend efficiently
 
+        # Projecting future movements
+        for f in game_state.factories.values():
+            f.projected_count = f.cyborg_count
+        for t in game_state.troops.values():
+            f = game_state.factories[t.destination]
+            if f.owner == t.owner:
+                f.projected_count += t.cyborg_count
+            else:
+                f.projected_count -= t.cyborg_count
+            # TODO - horizon effect (5 turns max?)
+            # TODO - take into account the production as well?
+
+        # Movements
         for f_id, f in game_state.factories.items():
-            if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
+            if f.owner == 1 and f.projected_count > self.MIN_TROOPS:
                 actions.extend(self.send_troop_from(f_id, topology, game_state))
 
+        # Bombs
         if game_state.turn_nb == self.BOMB_TURN:
             actions.extend(self.send_bombs(topology, game_state))
-        if not actions:
-            actions.append(Wait())
-        return actions
+
+        # Returning actions
+        return [Wait()] if not actions else actions
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
-            return camp_factor * (f.cyborg_count + 1) * topology.distance(source, f_id) / (f.production + 1)
+            return camp_factor * (f.projected_count + 1) * topology.distance(source, f_id) / (f.production + 1)
 
         moves: Actions = []
 
         targets = []
         for f_id, f in game_state.factories.items():
-            if f_id != source and (f.owner != 1 or (f.owner == 1 and f.cyborg_count < self.MIN_TROOPS)):
+            if f_id != source and (f.owner != 1 or (f.owner == 1 and f.projected_count < self.MIN_TROOPS)):
                 targets.append(f_id)
         targets.sort(key=attractiveness)
         if not targets:
             return moves
 
-        excess_cyborgs = game_state.factories[source].cyborg_count - self.MIN_TROOPS
+        excess_cyborgs = game_state.factories[source].projected_count - self.MIN_TROOPS
         for f_id in targets:
-            if not excess_cyborgs:
+            if excess_cyborgs <= 0:
                 return moves
 
-            troops = min(excess_cyborgs, game_state.factories[f_id].cyborg_count + 1)
-            # debug("Target", f_id, "with troops", troops)
-            next_hop = topology.next_move_hop(source, f_id)
-            moves.append(Move(source, next_hop, troops))
-            excess_cyborgs -= troops
+            target = game_state.factories[f_id]
+            if target.owner == 1:
+                troops = min(excess_cyborgs, self.MIN_TROOPS - game_state.factories[f_id].projected_count)
+            else:
+                troops = min(excess_cyborgs, game_state.factories[f_id].projected_count + 1)
+
+            if troops > 0:
+                debug("Target", f_id, "with troops", troops)
+                next_hop = topology.next_move_hop(source, f_id)
+                moves.append(Move(source, next_hop, troops))
+                excess_cyborgs -= troops
 
         if excess_cyborgs:
             next_hop = topology.next_move_hop(source, targets[0])
