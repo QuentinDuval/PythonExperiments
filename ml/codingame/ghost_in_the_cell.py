@@ -258,9 +258,7 @@ class Agent:
         actions: Actions = []
 
         # TODO - increase action
-        # TODO - pre-treat the topology to detect your camp and defend it
-        # TODO - pre-treat the topology to pass through as many  nodes as possible
-        # TODO - apply the effect of on-going actions
+        # TODO - apply the effect of on-going actions to defend efficiently
 
         for f_id, f in game_state.factories.items():
             if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
