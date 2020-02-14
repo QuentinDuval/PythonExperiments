@@ -270,25 +270,6 @@ class Agent:
             actions.append(Wait())
         return actions
 
-    def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
-        targets = []
-        for f_id, f in game_state.factories.items():
-            if topology.get_camp(f_id) == -1:
-                targets.append(f_id)
-        targets.sort(key=lambda t_id: game_state.factories[t_id].production, reverse=True)
-
-        sources = []
-        for f_id, f in game_state.factories.items():
-            if f.owner == 1:
-                sources.append(f_id)
-
-        actions = []
-        for i in range(MAX_BOMBS):
-            target = targets[i]
-            source = min(sources, key=lambda s_id: topology.distance(s_id, target))
-            actions.append(SendBomb(source, target))
-        return actions
-
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
         def attractiveness(f_id: int):
@@ -322,6 +303,25 @@ class Agent:
             moves.append(Move(source, next_hop, excess_cyborgs // 2))
 
         return moves
+
+    def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
+        targets = []
+        for f_id, f in game_state.factories.items():
+            if topology.get_camp(f_id) == -1:
+                targets.append(f_id)
+        targets.sort(key=lambda t_id: game_state.factories[t_id].production, reverse=True)
+
+        sources = []
+        for f_id, f in game_state.factories.items():
+            if f.owner == 1:
+                sources.append(f_id)
+
+        actions = []
+        for i in range(MAX_BOMBS):
+            target = targets[i]
+            source = min(sources, key=lambda s_id: topology.distance(s_id, target))
+            actions.append(SendBomb(source, target))
+        return actions
 
 
 """
