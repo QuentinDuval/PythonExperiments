@@ -166,7 +166,7 @@ class Topology:
             paths[s][s] = 0
             for d in nodes:
                 if s != d:
-                    modified_dist[s][d] = graph[s].get(d, INF_DISTANCE) ** 2
+                    modified_dist[s][d] = graph[s].get(d, INF_DISTANCE) ** 1.5 # TODO - tune this factor
                     paths[s][d] = d
         for k in range(len(nodes)):
             for s in nodes:
@@ -256,10 +256,6 @@ class Agent:
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
-
-        # TODO
-        #   - simple: increase factories with 0 production right away
-        #   - simple: send bomb to most productive factory of opponent camp right away
 
         # TODO - increase action
         # TODO - pre-treat the topology to detect your camp and defend it
