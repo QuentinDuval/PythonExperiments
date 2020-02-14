@@ -259,6 +259,8 @@ class Agent:
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
 
+        # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
+        # TODO - avoid bombs (you can somehow guess where it goes...)
         # TODO - increase action
         # TODO - apply the effect of on-going actions to defend efficiently
 
@@ -271,8 +273,8 @@ class Agent:
                 f.projected_count += t.cyborg_count
             else:
                 f.projected_count -= t.cyborg_count
+            # TODO - take into account the production - especially for offense
             # TODO - horizon effect (5 turns max?)
-            # TODO - take into account the production as well?
 
         # Movements
         for f_id, f in game_state.factories.items():
