@@ -288,6 +288,7 @@ class Agent:
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
+        # TODO - beware here, I tend to capture factories that do not bring me ghosts => rework attractiveness
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
