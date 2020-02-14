@@ -174,7 +174,7 @@ class Topology:
                     if s != d and s != k and d != k:
                         if modified_dist[s][d] > modified_dist[s][k] + modified_dist[k][d]:
                             modified_dist[s][d] = modified_dist[s][k] + modified_dist[k][d]
-                            paths[s][d] = k
+                            paths[s][d] = paths[s][k]
         return paths
 
     def compute_camps(self, game_state: GameState):
@@ -249,10 +249,10 @@ AGENT
 
 class Agent:
     MIN_TROOPS = 1
+    BOMB_TURN = 5   # TODO - tune this number
 
     def __init__(self):
         self.chrono = Chronometer()
-        self.bomb_sent = 0
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
@@ -269,47 +269,38 @@ class Agent:
         for f_id, f in game_state.factories.items():
             if f.owner > 0 and f.cyborg_count > self.MIN_TROOPS:
                 actions.extend(self.send_troop_from(f_id, topology, game_state))
-        actions.extend(self.send_bombs(topology, game_state))
+
+        if game_state.turn_nb == self.BOMB_TURN:
+            actions.extend(self.send_bombs(topology, game_state))
         if not actions:
             actions.append(Wait())
         return actions
 
     def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
-        if self.bomb_sent >= MAX_BOMBS:
-            return []
-
         targets = []
         for f_id, f in game_state.factories.items():
-            if f.owner == -1:
+            if topology.get_camp(f_id) == -1:
                 targets.append(f_id)
-        targets.sort(key=lambda f_id: game_state.factories[f_id].production)
-        if not targets:
-            return []
-
-        target = targets[-1]
-
-        for b in game_state.bombs.values():
-            if b.owner == 1 and b.destination == target:
-                return []
+        targets.sort(key=lambda t_id: game_state.factories[t_id].production, reverse=True)
 
         sources = []
         for f_id, f in game_state.factories.items():
             if f.owner == 1:
                 sources.append(f_id)
-        sources.sort(key=lambda f_id: topology.distance(f_id, target))
-        if not sources:
-            return []
 
-        actions = [SendBomb(sources[0], target)]
-        self.bomb_sent += 1
+        actions = []
+        for i in range(MAX_BOMBS):
+            target = targets[i]
+            source = min(sources, key=lambda s_id: topology.distance(s_id, target))
+            actions.append(SendBomb(source, target))
         return actions
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
-            camp_factor = 5 if topology.get_camp(f_id) == 1 else 1  # More attractiveness for my camp
-            return camp_factor * topology.distance(source, f_id) / (f.production + f.cyborg_count + 1)
+            camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
+            return camp_factor * (f.cyborg_count + 1) * topology.distance(source, f_id) / (f.production + 1)
 
         moves: Actions = []
 
@@ -327,6 +318,7 @@ class Agent:
                 return moves
 
             troops = min(excess_cyborgs, game_state.factories[f_id].cyborg_count + 1)
+            # debug("Target", f_id, "with troops", troops)
             next_hop = topology.next_move_hop(source, f_id)
             moves.append(Move(source, next_hop, troops))
             excess_cyborgs -= troops
@@ -348,6 +340,7 @@ GAME LOOP
 def game_loop():
     agent = Agent()
     topology = Topology.read()
+    debug(topology)
     for turn_nb in itertools.count():
         game_state = GameState.read(turn_nb)
         if turn_nb == 0:
