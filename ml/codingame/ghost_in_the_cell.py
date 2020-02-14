@@ -251,6 +251,8 @@ AGENT
 class Agent:
     MIN_TROOPS = 1
     BOMB_TURN = 5   # TODO - tune this number
+    MAX_PROJ_TURN = 10
+    # TURN_DISCOUNT = 0.9
 
     def __init__(self):
         self.chrono = Chronometer()
@@ -259,22 +261,26 @@ class Agent:
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
 
+        # TODO - avoid bombs - you can somehow guess where it goes: at first appearance, look at distance!
+        # TODO: opening book, send a bomb + a troop directly afterwards (on the opponent base?)
         # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
-        # TODO - avoid bombs (you can somehow guess where it goes...)
         # TODO - increase action
         # TODO - apply the effect of on-going actions to defend efficiently
 
         # Projecting future movements
+        # TODO - this is much too naive: imminent attack will not be seen because of production in 10 turns...
+        # TODO - instead, try to find when the factory change allegance in the few turns ahead (simulation)
+        '''
         for f in game_state.factories.values():
-            f.projected_count = f.cyborg_count
+            f.projected_count = f.cyborg_count + f.production * self.MAX_PROJ_TURN
+        '''
         for t in game_state.troops.values():
-            f = game_state.factories[t.destination]
-            if f.owner == t.owner:
-                f.projected_count += t.cyborg_count
-            else:
-                f.projected_count -= t.cyborg_count
-            # TODO - take into account the production - especially for offense
-            # TODO - horizon effect (5 turns max?)
+            if t.distance <= self.MAX_PROJ_TURN:
+                f = game_state.factories[t.destination]
+                if f.owner == t.owner:
+                    f.projected_count += t.cyborg_count
+                else:
+                    f.projected_count -= t.cyborg_count
 
         # Movements
         for f_id, f in game_state.factories.items():
