@@ -291,23 +291,39 @@ class Agent:
                 f.projected_count -= t.cyborg_count
 
     def decide_movements(self, topology: Topology, game_state: GameState) -> Actions:
+        # TODO - you should also avoid you own bombs
+        bomb_impacts = {}
+        for b in game_state.bombs.values():
+            if b.owner == -1:
+                bomb_impacts[b.destination] = min(b.distance, bomb_impacts.get(b.destination, INF_DISTANCE))
+        debug(bomb_impacts)
+
         actions = []
         for f_id, f in game_state.factories.items():
             if f.owner == 1:
-                excess_cyborgs = game_state.factories[f_id].projected_count - self.MIN_TROOPS
-                # TODO - avoid bombs here
-                # TODO - min number of troops should be function of the production
+                imminent_impact = bomb_impacts.get(f_id, INF_DISTANCE) <= 2
+                if imminent_impact:
+                    excess_cyborgs = game_state.factories[f_id].cyborg_count
+                else:
+                    # TODO - min number of troops should be function of the production too
+                    min_troops = self.MIN_TROOPS
+                    excess_cyborgs = game_state.factories[f_id].projected_count - min_troops
+                debug(f_id, imminent_impact, excess_cyborgs)
                 if excess_cyborgs > 0:
-                    actions.extend(self.send_troop_from(f_id, topology, game_state, excess_cyborgs))
+                    actions.extend(self.send_troop_from(f_id, topology, game_state, excess_cyborgs, bomb_impacts))
         return actions
 
     def send_troop_from(self, source: EntityId, topology: Topology,
-                        game_state: GameState, excess_cyborgs: int) -> Actions:
+                        game_state: GameState, excess_cyborgs: int,
+                        bomb_impacts: Dict[EntityId, Distance]) -> Actions:
 
         def attractiveness(f_id: int):
+            dist = topology.distance(source, f_id) # TODO - take into account dist with hops
+            if dist < bomb_impacts.get(f_id, -INF_DISTANCE):
+                return float('inf')
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
-            return camp_factor * (f.projected_count + 1) * topology.distance(source, f_id) / (f.production ** 2 + 1)
+            return camp_factor * (f.projected_count + 1) * dist / (f.production ** 2 + 1)
 
         targets = []
         for f_id, f in game_state.factories.items():
@@ -329,9 +345,13 @@ class Agent:
                 troops = min(excess_cyborgs, game_state.factories[f_id].projected_count + 1)
 
             if troops > 0:
-                debug("Target", f_id, "with troops", troops)
+                # debug("FROM", source, "- target", f_id, "with troops", troops)
                 next_hop = topology.next_move_hop(source, f_id)
-                moves.append(Move(source, next_hop, troops))
+                if next_hop not in bomb_impacts:
+                    # TODO - the bomb impacts should be in fact part of the shortest paths
+                    moves.append(Move(source, next_hop, troops))
+                else:
+                    moves.append(Move(source, f_id, troops))
                 excess_cyborgs -= troops
         if excess_cyborgs:
             next_hop = topology.next_move_hop(source, targets[0])
@@ -367,36 +387,29 @@ GAME LOOP
 
 
 def identify_bomb_target(topology: Topology, game_state: GameState, bomb: Bomb):
+    # For opponent bombs, we do not get the distance nor the destination
     closest = -1
-    closest_distance = float('inf')
-    closest_production = 0
+    closest_distance = 0
+    closest_production = -1
     for f_id, distance in topology.graph[bomb.source].items():
-        if distance < bomb.distance:
-            continue
-
         factory = game_state.factories[f_id]
-        if factory.owner != 1:
-            continue
-
-        if distance - bomb.distance < closest_distance:
+        if factory.owner == 1 and factory.production > closest_production:
             closest = f_id
-            closest_distance = distance - bomb.distance
+            closest_distance = distance - 1
             closest_production = factory.production
-        elif distance - bomb.distance == closest_distance and factory.production > closest_production:
-            closest = f_id
-            closest_distance = distance - bomb.distance
-            closest_production = factory.production
-    return closest
+    bomb.destination = closest
+    bomb.distance = closest_distance
 
 
 def enrich(memory: GameState, game_state: GameState, topology: Topology):
     for b_id, bomb in game_state.bombs.items():
         if bomb.owner == -1:
             if b_id not in memory.bombs:
-                bomb.destination = identify_bomb_target(topology, game_state, bomb)
+                identify_bomb_target(topology, game_state, bomb)
                 debug(bomb)
             else:
                 bomb.destination = memory.bombs[b_id].destination
+                bomb.distance = memory.bombs[b_id].distance - 1
 
 
 def game_loop():
