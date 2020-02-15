@@ -159,7 +159,7 @@ class Topology:
         graph = self.graph
         self.paths.clear()
         nodes = list(graph.keys())
-        modified_dist: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
+        modified_dist: Dict[EntityId, Dict[EntityId, float]] = defaultdict(dict)
         for s in nodes:
             self.paths[s][s] = 0
             for d in nodes:
@@ -297,7 +297,7 @@ class Agent:
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
-            return camp_factor * (f.projected_count + 1) * topology.distance(source, f_id) / (f.production + 1)
+            return camp_factor * (f.projected_count + 1) * topology.distance(source, f_id) / (f.production ** 2 + 1)
 
         moves: Actions = []
 
