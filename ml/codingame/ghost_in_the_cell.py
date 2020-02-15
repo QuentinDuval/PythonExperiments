@@ -248,8 +248,7 @@ AGENT
 
 class Agent:
     MIN_TROOPS = 1
-    BOMB_TURN = 2   # TODO - tune this number
-    # TURN_DISCOUNT = 0.9
+    BOMB_TURN = 2
 
     def __init__(self):
         self.chrono = Chronometer()
@@ -257,6 +256,9 @@ class Agent:
 
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
+
+        # TODO: need a strategic analysis globally?
+        #   * how can you manage the increase otherwise?
 
         # TODO: bad start
         #   * if a factory is too occupied at first, you might just wait to more easily get it
