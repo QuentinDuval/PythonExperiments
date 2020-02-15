@@ -247,8 +247,7 @@ AGENT
 
 class Agent:
     MIN_TROOPS = 1
-    BOMB_TURN = 5   # TODO - tune this number
-    MAX_PROJ_TURN = 20  # TODO - does not seem to help
+    BOMB_TURN = 2   # TODO - tune this number
     # TURN_DISCOUNT = 0.9
 
     def __init__(self):
@@ -274,12 +273,11 @@ class Agent:
         for f in game_state.factories.values():
             f.projected_count = f.cyborg_count + f.production # + f.production * self.MAX_PROJ_TURN
         for t in game_state.troops.values():
-            if t.distance <= self.MAX_PROJ_TURN:
-                f = game_state.factories[t.destination]
-                if f.owner == t.owner:
-                    f.projected_count += t.cyborg_count
-                else:
-                    f.projected_count -= t.cyborg_count
+            f = game_state.factories[t.destination]
+            if f.owner == t.owner:
+                f.projected_count += t.cyborg_count
+            else:
+                f.projected_count -= t.cyborg_count
 
         # Movements
         for f_id, f in game_state.factories.items():
