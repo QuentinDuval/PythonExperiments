@@ -318,12 +318,16 @@ class Agent:
                         bomb_impacts: Dict[EntityId, Distance]) -> Actions:
 
         def attractiveness(f_id: int):
-            dist = topology.distance(source, f_id) # TODO - take into account dist with hops
+            # TODO - take into account dist with hops
+            dist = topology.distance(source, f_id)
             if dist < bomb_impacts.get(f_id, -INF_DISTANCE):
                 return float('inf')
+
+            # TODO - in the beginning of the game, tend to waste cyborgs on targets highly occupied
+            # TODO => tend to push toward different AI depending on whether I win or lose
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
-            return camp_factor * (f.projected_count + 1) * dist / (f.production ** 2 + 1)
+            return camp_factor * (f.projected_count ** 2 + 1) * dist / (f.production ** 2 + 1)
 
         targets = []
         for f_id, f in game_state.factories.items():
