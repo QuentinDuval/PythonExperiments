@@ -274,8 +274,13 @@ class Agent:
         # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
         # TODO - increase action
 
-        # Projecting future movements
-        # TODO - this is much too naive: imminent attack will not be seen because of production in 10 turns...
+        self.aggregate_current_moves(game_state)
+        actions.extend(self.decide_movements(topology, game_state))
+        if game_state.turn_nb == self.BOMB_TURN:
+            actions.extend(self.send_bombs(topology, game_state))
+        return [Wait()] if not actions else actions
+
+    def aggregate_current_moves(self, game_state: GameState):
         # TODO - instead, try to find when the factory change allegance in the few turns ahead (simulation)
         for f in game_state.factories.values():
             f.projected_count = f.cyborg_count + f.production # + f.production * self.MAX_PROJ_TURN
@@ -286,21 +291,15 @@ class Agent:
             else:
                 f.projected_count -= t.cyborg_count
 
-        # Movements
+    def decide_movements(self, topology: Topology, game_state: GameState) -> Actions:
+        actions = []
         for f_id, f in game_state.factories.items():
             if f.owner == 1 and f.projected_count > self.MIN_TROOPS:
                 actions.extend(self.send_troop_from(f_id, topology, game_state))
-
-        # Bombs
-        if game_state.turn_nb == self.BOMB_TURN:
-            actions.extend(self.send_bombs(topology, game_state))
-
-        # Returning actions
-        return [Wait()] if not actions else actions
+        return actions
 
     def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
 
-        # TODO - beware here, I tend to capture factories that do not bring me ghosts => rework attractiveness
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
