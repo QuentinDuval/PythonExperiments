@@ -366,16 +366,53 @@ GAME LOOP
 """
 
 
+def identify_bomb_target(topology: Topology, game_state: GameState, bomb: Bomb):
+    closest = -1
+    closest_distance = float('inf')
+    closest_production = 0
+    for f_id, distance in topology.graph[bomb.source].items():
+        if distance < bomb.distance:
+            continue
+
+        factory = game_state.factories[f_id]
+        if factory.owner != 1:
+            continue
+
+        if distance - bomb.distance < closest_distance:
+            closest = f_id
+            closest_distance = distance - bomb.distance
+            closest_production = factory.production
+        elif distance - bomb.distance == closest_distance and factory.production > closest_production:
+            closest = f_id
+            closest_distance = distance - bomb.distance
+            closest_production = factory.production
+    return closest
+
+
+def enrich(memory: GameState, game_state: GameState, topology: Topology):
+    for b_id, bomb in game_state.bombs.items():
+        if bomb.owner == -1:
+            if b_id not in memory.bombs:
+                bomb.destination = identify_bomb_target(topology, game_state, bomb)
+                debug(bomb)
+            else:
+                bomb.destination = memory.bombs[b_id].destination
+
+
 def game_loop():
     agent = Agent()
     topology = Topology.read()
     debug(topology)
+
+    memory: GameState = None
     for turn_nb in itertools.count():
         game_state = GameState.read(turn_nb)
         if turn_nb == 0:
             topology.compute_camps(game_state)
         topology.compute_paths(game_state)
+        enrich(memory, game_state, topology)
         actions = agent.get_action(topology, game_state)
+        memory = game_state
         print(";".join(str(a) for a in actions))
 
 
