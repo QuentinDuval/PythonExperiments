@@ -317,6 +317,8 @@ class Agent:
                         game_state: GameState, excess_cyborgs: int,
                         bomb_impacts: Dict[EntityId, Distance]) -> Actions:
 
+        # TODO - shooting opponent cyborgs is better than shooting neutral cyborgs!!!
+
         def attractiveness(f_id: int):
             # TODO - take into account dist with hops
             dist = topology.distance(source, f_id)
@@ -342,6 +344,7 @@ class Agent:
             if excess_cyborgs <= 0:
                 return moves
 
+            # TODO - attack is too weak, I never get factories because I send just below production...
             target = game_state.factories[f_id]
             if target.owner == 1:
                 troops = min(excess_cyborgs, self.MIN_TROOPS - game_state.factories[f_id].projected_count)
