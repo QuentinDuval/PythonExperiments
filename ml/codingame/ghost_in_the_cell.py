@@ -270,7 +270,6 @@ class Agent:
         # TODO: anticipate your own move:
         #   * no need to send twice the reinforcements
 
-        # TODO - avoid bombs - you can somehow guess where it goes: at first appearance, look at distance!
         # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
         # TODO - increase action
 
@@ -294,18 +293,21 @@ class Agent:
     def decide_movements(self, topology: Topology, game_state: GameState) -> Actions:
         actions = []
         for f_id, f in game_state.factories.items():
-            if f.owner == 1 and f.projected_count > self.MIN_TROOPS:
-                actions.extend(self.send_troop_from(f_id, topology, game_state))
+            if f.owner == 1:
+                excess_cyborgs = game_state.factories[f_id].projected_count - self.MIN_TROOPS
+                # TODO - avoid bombs here
+                # TODO - min number of troops should be function of the production
+                if excess_cyborgs > 0:
+                    actions.extend(self.send_troop_from(f_id, topology, game_state, excess_cyborgs))
         return actions
 
-    def send_troop_from(self, source: EntityId, topology: Topology, game_state: GameState) -> Actions:
+    def send_troop_from(self, source: EntityId, topology: Topology,
+                        game_state: GameState, excess_cyborgs: int) -> Actions:
 
         def attractiveness(f_id: int):
             f = game_state.factories[f_id]
             camp_factor = 1 if topology.get_camp(f_id) == 1 else 5  # More attractiveness for my camp
             return camp_factor * (f.projected_count + 1) * topology.distance(source, f_id) / (f.production ** 2 + 1)
-
-        moves: Actions = []
 
         targets = []
         for f_id, f in game_state.factories.items():
@@ -313,9 +315,9 @@ class Agent:
                 targets.append(f_id)
         targets.sort(key=attractiveness)
         if not targets:
-            return moves
+            return []
 
-        excess_cyborgs = game_state.factories[source].projected_count - self.MIN_TROOPS
+        moves: Actions = []
         for f_id in targets:
             if excess_cyborgs <= 0:
                 return moves
@@ -331,11 +333,9 @@ class Agent:
                 next_hop = topology.next_move_hop(source, f_id)
                 moves.append(Move(source, next_hop, troops))
                 excess_cyborgs -= troops
-
         if excess_cyborgs:
             next_hop = topology.next_move_hop(source, targets[0])
             moves.append(Move(source, next_hop, excess_cyborgs // 2))
-
         return moves
 
     def send_bombs(self, topology: Topology, game_state: GameState) -> Actions:
