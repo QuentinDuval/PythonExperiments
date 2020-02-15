@@ -156,6 +156,7 @@ class Topology:
         return topology
 
     def compute_paths(self, game_state: GameState):
+        # TODO: avoid "next hops" on a factory that has 0 production?
         graph = self.graph
         self.paths.clear()
         nodes = list(graph.keys())
@@ -257,12 +258,16 @@ class Agent:
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
 
+        # TODO: bad start
+        #   * if a factory is too occupied at first, you might just wait to more easily get it
+        #   * currently, I get the factory, and then it is taken back right after... I just clear the mobs...
+
         # TODO: opening book, send a bomb + a troop directly afterwards (on the opponent base?)
         #   * to do this, you need to take into account remaining troops (in order not to send them twice)
 
-        # TODO: anticipate your own move: no need to send twice the reinforcements
+        # TODO: anticipate your own move:
+        #   * no need to send twice the reinforcements
 
-        # TODO: avoid "next hops" on a factory that has 0 production
         # TODO - avoid bombs - you can somehow guess where it goes: at first appearance, look at distance!
         # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
         # TODO - increase action
