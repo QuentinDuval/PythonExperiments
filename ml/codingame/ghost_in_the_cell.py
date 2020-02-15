@@ -110,7 +110,7 @@ class GameState:
 class Topology:
     def __init__(self):
         self.graph: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
-        self.paths: Dict[EntityId, Dict[EntityId, EntityId]] = {}
+        self.paths: Dict[EntityId, Dict[EntityId, EntityId]] = defaultdict(dict)
         self.camps: Dict[EntityId, Owner] = {}
 
     def distance(self, source: EntityId, destination: EntityId) -> Distance:
@@ -138,7 +138,6 @@ class Topology:
             factory_1, factory_2, distance = [int(j) for j in input().split()]
             topology.graph[factory_1][factory_2] = distance
             topology.graph[factory_2][factory_1] = distance
-        topology.paths = cls.compute_paths(topology.graph)
         return topology
 
     @classmethod
@@ -146,7 +145,6 @@ class Topology:
         topology = Topology()
         for k, v in graph.items():
             topology.graph[k].update(v)
-        topology.paths = cls.compute_paths(topology.graph)
         return topology
 
     @classmethod
@@ -155,29 +153,27 @@ class Topology:
         for e1, e2, d in edges:
             topology.graph[e1][e2] = d
             topology.graph[e2][e1] = d
-        topology.paths = cls.compute_paths(topology.graph)
         return topology
 
-    @staticmethod
-    def compute_paths(graph):
-        # TODO - ideally, avoid the factories with 0 as production... (you just lose troops)
+    def compute_paths(self, game_state: GameState):
+        graph = self.graph
+        self.paths.clear()
         nodes = list(graph.keys())
-        paths: Dict[EntityId, Dict[EntityId, EntityId]] = defaultdict(dict)
         modified_dist: Dict[EntityId, Dict[EntityId, Distance]] = defaultdict(dict)
         for s in nodes:
-            paths[s][s] = 0
+            self.paths[s][s] = 0
             for d in nodes:
                 if s != d:
-                    modified_dist[s][d] = graph[s].get(d, INF_DISTANCE) ** 1.5 # TODO - tune this factor
-                    paths[s][d] = d
+                    modified_dist[s][d] = graph[s].get(d, INF_DISTANCE) ** 2
+                    self.paths[s][d] = d
         for k in range(len(nodes)):
-            for s in nodes:
-                for d in nodes:
-                    if s != d and s != k and d != k:
-                        if modified_dist[s][d] > modified_dist[s][k] + modified_dist[k][d]:
-                            modified_dist[s][d] = modified_dist[s][k] + modified_dist[k][d]
-                            paths[s][d] = paths[s][k]
-        return paths
+            if game_state.factories[k].owner == 1:
+                for s in nodes:
+                    for d in nodes:
+                        if s != d and s != k and d != k:
+                            if modified_dist[s][d] > modified_dist[s][k] + modified_dist[k][d]:
+                                modified_dist[s][d] = modified_dist[s][k] + modified_dist[k][d]
+                                self.paths[s][d] = self.paths[s][k]
 
     def compute_camps(self, game_state: GameState):
         self.camps.clear()
@@ -262,9 +258,13 @@ class Agent:
     def get_action(self, topology: Topology, game_state: GameState) -> Actions:
         actions: Actions = []
 
+        # TODO: opening book, send a bomb + a troop directly afterwards (on the opponent base?)
+        #   * to do this, you need to take into account remaining troops (in order not to send them twice)
+
+        # TODO: anticipate your own move: no need to send twice the reinforcements
+
         # TODO: avoid "next hops" on a factory that has 0 production
         # TODO - avoid bombs - you can somehow guess where it goes: at first appearance, look at distance!
-        # TODO: opening book, send a bomb + a troop directly afterwards (on the opponent base?)
         # TODO - !production is affected by bombs, differentiate between temporary down and no prod (in attractiveness)
         # TODO - increase action
 
@@ -370,6 +370,7 @@ def game_loop():
         game_state = GameState.read(turn_nb)
         if turn_nb == 0:
             topology.compute_camps(game_state)
+        topology.compute_paths(game_state)
         actions = agent.get_action(topology, game_state)
         print(";".join(str(a) for a in actions))
 
