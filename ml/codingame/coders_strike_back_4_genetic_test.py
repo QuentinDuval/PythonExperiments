@@ -144,6 +144,21 @@ def test_full_game():
     print("progress:", entities.next_progress_id[0], entities.next_progress_id[1])
 
 
+def test_find_collision_performance():
+    def test_loop():
+        total = 0.
+        for i in range(100000):
+            total += find_collision(np.array([float(i), 0.]),
+                                    np.array([0., 0.]),
+                                    np.array([2000., 0.]),
+                                    800 * 800)
+        return total
+
+    profiler = cProfile.Profile()
+    profiler.runcall(test_loop)
+    profiler.print_stats(sort=1)
+
+
 def test_simulation_performance(profiler: bool):
     nb_scenario = 1000
     nb_action = 4
@@ -182,4 +197,5 @@ test_scenario_2()
 test_scenario_3()
 
 # test_full_game()
-test_simulation_performance(profiler=True)
+test_find_collision_performance()
+# test_simulation_performance(profiler=True)

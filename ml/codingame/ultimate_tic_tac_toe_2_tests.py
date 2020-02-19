@@ -141,6 +141,7 @@ def test_ia(agent1: Agent, agent2: Agent):
     # print(board)
 
 
+'''
 print("\nNaive, depth 4 (minimax vs negamax)")
 print("-" * 50)
 
@@ -207,14 +208,17 @@ test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()),
 
 test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
         agent2=MinimaxAgent(max_depth=3, eval_fct=StrategicMapEvaluation()))
+'''
 
 
 print("\nMCTS vs Minimax")
 print("-" * 50)
 
-test_ia(agent1=MCTSAgent(exploration_factor=1.0),
-        agent2=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+# MCTS is losing all games
 
-test_ia(agent1=MinimaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
-        agent2=MCTSAgent(exploration_factor=1.0))
+test_ia(agent1=MCTSAgent(exploration_factor=1.0, max_turn_time=100),
+        agent2=NegamaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()))
+
+test_ia(agent1=NegamaxAgent(max_depth=3, eval_fct=PriceMapEvaluation()),
+        agent2=MCTSAgent(exploration_factor=1.0, max_turn_time=100))
 

@@ -562,9 +562,10 @@ class GameTree:
 
 
 class MCTSAgent(Agent):
-    def __init__(self, exploration_factor: float):
+    def __init__(self, exploration_factor: float, max_turn_time: int = MAX_TURN_TIME):
         self.exploration_factor = exploration_factor
         self.game_tree: GameTree = None
+        self.max_turn_time = max_turn_time
 
     def on_end_episode(self):
         self.game_tree = None
@@ -580,7 +581,7 @@ class MCTSAgent(Agent):
         scenario_count = 0
         chrono = Chronometer()
         chrono.start()
-        while chrono.spent() <= 0.8 * MAX_TURN_TIME:
+        while chrono.spent() <= 0.8 * self.max_turn_time:
             self._monte_carlo_tree_search(player_id)
             scenario_count += 1
 
