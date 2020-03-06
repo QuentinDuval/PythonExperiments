@@ -63,3 +63,29 @@ def wordBreak(s: str, words: List[str]) -> List[str]:
         return solutions
 
     return backtrack(start_pos=0)
+
+
+from functools import lru_cache
+
+
+class Solution:
+    def wordBreak(self, s: str, wordDict: List[str]) -> bool:
+        if not wordDict:
+            return False
+
+        word_dict = set(wordDict)
+        smallest_word = min(len(w) for w in wordDict)
+        longest_word = max(len(w) for w in wordDict)
+
+        @lru_cache(maxsize=None)
+        def can_break_from(i: int) -> bool:
+            if i == len(s):
+                return True
+
+            for delta in range(smallest_word, longest_word + 1):
+                if s[i:i + delta] in word_dict:
+                    if can_break_from(i + delta):
+                        return True
+            return False
+
+        return can_break_from(0)
