@@ -13,10 +13,11 @@ Note: by the way, it is easy to test, just apply the reversed mapping and the co
 
 import numpy as np
 import string
+from collections import defaultdict
 from typing import *
 
 
-def topological_sort(graph: Dict[Any, List[Any]]) -> List[Any]:
+def topological_sort(graph: Dict[Any, Iterable[Any]]) -> List[Any]:
     ordered = []
     discovered = set()
 
@@ -34,15 +35,12 @@ def topological_sort(graph: Dict[Any, List[Any]]) -> List[Any]:
     return list(reversed(ordered))
 
 
-def guess_mapping(words: List[str]) -> Dict[str, str]:
+def find_constraints(words: List[str]) -> Dict[str, Set[str]]:
+    ordering_constraints = {c: set() for word in words for c in word}
+
+    # TODO - do it recursively, sub-list + depth of character
+
     n = len(words)
-    ordering_constraints = {c: set() for c in string.ascii_lowercase}
-
-    # TODO - you should be able to do it in O(N):
-    #   - scan first letters (to have the ordering there)
-    #   - scan second letters in each group having same first letter
-    #   - etc => can basically be done with a recursion
-
     for i in range(n):
         for j in range(i+1, n):
             w1 = words[i]
@@ -57,11 +55,16 @@ def guess_mapping(words: List[str]) -> Dict[str, str]:
             if w1[0] != w2[0]:
                 break
 
+    return ordering_constraints
+
+
+def guess_mapping(words: List[str]) -> Dict[str, str]:
+    ordering_constraints = find_constraints(words)
     ordered_letters = topological_sort(ordering_constraints)
     return {dst: src for src, dst in zip(string.ascii_lowercase, ordered_letters)}
 
 
-def apply_mapping(words: List[str], mapping: List[str]) -> List[str]:
+def apply_mapping(words: List[str], mapping: Dict[str, str]) -> List[str]:
     previous = []
     for word in words:
         prev = ""
@@ -99,6 +102,27 @@ def generative_testing(nb_test_cases: int, sentence_size: int, word_min_size: in
         rev_mapping = guess_mapping(sentence)
         output = apply_mapping(sentence, rev_mapping)
         assert output == list(sorted(output))
+
+
+"""
+Tests
+"""
+
+
+words = ["at", "bat", "bed", "car", "cat", "eel"]
+mapping = {"b": "c",
+           "c": "a",
+           "a": "t",
+           "t": "u",
+           "e": "b",
+           "d": "x",
+           "r": "g",
+           "l": "h"}
+encoded = apply_mapping(words, mapping)
+print(encoded)
+reverse_mapping = guess_mapping(encoded)
+print(reverse_mapping)
+print(apply_mapping(encoded, reverse_mapping))
 
 
 '''

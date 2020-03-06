@@ -43,8 +43,9 @@ class Solution:
             sets_to_len[mask] = max(sets_to_len[mask], len(w))
 
         max_product = 0
-        for s1, l1 in sets_to_len.items():
-            for s2, l2 in sets_to_len.items():
+        sets_to_len = list(sets_to_len.items())
+        for i, (s1, l1) in enumerate(sets_to_len):
+            for s2, l2 in sets_to_len[i + 1:]:  # use i to avoid doing the same work twice
                 if not s1 & s2:
                     max_product = max(max_product, l1 * l2)
         return max_product
