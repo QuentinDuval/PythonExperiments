@@ -1,7 +1,9 @@
 .idea/
 .hypothesis/
-*/__pycache__
+__pycache__/
 Learning/resources
 Learning/models
 Learning/Perforce.*
 *.csv
+.ipynb_checkpoints/
+dataset/
